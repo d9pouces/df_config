@@ -85,7 +85,7 @@ def get_merger_from_env() -> SettingMerger:
         PythonFileProvider("%s/etc/%s/settings.py" % (prefix, module_name,)),
         IniConfigProvider(os.path.abspath("local_settings.ini")),
         PythonFileProvider(os.path.abspath("local_settings.py")),
-        EnvironmentConfigProvider(module_name.upper()),
+        EnvironmentConfigProvider("%s_" % module_name.upper()),
     ]
     fields_provider = PythonConfigFieldsProvider(mapping)
     return SettingMerger(fields_provider, config_providers)

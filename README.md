@@ -143,8 +143,44 @@ ALLOWED_HOSTS = CallableSetting(lambda x: [urlparse(x['SERVER_BASE_URL']).hostna
 CSRF_COOKIE_DOMAIN = CallableSetting(lambda x: urlparse(x['SERVER_BASE_URL']).hostname, 'SERVER_BASE_URL')
 ```
 
+List of user settings
+---------------------
+
+Your user probably prefer use .ini files instead of Python ones.
+df_config searches for a list `INI_MAPPING` into the module `yourproject.iniconf`.
+
+```python
+from df_config.config.fields import ConfigField
+INI_MAPPING = [ConfigField("global.server_url", "SERVER_BASE_URL", help_str="Public URL of your website.",)]
+```
+
+Some specialized classes are available in `df_config.config.fields`: `CharConfigField`, `IntegerConfigField`, `FloatConfigField`, `ListConfigField`, `BooleanConfigField`, `ChoiceConfigFile`.
+You can also pickup some predefined list in `df_config.iniconf`.
+
+You can also use environment variables instead of an .ini file (only for values in the INI_MAPPING list):
+```bash
+YOURPROJECT_SERVER_BASE_URL=http://www.example-2.com
+python3 manage.py config python -v 2 | grep SERVER_BASE_URL
+```
+
+dynamic settings
+----------------
+
+By default, any `str` is assumed to be a template string: for example, `LOG_DIRECTORY = '{LOCAL_PATH}/logs'` needs `LOCAL_PATH` to be defined.
+So, if one of your setting include such values, it need to be encapsulated:
+
+```python
+from df_config.config.dynamic_settings import RawValue
+LOG_DIRECTORY = RawValue('{LOCAL_PATH}/logs')
+```
+
+Other dynamic classes are:
+```python
+from df_config.config.dynamic_settings import Directory, AutocreateFileContent, SettingReference, CallableSetting, ExpandIterable
+from df_config.guesses.misc import generate_secret_key
+DIRNAME = Directory("/tmp/directory")
+# creates /tmp/directory with collectstatic/migrate commands, otherwise you have a warning 
+SECRET_KEY = AutocreateFileContent("{LOCAL_PATH}/secret_key.txt", generate_secret_key, mode=0o600, use_collectstatic=False,use_migrate=True)
 
 
-
-
-
+```
