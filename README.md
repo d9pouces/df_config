@@ -177,10 +177,31 @@ LOG_DIRECTORY = RawValue('{LOCAL_PATH}/logs')
 Other dynamic classes are:
 ```python
 from df_config.config.dynamic_settings import Directory, AutocreateFileContent, SettingReference, CallableSetting, ExpandIterable
-from df_config.guesses.misc import generate_secret_key
+from df_config.guesses.misc import generate_secret_key, secure_hsts_seconds
 DIRNAME = Directory("/tmp/directory")
 # creates /tmp/directory with collectstatic/migrate commands, otherwise you have a warning 
 SECRET_KEY = AutocreateFileContent("{LOCAL_PATH}/secret_key.txt", generate_secret_key, mode=0o600, use_collectstatic=False,use_migrate=True)
-
+# if the file does not exist, SECRET_KEY = generate_secret_key()
+# if the file does exist, SECRET_KEY is equal to its content
+# if the migrate command is called and the file does not exist, it is created and the result of generate_secret_key() is written to it
+TEMPLATE_DEBUG = SettingReference('DEBUG')
+# TEMPLATE_DEBUG is always equal to DEBUG, even if DEBUG is defined in another file
+SECURE_HSTS_SECONDS = CallableSetting(secure_hsts_seconds, "USE_SSL")
+# the secure_hsts_seconds is called with a dict that contains the currently resolved settings
+# at least USE_SSL is present in this dict (maybe some other values are also defined)
+# the list of required settings can be directly set as an attribute of the callable:
+# secure_hsts_seconds.required_settings = ["USE_SSL"]
+# SECURE_HSTS_SECONDS = CallableSetting(secure_hsts_seconds)
+INSTALLED_APPS = ["django.contrib.admin", ..., ExpandIterable("EXTRA_APPS"), "django.contrib.auth"]
+# EXTRA_APPS must be a list, whose values are inserted in the final valaues
 
 ```
+
+server command
+--------------
+
+You can choose the application server used in production:
+```python
+DF_SERVER = "gunicorn"  # "gunicorn" or "daphne"
+```
+A new Django command `server` is available and launches `gunicorn` or `daphne`. The application and the listen address/port are specified so you do no have to set them. 
