@@ -120,7 +120,7 @@ class Command(BaseCommand):
         self.stdout.write(self.style.SUCCESS("# " + "-" * 80))
         self.stdout.write(
             self.style.SUCCESS(
-                _("# Djangofloor version %(version)s") % {"version": version}
+                _("# df_config version %(version)s") % {"version": version}
             )
         )
         self.stdout.write(

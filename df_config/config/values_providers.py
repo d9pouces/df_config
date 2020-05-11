@@ -61,9 +61,18 @@ Otherwise returns the current value of the config field."""
 
 
 class EnvironmentConfigProvider(ConfigProvider):
+    name = "Environment"
+
     def __init__(self, prefix):
         self.prefix = prefix
         self.exports = ""
+        self.exported_values = set()
+
+    def __str__(self):
+        count = len(self.exported_values)
+        if count <= 1:
+            return '(%s variable)' % count
+        return '(%s variables)' % count
 
     def has_value(self, config_field: ConfigField):
         key = "%s%s" % (self.prefix, config_field.setting_name)
@@ -80,6 +89,7 @@ class EnvironmentConfigProvider(ConfigProvider):
     def get_value(self, config_field):
         key = "%s%s" % (self.prefix, config_field.setting_name)
         if key in os.environ:
+            self.exported_values.add(key)
             return config_field.from_str(os.environ[key])
         return config_field.value
 

@@ -217,11 +217,6 @@ CELERY_APP = "df_websockets"
 CELERY_CREATE_DIRS = True
 CELERY_TASK_SERIALIZER = "json"
 
-# django-npm
-NPM_EXECUTABLE_PATH = "npm"
-NPM_ROOT_PATH = Directory("{LOCAL_PATH}/npm")
-NPM_STATIC_FILES_PREFIX = "vendor"
-
 # df_config
 DF_PROJECT_VERSION = CallableSetting(guess_version)
 DATA_PATH = Directory("{LOCAL_PATH}/data")
@@ -518,7 +513,7 @@ EMAIL_USE_TLS = False  # aliased in settings.ini as "[email]use_tls"
 EMAIL_USE_SSL = False  # aliased in settings.ini as "[email]use_ssl"
 EMAIL_SSL_CERTFILE = None
 EMAIL_SSL_KEYFILE = None
-LANGUAGE_CODE = "fr"  # aliased in settings.ini as "[global]language_code"
+LANGUAGE_CODE = "en"  # aliased in settings.ini as "[global]language_code"
 TIME_ZONE = "Europe/Paris"  # aliased in settings.ini as "[global]time_zone"
 LOG_REMOTE_URL = None  # aliased in settings.ini as "[global]log_remote_url"
 LOG_LEVEL = None

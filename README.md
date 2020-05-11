@@ -1,115 +1,150 @@
-metier & df_site
-=================
+df_config
+=========
 
-Composants (documentation)
-https://github.com/twbs/bootstrap
-https://github.com/SortableJS/Sortable
-https://github.com/select2/select2
-https://github.com/flatpickr/flatpickr
-https://github.com/MohammadYounes/AlertifyJS
-https://github.com/ckeditor/ckeditor5
-https://pypi.org/project/django-fontawesome-5/
+Django, *the web framework for perfectionists with deadlines*, is based on a single settings Python module defined in a environment variable.
+However, these settings could be organized into three categories:
 
-Django-Floor
-    * websockets et signaux
-        Candidats : 
-            * django-channels 2 + daphnee
-                # il y a 10 mois : This is great. I've been having performance and crashing issues with Daphne. I'll wait to test this PR before opening an issue, hopefully it goes away :)
-                # Yeah, I remember that @gordon had stability issues, and I wouldn't be suprised if the switch fixed that either!
-                # We didn’t want to use Daphne anymore. It was a nightmare.  https://medium.com/@ebsaral/our-experience-with-django-channels-on-heroku-f821213a57a1
-                dépendances de daphne : pycparser, cffi, cryptography, txaio, autobahn, hyperlink, PyHamcrest, Automat, constantly, zope.interface, incremental, pyopenssl, pyasn1, pyasn1-modules, service-identity, twisted, daphne
-                * daphne conseille d'avoir un process pour les WS et un process pour le HTTP comme gunicorn (sous-entendu gunicorn est plus performant)
-            * uvicorn
-                dépendances d'uvicorn : click-7.1.1 h11-0.9.0 httptools-0.1.1 uvicorn-0.11.3 uvloop-0.14.0 websockets-8.1
-    * configuration 
-        * A découpage en plusieurs fichiers
-        * B fichiers .ini ou .env
-        * C fichiers .py
-        * D variables d'environnement
-        * E configuration par défaut complète
-        * F référence entre settings
-        * G relance des process en cas de changement de config
-        * H page web de configuration
-        Candidats : 
-            * django-floor -> OK : A, B, C, D, E, F 
-            * django-environ -> OK : D 
-            * python-decouple -> OK : A, B, D
-            * django-constance -> OK : H
-            * django-configurations -> OK : A, C
-            * django-split-settings -> OK : A, C
-            * django-dotenv -> trop vieux
-            * django-flexisettings -> OK : A, C
-            * django-livesettings -> OK : H
-            * django-extra-settings -> OK : H
-    * pages complètes
-    * utilitaires divers  
-    * configuration récupérée
-
-Widgets : 
-    ok Fenêtres modales
-    ok Notifications
-    ok datetime -> flatpicker
-    ok date -> flatpicker
-    ok time -> flatpicker
-    ok autocomplete 
-    ok plusieurs éditeurs sur la même page
-    ok éditeurs dans des fenêtres modales
-    ok upload d'images
-    ok font-awesome
-    ok barres de progression avec signal
-    ok ajouter un drapeau au modèle => tester select2 avec le drapeau et un lien
-    ok django-smart-selects (sélections liées), y compris dans les modales
-    ok select2 et overflow
-    ok sortable inlines + formset
-    ok confirmation avant submit via POST {% confirm "Êtes-vous sûr ?" %} 
-    ok raccourcis {% shortcut "f" %}
-    ok menu vertical avec des éléments => breadcrumbs.html
-    ok typescript
-    ok chargement différé des images
-    ok images en plein écran avec parcours des images d'une page
-    ok django-pipeline
-    tables dynamiques pour remplacer le site d'admin
-        -> actions sur la sélection
-        -> filtres
-        -> barre de recherche
-        -> pagination
-        -> tri par colonne
-        -> liens fonctionnels (via l'anchor)
-    projets distincts pour df_websockets, df_site et df_config
-    tester un appel Ajax avec le header pour valider le window_key
-    preview de PDF
+  * settings that are very common and that can be kept as-is for most projects (`USE_TZ = True` or `MEDIA_URL = '/media/'`),
+  * settings that are specific to your project but common to all instances of your project (like `INSTALLED_APPS`),
+  * settings that are installation-dependent (`DATABASE_PASSWORD`, …)
 
 
-+-------------------------------------------------------------------------------+
-| widget           |    base    |     modal     | formset       | extra formset |
-|------------------|------------|---------------|---------------|---------------|
-| date             |     ok     |      ok       |               |               |
-|------------------|------------|---------------|---------------|---------------|
-| datetime         |     ok     |      ok       |               |               |
-|------------------|------------|---------------|---------------|---------------|
-| time             |     ok     |      ok       |               |               |
-|------------------|------------|---------------|---------------|---------------|
-| smart_selects    |     ok     |      ok       |               |               |
-|------------------|------------|---------------|---------------|---------------|
-| Ckeditor         |     ok     |      ok       |               |               |
-|------------------|------------|---------------|---------------|---------------|
-| select2          |     ok     |      ok       |               |               |
-+-------------------------------------------------------------------------------+
-| confirmation     |     ok     |      ok       |               |               |
-+-------------------------------------------------------------------------------+
+Moreover, there are dependencies between settings. For example, `ADMIN_EMAIL`, `ALLOWED_HOSTS` or `CSRF_COOKIE_DOMAIN` depend
+ on the domain name of your site,  and `SESSION_COOKIE_SECURE` and `CSRF_COOKIE_SECURE` can be set when you use TLS.
+df_config allows to use functions to dynamically define settings using some other settings as parameters.
 
 
-CKEditor : 
-    ok hauteur
-    ok upload d'images
-    ok smileys
-    ok espaces insécables
-    ok majuscules auto
-    ok autocorrect
-    ok lignes horizontales
-    ok sauts de page
-    ckeditor5-footnote
-    blocs de couleurs
-    petites capitales
-    mention
- 
+On the contrary, df_config dynamically merges several files to define your settings:
+
+  * :mod:`df_config.config.defaults` that aims at providing good default values,
+  * `yourproject.defaults` for your project-specific settings,
+  * `/etc/yourproject/settings.py/.ini` for installation-dependent settings.
+
+df_config also defines settings that should be valid for most sites, based on installed Django apps.
+
+You can define a list of settings that are read from a traditionnal text configuration file (`.ini format <https://docs.python.org/3/library/configparser.html>`_).
+Finally, df_config also searches for `local_settings.py` and `local_settings.ini` setting files in the working directory.
+
+
+Requirements
+------------
+
+df_config works with:
+
+  * Python 3.6+,
+  * Django 2.0+.
+  
+  
+How to use it?
+--------------
+
+df_config assumes that your project has a main module `yourproject`.
+Then you just have two steps to do:
+
+- update your `manage.py` file: 
+
+```python
+#!/usr/bin/env python
+from df_config.manage import manage, set_env
+
+set_env(module_name="yourproject")
+if __name__ == "__main__":
+    manage()
+
+```
+
+- copy your current settings (as-is) into `yourproject/defaults.py`,
+
+
+You can take a look to the resulting settings and the searched files:
+```bash
+python3 manage.py config python -v 2 | less
+```
+
+If you want a single settings file, you can also create it:
+
+```bash
+python3 manage.py config python --filename settings.py
+```
+
+update your setup.py
+--------------------
+
+You should the entry point in your `setup.py` file:
+
+```python
+entry_points = {"console_scripts": ["yourproject-ctl = df_config.manage:manage"]}
+``` 
+
+Once installed, the command `yourproject-ctl` (in fact, you can change `ctl` by anything without hyphen) executes the standard `maanage` command. 
+
+
+dynamize your settings
+----------------------
+
+First, you can provide sensible defaults settings in `yourproject.py` and overwrite the dev settings in `local_settings.py`.
+Then real things can begin:
+For example, imagine that you currently have the following settings:
+
+```python
+LOG_DIRECTORY = '/var/myproject/logs'
+STATIC_ROOT = '/var/myproject/static'
+MEDIA_ROOT = '/var/myproject/media'
+FILE_UPLOAD_TEMP_DIR = '/var/myproject/tmp'
+```
+
+If you change the base directory `/var/myproject`, four variables needs to be changed (and you will forget to change at least one).
+Now, you can write:
+
+```python
+LOCAL_PATH = '/var/myproject'
+LOG_DIRECTORY = '{LOCAL_PATH}/logs'
+STATIC_ROOT = '{LOCAL_PATH}/static'
+MEDIA_ROOT = '{LOCAL_PATH}/media'
+FILE_UPLOAD_TEMP_DIR = '{LOCAL_PATH}/tmp'
+```
+
+Now, you just have to redefine `LOCAL_PATH`; but you can even go slightly further:
+
+```python
+from df_config.config.dynamic_settings import Directory
+LOCAL_PATH = Directory('/var/myproject')
+LOG_DIRECTORY = Directory('{LOCAL_PATH}/logs')
+STATIC_ROOT = Directory('{LOCAL_PATH}/static')
+MEDIA_ROOT = Directory('{LOCAL_PATH}/media')
+FILE_UPLOAD_TEMP_DIR = Directory('{LOCAL_PATH}/tmp')
+```
+
+If you run the `check` command, you will be warned for missing directories, and the `collectstatic` and `migrate` commands
+will attempt to create them.
+Of course, you still have `settings.MEDIA_ROOT == '/var/myproject/media'` in your code, when settings are loaded.
+
+
+You can use more complex things, instead of:
+
+```python
+SERVER_BASE_URL = 'http://www.example.com'
+SERVER_NAME = 'www.example.com'
+USE_SSL = False
+ALLOWED_HOSTS = ['www.example.com']
+CSRF_COOKIE_DOMAIN = 'www.example.com'
+```
+
+You could just write:
+
+```python
+from urllib.parse import urlparse
+from df_config.config.dynamic_settings import CallableSetting
+
+SERVER_BASE_URL = 'http://www.example.com'
+SERVER_NAME = CallableSetting(lambda x: urlparse(x['SERVER_BASE_URL']).hostname, 'SERVER_BASE_URL')
+USE_SSL = CallableSetting(lambda x: urlparse(x['SERVER_BASE_URL']).scheme == 'https', 'SERVER_BASE_URL')
+ALLOWED_HOSTS = CallableSetting(lambda x: [urlparse(x['SERVER_BASE_URL']).hostname], 'SERVER_BASE_URL')
+CSRF_COOKIE_DOMAIN = CallableSetting(lambda x: urlparse(x['SERVER_BASE_URL']).hostname, 'SERVER_BASE_URL')
+```
+
+
+
+
+
+
