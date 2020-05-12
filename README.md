@@ -26,14 +26,17 @@ You can define a list of settings that are read from a traditionnal text configu
 Finally, df_config also searches for `local_settings.py` and `local_settings.ini` setting files in the working directory.
 
 
-Requirements
-------------
+Requirements and installation
+-----------------------------
 
 df_config works with:
 
   * Python 3.6+,
   * Django 2.0+.
   
+```bash
+pip install df_config
+```
   
 How to use it?
 --------------
