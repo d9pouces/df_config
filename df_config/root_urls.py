@@ -1,16 +1,8 @@
 # ##############################################################################
-#  This file is part of df_config                                              #
+#  This file is part of Interdiode                                             #
 #                                                                              #
-#  Copyright (C) 2020 Matthieu Gallet <github@19pouces.net>                    #
+#  Copyright (C) 2020 Matthieu Gallet <matthieu.gallet@19pouces.net>           #
 #  All Rights Reserved                                                         #
-#                                                                              #
-#  You may use, distribute and modify this code under the                      #
-#  terms of the (BSD-like) CeCILL-B license.                                   #
-#                                                                              #
-#  You should have received a copy of the CeCILL-B license with                #
-#  this file. If not, please visit:                                            #
-#  https://cecill.info/licences/Licence_CeCILL-B_V1-en.txt (English)           #
-#  or https://cecill.info/licences/Licence_CeCILL-B_V1-fr.txt (French)         #
 #                                                                              #
 # ##############################################################################
 """Root URLs provided by DjangoFloor
@@ -21,14 +13,13 @@ If DjangoDebugToolbar is present, then its URL is also registered.
 
 """
 
+from df_config.utils import get_view_from_string
 from django.conf import settings
 from django.conf.urls import include, url
 from django.urls import path
 from django.utils.module_loading import autodiscover_modules, import_string
 from django.views.i18n import JavaScriptCatalog
 from django.views.static import serve
-
-from df_config.utils import get_view_from_string
 
 
 def common_static_urls():
@@ -93,7 +84,8 @@ if settings.DF_ADMIN_SITE:
     urlpatterns += [path("admin/", include(admin_site.urls[:2]))]
 if settings.DEBUG and settings.USE_DEBUG_TOOLBAR:
     # noinspection PyPackageRequirements,PyUnresolvedReferences
-    urlpatterns += [path("__debug__/", include("debug_toolbar.urls"))]
+    import debug_toolbar
+    urlpatterns += [path("__debug__/", include(debug_toolbar.urls))]
 if settings.DF_INDEX_VIEW:
     urlpatterns += [
         path("", get_view_from_string(settings.DF_INDEX_VIEW), name="index")
