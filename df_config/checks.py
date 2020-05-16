@@ -1,23 +1,15 @@
 # ##############################################################################
-#  This file is part of df_config                                              #
+#  This file is part of Interdiode                                             #
 #                                                                              #
-#  Copyright (C) 2020 Matthieu Gallet <github@19pouces.net>                    #
+#  Copyright (C) 2020 Matthieu Gallet <matthieu.gallet@19pouces.net>           #
 #  All Rights Reserved                                                         #
-#                                                                              #
-#  You may use, distribute and modify this code under the                      #
-#  terms of the (BSD-like) CeCILL-B license.                                   #
-#                                                                              #
-#  You should have received a copy of the CeCILL-B license with                #
-#  this file. If not, please visit:                                            #
-#  https://cecill.info/licences/Licence_CeCILL-B_V1-en.txt (English)           #
-#  or https://cecill.info/licences/Licence_CeCILL-B_V1-fr.txt (French)         #
 #                                                                              #
 # ##############################################################################
 import os
 import shutil
 import sys
 
-from django.core.checks import Error, register
+from django.core.checks import Error, register, Warning
 
 from df_config.guesses.pipeline import available_compilers, available_css_compressor, available_js_compressors
 from df_config.utils import is_package_present
@@ -32,7 +24,7 @@ def missing_package(package_name, desc=""):
         cmd = "Try 'pip3 install --user %s' to install it." % package_name
     else:
         cmd = "Try 'sudo pip3 install %s' to install it." % package_name
-    return Error(
+    return Warning(
         "Python package '%s' is required%s. %s" % (package_name, desc, cmd),
         obj="configuration",
     )
