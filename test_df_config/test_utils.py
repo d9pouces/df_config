@@ -19,6 +19,7 @@ from unittest import TestCase
 
 import pkg_resources
 from django.http import HttpRequest
+from django.utils.http import http_date
 
 from df_config.utils import RangedChunkReader, ensure_dir, is_package_present, send_file
 
@@ -102,10 +103,12 @@ class TestSendFile(TestCase):
         )
         content = r.getvalue()
         self.assertEqual(b"333333333\n", content)
+
         expected_headers = [
             ("Content-Type", "text/plain"),
             ("Content-Range", "bytes 20-29/90"),
             ("Content-Length", "10"),
+            ('Last-Modified', http_date(os.stat(filename).st_mtime)),
             ("Content-Disposition", 'inline; filename="range_data.txt"'),
         ]
         self.assertEqual(expected_headers, list(r.items()))
@@ -129,6 +132,7 @@ class TestSendFile(TestCase):
         expected_headers = [
             ("Content-Type", "text/plain"),
             ("Content-Length", "30"),
+            ('Last-Modified', http_date(os.stat(filename).st_mtime)),
             ("Content-Disposition", 'inline; filename="range_data.txt"'),
         ]
         self.assertEqual(expected_headers, list(r.items()))
@@ -155,6 +159,7 @@ class TestSendFile(TestCase):
         expected_headers = [
             ("Content-Type", "text/plain"),
             ("Content-Length", "90"),
+            ('Last-Modified', http_date(os.stat(filename).st_mtime)),
             ("Content-Disposition", 'inline; filename="range_data.txt"'),
         ]
         self.assertEqual(expected_headers, list(r.items()))

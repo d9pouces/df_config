@@ -17,6 +17,7 @@ import argparse
 import mimetypes
 import os
 import re
+from email.utils import mktime_tz, parsedate_tz
 from importlib import import_module
 from typing import Iterable, Set, Tuple
 from urllib.parse import quote
@@ -24,7 +25,8 @@ from urllib.parse import quote
 import pkg_resources
 from django.conf import settings
 from django.core.exceptions import ImproperlyConfigured
-from django.http import HttpRequest, HttpResponse, StreamingHttpResponse
+from django.http import HttpRequest, HttpResponse, HttpResponseNotModified, StreamingHttpResponse
+from django.utils.http import http_date
 from django.utils.module_loading import import_string
 
 
@@ -142,6 +144,40 @@ mimetypes.init()
 
 
 _range_re = re.compile(r"^bytes=(\d*-\d*(?:,\s*\d*-\d*)*)$")
+_if_modified_since_re = re.compile(
+    r"^([^;]+)(; length=([0-9]+))?$", flags=re.IGNORECASE
+)
+
+
+def was_modified_since(header=None, mtime=0., size=None):
+    """
+    Was something modified since the user last downloaded it?
+    header
+      This is the value of the If-Modified-Since header.  If this is None,
+      I'll just return True.
+    mtime
+      This is the modification time of the item we're talking about.
+    size
+      This is the size of the item we're talking about.
+    """
+    if header is None:
+        return True
+    matcher = _if_modified_since_re.match(header)
+    if not matcher:
+        return True
+    try:
+        header_date = parsedate_tz(matcher.group(1))
+        if header_date is None:
+            return True
+        header_mtime = mktime_tz(header_date)
+        header_len = matcher.group(3)
+        if size is not None and header_len and int(header_len) != size:
+            return True
+        if mtime > header_mtime:
+            return True
+    except (AttributeError, ValueError, OverflowError):
+        return True
+    return False
 
 
 def send_file(
@@ -179,14 +215,21 @@ def send_file(
         mimetype = mimetype.decode("utf-8")
 
     filepath = os.path.abspath(filepath)
-    response = None
+
     attachment_filename = attachment_filename or os.path.basename(filepath)
     if request.method == "HEAD":
-        return HttpResponse(content=b"", content_type=mime_type, status=200)
+        return HttpResponse(content=b"", content_type=mimetype, status=200)
 
     range_matcher = _range_re.match(request.META.get("HTTP_RANGE", ""))
     ranges = []
-    filesize = os.path.getsize(filepath)
+    if not os.path.isfile(filepath):
+        return HttpResponse(status=404)
+    stats = os.stat(filepath)
+    filesize = stats.st_size
+    if not was_modified_since(
+        request.META.get("HTTP_IF_MODIFIED_SINCE"), mtime=stats.st_mtime, size=filesize
+    ):
+        return HttpResponseNotModified()
     if range_matcher:
         content_size = 0
         ranges_str = [x.strip() for x in range_matcher.group(1).split(",")]
@@ -198,11 +241,13 @@ def send_file(
             if end + 1 > filesize:
                 response = HttpResponse(content_type=mimetype, status=416)
                 response["Content-Range"] = "bytes */%s" % filesize
+
                 return response
             ranges.append((start, end))
     else:
         content_size = filesize
 
+    response = None
     if settings.USE_X_SEND_FILE and not ranges:
         response = HttpResponse(content_type=mimetype)
         response["X-SENDFILE"] = filepath
@@ -217,16 +262,24 @@ def send_file(
                 break
     if response is None:
         fileobj = open(filepath, "rb")
+        status = 200
         if ranges:
             file_content = RangedChunkReader(fileobj, ranges, chunk_size=chunk_size)
-            status = 206
+            if len(ranges) == 1:
+                status = 206
         else:
             file_content = ChunkReader(fileobj, chunk_size=chunk_size)
-            status = 200
-        response = StreamingHttpResponse(file_content, content_type=mimetype, status=status)
+        response = StreamingHttpResponse(
+            file_content, content_type=mimetype, status=status
+        )
         if len(ranges) == 1:
-            response["Content-Range"] = "bytes %d-%d/%d" % (ranges[0][0], ranges[0][1], filesize)
+            response["Content-Range"] = "bytes %d-%d/%d" % (
+                ranges[0][0],
+                ranges[0][1],
+                filesize,
+            )
         response["Content-Length"] = content_size
+    response["Last-Modified"] = http_date(stats.st_mtime)
     encoded_filename = quote(attachment_filename, encoding="utf-8")
     header = "attachment" if force_download else "inline"
 
