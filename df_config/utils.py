@@ -25,7 +25,12 @@ from urllib.parse import quote
 import pkg_resources
 from django.conf import settings
 from django.core.exceptions import ImproperlyConfigured
-from django.http import HttpRequest, HttpResponse, HttpResponseNotModified, StreamingHttpResponse
+from django.http import (
+    HttpRequest,
+    HttpResponse,
+    HttpResponseNotModified,
+    StreamingHttpResponse,
+)
 from django.utils.http import http_date
 from django.utils.module_loading import import_string
 
@@ -149,7 +154,7 @@ _if_modified_since_re = re.compile(
 )
 
 
-def was_modified_since(header=None, mtime=0., size=None):
+def was_modified_since(header=None, mtime=0.0, size=None):
     """
     Was something modified since the user last downloaded it?
     header
@@ -187,6 +192,7 @@ def send_file(
     force_download=False,
     attachment_filename=None,
     chunk_size=32768,
+    etag=None,
 ):
     """Send a local file. This is not a Django view, but a function that is called at the end of a view.
 
@@ -218,7 +224,10 @@ def send_file(
 
     attachment_filename = attachment_filename or os.path.basename(filepath)
     if request.method == "HEAD":
-        return HttpResponse(content=b"", content_type=mimetype, status=200)
+        r = HttpResponse(content=b"", content_type=mimetype, status=200)
+        if etag:
+            r["ETag"] = str(etag)
+        return r
 
     range_matcher = _range_re.match(request.META.get("HTTP_RANGE", ""))
     ranges = []
@@ -282,7 +291,8 @@ def send_file(
     response["Last-Modified"] = http_date(stats.st_mtime)
     encoded_filename = quote(attachment_filename, encoding="utf-8")
     header = "attachment" if force_download else "inline"
-
+    if etag:
+        response["ETag"] = str(etag)
     if encoded_filename == attachment_filename:
         response["Content-Disposition"] = '{1}; filename="{0}"'.format(
             encoded_filename, header
