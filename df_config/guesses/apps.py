@@ -72,7 +72,7 @@ class InstalledApps:
     ]
     common_third_parties = OrderedDict(
         [
-            ("USE_WEBSOCKETS", ["df_websockets"]),
+            ("USE_WEBSOCKETS", ["df_websockets", "channels"]),
             (
                 "USE_SITE",
                 [
