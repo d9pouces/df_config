@@ -28,7 +28,7 @@ from df_config.utils import guess_version, remove_arguments_from_help
 
 __author__ = "Matthieu Gallet"
 
-from df_config.config.values_providers import IniConfigProvider
+from df_config.config.values_providers import EnvironmentConfigProvider, IniConfigProvider
 
 
 class Command(BaseCommand):
@@ -40,6 +40,7 @@ class Command(BaseCommand):
     options = {
         "python": "display the current config as Python module",
         "ini": "display the current config as .ini file",
+        "env": "display the current config as environment variables",
     }
 
     def add_arguments(self, parser: ArgumentParser):
@@ -76,19 +77,22 @@ class Command(BaseCommand):
             self.show_python_config(verbosity)
         elif action == "ini":
             self.show_ini_config(verbosity)
+        elif action == "env":
+            self.show_env_config(verbosity)
 
-        if filename and action == "python":
+        if filename and action in {"python", "env"}:
             content = fd.getvalue()
             # noinspection PyBroadException
-            try:
-                # noinspection PyPackageRequirements,PyUnresolvedReferences
-                import black
+            if action == "python":
+                try:
+                    # noinspection PyPackageRequirements,PyUnresolvedReferences
+                    import black
 
-                mode = black.FileMode()
-                # noinspection PyArgumentList
-                content = black.format_file_contents(content, fast=False, mode=mode)
-            except Exception:
-                pass
+                    mode = black.FileMode()
+                    # noinspection PyArgumentList
+                    content = black.format_file_contents(content, fast=False, mode=mode)
+                except Exception:
+                    pass
             with open(filename, "w") as dst_fd:
                 dst_fd.write(content)
 
@@ -113,6 +117,21 @@ class Command(BaseCommand):
                     )
                 )
         provider = IniConfigProvider()
+        merger.write_provider(provider, include_doc=verbosity >= 2)
+        self.stdout.write(provider.to_str())
+
+    def show_env_config(self, verbosity):
+        prefix = None
+        for provider in merger.providers:
+            if not isinstance(provider, EnvironmentConfigProvider):
+                continue
+            prefix = provider.prefix
+        if not prefix:
+            self.stderr.write("Environment variables are not used•")
+            return
+        if verbosity >= 2:
+            self.stdout.write(self.style.SUCCESS("# read environment variables:"))
+        provider = EnvironmentConfigProvider(prefix)
         merger.write_provider(provider, include_doc=verbosity >= 2)
         self.stdout.write(provider.to_str())
 
