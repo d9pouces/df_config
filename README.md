@@ -18,7 +18,7 @@ On the contrary, df_config dynamically merges several files to define your setti
 
   * :mod:`df_config.config.defaults` that aims at providing good default values,
   * `yourproject.defaults` for your project-specific settings,
-  * `/etc/yourproject/settings.py/.ini` for installation-dependent settings.
+  * `/etc/yourproject/settings(.py|.ini)` for installation-dependent settings.
 
 df_config also defines settings that should be valid for most sites, based on installed Django apps.
 
@@ -164,6 +164,13 @@ You can also use environment variables instead of an .ini file (only for values 
 ```bash
 YOURPROJECT_SERVER_BASE_URL=http://www.example-2.com
 python3 manage.py config python -v 2 | grep SERVER_BASE_URL
+```
+
+You can check the current config as a .ini file or as environment variables: 
+```bash
+YOURPROJECT_SERVER_BASE_URL=http://www.example-2.com
+python3 manage.py config env
+python3 manage.py config ini
 ```
 
 dynamic settings
