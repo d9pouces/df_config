@@ -536,14 +536,14 @@ SESSION_REDIS_PROTOCOL = "redis"
 SESSION_REDIS_HOST = "localhost"  # aliased in settings.ini as "[session]host"
 SESSION_REDIS_PORT = 6379  # aliased in settings.ini as "[session]port"
 SESSION_REDIS_DB = 1  # aliased in settings.ini as "[session]db"
-SESSION_REDIS_PASSWORD = ""  # aliased in settings.ini as "[session]password"
+SESSION_REDIS_PASSWORD = None  # aliased in settings.ini as "[session]password"
 
 # django_redis (cache)
 CACHE_PROTOCOL = "redis"
 CACHE_HOST = "localhost"  # aliased in settings.ini as "[cache]host"
 CACHE_PORT = 6379  # aliased in settings.ini as "[cache]port"
 CACHE_DB = 2  # aliased in settings.ini as "[cache]db"
-CACHE_PASSWORD = ""  # aliased in settings.ini as "[cache]password"
+CACHE_PASSWORD = None  # aliased in settings.ini as "[cache]password"
 
 # websockets
 WEBSOCKET_REDIS_PROTOCOL = "redis"
@@ -557,7 +557,7 @@ CELERY_PROTOCOL = "redis"
 CELERY_HOST = "localhost"  # aliased in settings.ini as "[celery]host"
 CELERY_PORT = 6379  # aliased in settings.ini as "[celery]port"
 CELERY_DB = 4  # aliased in settings.ini as "[celery]db"
-CELERY_PASSWORD = ""  # aliased in settings.ini as "[celery]password"
+CELERY_PASSWORD = None  # aliased in settings.ini as "[celery]password"
 CELERY_PROCESSES = 4
 
 # raven
