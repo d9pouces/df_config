@@ -145,7 +145,7 @@ class RedisSmartSetting:
                 "host": values["HOST"] or "localhost",
                 "port": int(values["PORT"] or 6379),
                 "db": int(values["DB"] or 0),
-                "password": values["PASSWORD"] or "",
+                "password": values["PASSWORD"] or None,
             }
             if self.extra_values:
                 result.update(self.extra_values)
