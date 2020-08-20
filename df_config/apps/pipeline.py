@@ -31,12 +31,12 @@ if settings.USE_PIPELINE:
     from pipeline.compilers import CompilerBase
 
     # noinspection PyPackageRequirements,PyUnresolvedReferences
-    from pipeline.storage import PipelineCachedStorage
+    from pipeline.storage import PipelineManifestStorage
 else:
     CompressorBase = object
     CompilerBase = object
     SubProcessCompressor = object
-    PipelineCachedStorage = None
+    PipelineManifestStorage = None
 
 
 class RcssCompressor(CompressorBase):
@@ -156,9 +156,9 @@ class TypescriptCompiler(CompilerBase):
             raise CompilerError(e, command=command, error_output=str(e))
 
 
-if PipelineCachedStorage:
+if PipelineManifestStorage:
 
-    class NicerPipelineCachedStorage(PipelineCachedStorage):
+    class NicerPipelineCachedStorage(PipelineManifestStorage):
         """ display a better exception"""
 
         def hashed_name(self, name, content=None, filename=None):
