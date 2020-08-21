@@ -170,6 +170,7 @@ TEMPLATE_CONTEXT_PROCESSORS = [
     "django.template.context_processors.i18n",
     "django.template.context_processors.media",
     "django.template.context_processors.static",
+    "django.template.context_processors.requests",
     "django.template.context_processors.tz",
     "django.contrib.messages.context_processors.messages",
     "df_config.context_processors.config",
