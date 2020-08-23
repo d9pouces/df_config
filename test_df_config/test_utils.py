@@ -104,14 +104,14 @@ class TestSendFile(TestCase):
         content = r.getvalue()
         self.assertEqual(b"333333333\n", content)
 
-        expected_headers = [
-            ("Content-Type", "text/plain"),
-            ("Content-Range", "bytes 20-29/90"),
-            ("Content-Length", "10"),
-            ('Last-Modified', http_date(os.stat(filename).st_mtime)),
-            ("Content-Disposition", 'inline; filename="range_data.txt"'),
-        ]
-        self.assertEqual(expected_headers, list(r.items()))
+        expected_headers = {
+            "Content-Type": "text/plain",
+            "Content-Range": "bytes 20-29/90",
+            "Content-Length": "10",
+            'Last-Modified': http_date(os.stat(filename).st_mtime),
+            "Content-Disposition": 'inline; filename="range_data.txt"',
+        }
+        self.assertEqual(expected_headers, {x: y for (x, y) in r.items()})
         self.assertEqual(206, r.status_code)
         r.close()
 
@@ -129,13 +129,13 @@ class TestSendFile(TestCase):
         )
         content = r.getvalue()
         self.assertEqual(b"111111111\n333333333\n555555555\n", content)
-        expected_headers = [
-            ("Content-Type", "text/plain"),
-            ("Content-Length", "30"),
-            ('Last-Modified', http_date(os.stat(filename).st_mtime)),
-            ("Content-Disposition", 'inline; filename="range_data.txt"'),
-        ]
-        self.assertEqual(expected_headers, list(r.items()))
+        expected_headers = {
+            "Content-Type": "text/plain",
+            "Content-Length": "30",
+            'Last-Modified': http_date(os.stat(filename).st_mtime),
+            "Content-Disposition": 'inline; filename="range_data.txt"',
+        }
+        self.assertEqual(expected_headers, {x: y for (x, y) in r.items()})
         self.assertEqual(200, r.status_code)
         r.close()
 
@@ -156,12 +156,12 @@ class TestSendFile(TestCase):
             b"111111111\n222222222\n333333333\n444444444\n555555555\n666666666\n777777777\n888888888\n999999999\n",
             content,
         )
-        expected_headers = [
-            ("Content-Type", "text/plain"),
-            ("Content-Length", "90"),
-            ('Last-Modified', http_date(os.stat(filename).st_mtime)),
-            ("Content-Disposition", 'inline; filename="range_data.txt"'),
-        ]
-        self.assertEqual(expected_headers, list(r.items()))
+        expected_headers = {
+            "Content-Type": "text/plain",
+            "Content-Length": "90",
+            'Last-Modified': http_date(os.stat(filename).st_mtime),
+            "Content-Disposition": 'inline; filename="range_data.txt"',
+        }
+        self.assertEqual(expected_headers, {x: y for (x, y) in r.items()})
         self.assertEqual(200, r.status_code)
         r.close()
