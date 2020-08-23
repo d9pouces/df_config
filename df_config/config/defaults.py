@@ -171,11 +171,13 @@ TEMPLATE_CONTEXT_PROCESSORS = [
     "django.template.context_processors.media",
     "django.template.context_processors.static",
     "django.template.context_processors.tz",
+    "django.template.context_processors.request",
     "django.contrib.messages.context_processors.messages",
     "df_config.context_processors.config",
     ExpandIterable("DF_TEMPLATE_CONTEXT_PROCESSORS"),
 ]
 TEST_RUNNER = "django.test.runner.DiscoverRunner"
+
 USE_I18N = True
 USE_L10N = True
 USE_THOUSAND_SEPARATOR = True

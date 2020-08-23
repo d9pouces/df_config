@@ -198,8 +198,8 @@ class PythonModuleProvider(ConfigProvider):
     def get_extra_settings(self):
         """Return all values that look like a Django setting (i.e. uppercase variables)"""
         if self.module is not None:
-            for key, value in self.module.__dict__.items():
-                if key.upper() != key or key.endswith("_HELP") or key == "_":
+            for key, value in sorted(self.module.__dict__.items()):
+                if key.upper() != key or key == "_":
                     continue
                 yield key, value
 
