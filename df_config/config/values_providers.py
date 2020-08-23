@@ -211,6 +211,7 @@ class PythonModuleProvider(ConfigProvider):
         """Display values as if set in a Python module"""
         fd = StringIO()
         for k, v in sorted(self.values.items()):
+            print(self.values)
             fd.write("%s = %r\n" % (k, v))
         return fd.getvalue()
 
