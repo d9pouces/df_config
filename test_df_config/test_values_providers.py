@@ -15,6 +15,7 @@
 # ##############################################################################
 import os
 import tempfile
+from collections import OrderedDict
 from typing import Dict, Iterable
 from unittest import TestCase
 
@@ -218,7 +219,10 @@ class TestPythonFileProvider(TestPythonModuleProvider):
 
 class TestDictProvider(TestPythonFileProvider):
     def get_provider(self):
-        return DictProvider({"UNITTEST": True, "UNITTEST_3": False})
+        values = OrderedDict()
+        values["UNITTEST"] = True
+        values["UNITTEST_3"] = False
+        return DictProvider(values)
 
     def get_str_form(self):
         return "{'UNITTEST': True, 'UNITTEST_3': False, 'UNITTEST2': '$KEY {VALUE} \\'SPECIAL \"CHARS'}"

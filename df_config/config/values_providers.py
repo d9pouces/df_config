@@ -198,7 +198,7 @@ class PythonModuleProvider(ConfigProvider):
     def get_extra_settings(self):
         """Return all values that look like a Django setting (i.e. uppercase variables)"""
         if self.module is not None:
-            for key, value in self.module.__dict__.items():
+            for key, value in sorted(self.module.__dict__.items()):
                 if key.upper() != key or key == "_":
                     continue
                 yield key, value
@@ -211,7 +211,6 @@ class PythonModuleProvider(ConfigProvider):
         """Display values as if set in a Python module"""
         fd = StringIO()
         for k, v in sorted(self.values.items()):
-            print(self.values)
             fd.write("%s = %r\n" % (k, v))
         return fd.getvalue()
 
