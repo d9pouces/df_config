@@ -132,7 +132,8 @@ class InstalledApps:
                 )
             )
             return []
-        if "django.contrib.sites" not in self.default_apps:
+        app = "django.contrib.sites"
+        if app not in self.default_apps and app not in self.base_django_apps:
             settings_check_results.append(
                 Error(
                     '"django.contrib.sites" app must be enabled.',

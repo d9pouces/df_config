@@ -67,8 +67,9 @@ if settings.DF_URL_CONF:
 
 if settings.USE_ALL_AUTH:
     # noinspection PyUnresolvedReferences
+    from allauth.account.views import login
     urlpatterns += [
-        path("admin/login/", "allauth.account.views.login"),
+        path("admin/login/", login),
         path("accounts/", include("allauth.urls")),
     ]
 else:
