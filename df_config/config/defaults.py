@@ -260,6 +260,7 @@ else:
     ASGI_APPLICATION = "df_config.application.asgi_application"
 
 # django-channels
+# noinspection PyUnresolvedReferences
 CHANNEL_LAYERS = {
     "default": {
         "BACKEND": "channels_redis.core.RedisChannelLayer",
