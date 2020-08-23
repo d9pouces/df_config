@@ -272,4 +272,4 @@ class DictProvider(ConfigProvider):
 
     def to_str(self):
         """display the internal dict"""
-        return "%r" % self.values
+        return "%r" % dict(self.values)
