@@ -5,8 +5,9 @@ from test_df_config.test_values_providers import EnvPatch
 
 
 class TestSetEnv(TestCase):
+    """check if all context processors are available"""
 
-    def test_manage(self):
+    def test_context_processors(self):
 
         with EnvPatch(**{MODULE_VARIABLE_NAME: "df_config"}):
             set_env()
