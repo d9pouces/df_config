@@ -1,6 +1,6 @@
 language: python
 sudo: required
-dist: xenial
+dist: bionic
 env:
   - DJANGO_VERSION="Django>=2.1,<2.2"
   - DJANGO_VERSION="Django>=2.2,<3.0"
