@@ -60,7 +60,8 @@ class Command(BaseCommand):
 
     @staticmethod
     def get_application():
-        return settings.ASGI_APPLICATION
+        mod_name, sep, attr_name = settings.ASGI_APPLICATION.rpartition(".")
+        return "%s:%s" % (mod_name, attr_name)
 
     def run_daphne(self):
         # noinspection PyPackageRequirements,PyUnresolvedReferences
