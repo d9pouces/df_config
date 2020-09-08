@@ -179,7 +179,6 @@ class LogConfiguration:
     *  `SERVER_NAME`: the public name of the server (like "www.example.com")
     *  `SERVER_PORT`: the public port (probably 80 or 443)
     * `LOG_EXCLUDED_COMMANDS`: Django commands that do not write logs
-    * `RAVEN_DSN`: `Sentry <https://sentry.io>`_ DSN (URL embedding login and password)
     """
 
     required_settings = [
@@ -191,7 +190,6 @@ class LogConfiguration:
         "SERVER_NAME",
         "SERVER_PORT",
         "LOG_EXCLUDED_COMMANDS",
-        "RAVEN_DSN",
         "LOG_LEVEL",
     ]
     # for loggers that only show INFO in debug mode, or WARN in INFO, and so on:
@@ -288,15 +286,6 @@ class LogConfiguration:
             return config
 
         has_handler = False
-
-        if settings_dict["RAVEN_DSN"] and is_package_present("raven"):
-            self.handlers["sentry"] = {
-                "level": "ERROR",
-                "class": "raven.contrib.django.raven_compat.handlers.SentryHandler",
-                "tags": {"application": self.log_suffix},
-            }
-            self.root["handlers"].append("sentry")
-            has_handler = True
 
         if self.log_directory and self.log_suffix:
             self.add_handler("ROOT", "root", level=log_level)

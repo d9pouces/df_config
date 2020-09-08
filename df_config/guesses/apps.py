@@ -88,7 +88,6 @@ class InstalledApps:
             ("USE_DEBUG_TOOLBAR", ["debug_toolbar"]),
             ("USE_PIPELINE", ["pipeline"]),
             ("USE_PAM_AUTHENTICATION", ["django_pam"]),
-            ("RAVEN_DSN", ["raven.contrib.django.raven_compat"]),
         ]
     )
     required_settings = [

@@ -168,12 +168,6 @@ BASE_MAPPING = [
             "critical": "CRITICAL",
         },
     ),
-    CharConfigField(
-        "global.log_raven_dsn",
-        "RAVEN_DSN",
-        help_str='Use the Raven service to capture logs. Require the "raven" package. \n'
-        'Should look like "https://xxx...xxx:yyy...yyy@sentry.io/zzzzz"',
-    ),
     BooleanConfigField(
         "global.log_remote_access",
         "LOG_REMOTE_ACCESS",

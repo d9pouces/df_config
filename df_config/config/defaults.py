@@ -414,9 +414,6 @@ SESSION_REDIS = CallableSetting(session_redis_dict)
 USE_DJANGO_JQUERY = True
 JQUERY_URL = False
 
-# raven
-RAVEN_CONFIG = {"dsn": "{RAVEN_DSN}", "release": "{DF_PROJECT_VERSION}"}
-
 # ######################################################################################################################
 #
 # settings that should be customized for each project
@@ -557,6 +554,3 @@ CELERY_PORT = 6379  # aliased in settings.ini as "[celery]port"
 CELERY_DB = 4  # aliased in settings.ini as "[celery]db"
 CELERY_PASSWORD = None  # aliased in settings.ini as "[celery]password"
 CELERY_PROCESSES = 4
-
-# raven
-RAVEN_DSN = None
