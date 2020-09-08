@@ -215,3 +215,14 @@ You can choose the application server used in production:
 DF_SERVER = "gunicorn"  # "gunicorn" or "daphne"
 ```
 A new Django command `server` is available and launches `gunicorn` or `daphne`. The application and the listen address/port are specified so you do no have to set them. 
+
+
+Heroku
+------
+
+Some special environment variables are read: 
+
+  * `SECRET_KEY`: you should set it in your `app.json` file
+  * `DATABASE_URL`: set if you use the "heroku-postgresql" addon
+  * `PORT`: set by default
+  * `HEROKU_APP_NAME`: you should set it in your `app.json` file

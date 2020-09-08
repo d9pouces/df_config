@@ -21,7 +21,7 @@ from django.utils.crypto import get_random_string
 from pkg_resources import DistributionNotFound, VersionConflict, get_distribution
 
 from df_config.checks import missing_package, settings_check_results
-from df_config.config.dynamic_settings import DynamicSettting
+from df_config.config.dynamic_settings import DynamicSettting, AutocreateFileContent
 
 
 def smart_hostname(settings_dict):
@@ -229,6 +229,16 @@ def project_name(settings_dict):
 
 
 project_name.required_settings = ["DF_MODULE_NAME"]
+
+
+class AutocreateSecretKey(AutocreateFileContent):
+    def __init__(self, filename):
+        super().__init__(filename, generate_secret_key, mode=0o600, length=60)
+
+    def get_value(self, merger, provider_name: str, setting_name: str):
+        if "SECRET_KEY" in os.environ:
+            return os.environ["SECRET_KEY"]
+        return super().get_value(merger, provider_name, setting_name)
 
 
 def generate_secret_key(django_ready, length=60):

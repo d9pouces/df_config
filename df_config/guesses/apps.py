@@ -178,6 +178,7 @@ class Middlewares:
     ]
     common_third_parties = OrderedDict(
         [
+            ("USE_WHITENOISE", "whitenoise.middleware.WhiteNoiseMiddleware"),
             ("USE_WEBSOCKETS", "df_websockets.middleware.WebsocketMiddleware"),
             ("USE_DEBUG_TOOLBAR", "debug_toolbar.middleware.DebugToolbarMiddleware"),
         ]

@@ -46,7 +46,6 @@ from django.utils.translation import gettext_lazy as _
 # ######################################################################################################################
 from df_config.config.dynamic_settings import (
     AutocreateFile,
-    AutocreateFileContent,
     CallableSetting,
     Directory,
     ExpandIterable,
@@ -75,7 +74,6 @@ from df_config.guesses.misc import (
     DefaultListenAddress,
     allowed_hosts,
     excluded_django_commands,
-    generate_secret_key,
     project_name,
     required_packages,
     secure_hsts_seconds,
@@ -87,6 +85,7 @@ from df_config.guesses.misc import (
     url_parse_server_protocol,
     url_parse_ssl,
     use_x_forwarded_for,
+    AutocreateSecretKey,
 )
 from df_config.guesses.pipeline import (
     pipeline_compilers,
@@ -145,9 +144,7 @@ MEDIA_URL = "/media/"
 MIDDLEWARE = CallableSetting(middlewares)
 
 ROOT_URLCONF = "df_config.root_urls"
-SECRET_KEY = AutocreateFileContent(
-    "{LOCAL_PATH}/secret_key.txt", generate_secret_key, mode=0o600, length=60
-)
+SECRET_KEY = AutocreateSecretKey("{LOCAL_PATH}/secret_key.txt")
 SECURE_BROWSER_XSS_FILTER = True
 SECURE_CONTENT_TYPE_NOSNIFF = True
 SECURE_HSTS_INCLUDE_SUBDOMAINS = SettingReference("USE_SSL")

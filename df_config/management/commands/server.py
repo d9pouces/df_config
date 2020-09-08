@@ -63,7 +63,7 @@ class Command(BaseCommand):
         if settings.USE_WEBSOCKETS:
             application = "df_websockets.routing:application"
         else:
-            application = "df_config.application.asgi_application"
+            application = "df_config.application:asgi_application"
         return application
 
     def run_daphne(self):
