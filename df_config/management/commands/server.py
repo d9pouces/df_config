@@ -60,11 +60,7 @@ class Command(BaseCommand):
 
     @staticmethod
     def get_application():
-        if settings.USE_WEBSOCKETS:
-            application = "df_websockets.routing:application"
-        else:
-            application = "df_config.application:asgi_application"
-        return application
+        return settings.ASGI_APPLICATION
 
     def run_daphne(self):
         # noinspection PyPackageRequirements,PyUnresolvedReferences

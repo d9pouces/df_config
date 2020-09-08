@@ -85,7 +85,7 @@ from df_config.guesses.misc import (
     url_parse_server_protocol,
     url_parse_ssl,
     use_x_forwarded_for,
-    AutocreateSecretKey,
+    AutocreateSecretKey, get_asgi_application, get_wsgi_application,
 )
 from df_config.guesses.pipeline import (
     pipeline_compilers,
@@ -113,6 +113,7 @@ USE_DEBUG_TOOLBAR = is_package_present("debug_toolbar")
 USE_ALL_AUTH = is_package_present("allauth")
 USE_WEBSOCKETS = is_package_present("df_websockets")
 USE_SITE = is_package_present("df_site")
+USE_WHITENOISE = is_package_present("whitenoise")
 
 # ######################################################################################################################
 #
@@ -181,7 +182,7 @@ USE_THOUSAND_SEPARATOR = True
 USE_TZ = True
 USE_X_FORWARDED_HOST = True  # X-Forwarded-Host
 X_FRAME_OPTIONS = "SAMEORIGIN"
-WSGI_APPLICATION = "df_config.application.wsgi_application"
+WSGI_APPLICATION = CallableSetting(get_wsgi_application)
 
 # django.contrib.auth
 AUTHENTICATION_BACKENDS = CallableSetting(authentication_backends)
@@ -251,10 +252,7 @@ WINDOW_INFO_MIDDLEWARES = [
     "df_websockets.ws_middleware.Djangoi18nMiddleware",
     "df_websockets.ws_middleware.BrowserMiddleware",
 ]
-if USE_WEBSOCKETS:
-    ASGI_APPLICATION = "df_websockets.routing.application"
-else:
-    ASGI_APPLICATION = "df_config.application.asgi_application"
+ASGI_APPLICATION = CallableSetting(get_asgi_application)
 
 # django-channels
 # noinspection PyUnresolvedReferences

@@ -317,3 +317,21 @@ class ExcludedDjangoCommands:
 
 
 excluded_django_commands = ExcludedDjangoCommands()
+
+
+def get_asgi_application(settings_dict) -> str:
+    if settings_dict["USE_WEBSOCKETS"]:
+        application = "df_websockets.routing:application"
+    else:
+        application = "df_config.application:asgi_application"
+    return application
+
+
+get_asgi_application.required_settings = ["USE_WEBSOCKETS"]
+
+
+def get_wsgi_application(settings_dict) -> str:
+    return "df_config.application:wsgi_application"
+
+
+get_wsgi_application.required_settings = []
