@@ -152,6 +152,9 @@ BASE_MAPPING = [
         "or syslog:///dev/log/daemon.",
     ),
     CharConfigField(
+        "global.log_sentry_dsn", "SENTRY_DSN", help_str="sentry DSN (see https://sentry.io/)"
+    ),
+    CharConfigField(
         "global.log_directory",
         "LOG_DIRECTORY",
         help_str="Write all local logs to this directory.",

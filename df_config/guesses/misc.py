@@ -15,13 +15,16 @@
 # ##############################################################################
 import os
 import re
+from typing import Dict
 from urllib.parse import urlparse
 
+from django.core.checks import Warning
 from django.utils.crypto import get_random_string
 from pkg_resources import DistributionNotFound, VersionConflict, get_distribution
 
 from df_config.checks import missing_package, settings_check_results
 from df_config.config.dynamic_settings import DynamicSettting, AutocreateFileContent
+from df_config.utils import is_package_present
 
 
 def smart_hostname(settings_dict):
@@ -330,8 +333,43 @@ def get_asgi_application(settings_dict) -> str:
 get_asgi_application.required_settings = ["USE_WEBSOCKETS"]
 
 
+# noinspection PyUnusedLocal
 def get_wsgi_application(settings_dict) -> str:
     return "df_config.application.wsgi_application"
 
 
 get_wsgi_application.required_settings = []
+
+
+def use_sentry(settings_dict: Dict) -> bool:
+    sentry_dsn = settings_dict["SENTRY_DSN"]
+    if not sentry_dsn:
+        return False
+    if not is_package_present("sentry_sdk"):
+        settings_check_results.append(
+            Warning("sentry_sdk must be installed.", obj="configuration")
+        )
+        return False
+    # noinspection PyUnresolvedReferences
+    import sentry_sdk
+
+    # noinspection PyUnresolvedReferences
+    from sentry_sdk.integrations.django import DjangoIntegration
+
+    # noinspection PyUnresolvedReferences
+    from sentry_sdk.integrations.celery import CeleryIntegration
+
+    integrations = [DjangoIntegration()]
+    if settings_dict["USE_CELERY"]:
+        integrations.append(CeleryIntegration())
+    sentry_sdk.init(
+        dsn=sentry_dsn,
+        integrations=integrations,
+        traces_sample_rate=1.0,
+        debug=settings_dict["DEBUG"],
+        send_default_pii=True,
+    )
+    return True
+
+
+use_sentry.required_settings = ["SENTRY_DSN", "USE_CELERY", "DEBUG"]

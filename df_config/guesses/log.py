@@ -18,18 +18,17 @@ import logging
 import logging.handlers
 import os
 import re
-import sys
-import time
 import warnings
 from traceback import extract_stack
 from urllib.parse import urlparse
 
+import sys
+import time
 from django.core.checks.messages import Warning
 from django.core.management import color_style
 from django.utils.log import AdminEmailHandler as BaseAdminEmailHandler
 
 from df_config.checks import settings_check_results
-from df_config.utils import is_package_present
 
 
 class ColorizedFormatter(logging.Formatter):

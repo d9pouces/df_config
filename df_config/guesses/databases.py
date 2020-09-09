@@ -14,7 +14,7 @@
 #                                                                              #
 # ##############################################################################
 import os
-from urllib.parse import urlparse
+from urllib.parse import urlparse, urlencode
 
 from pkg_resources import DistributionNotFound, get_distribution
 
@@ -118,6 +118,14 @@ class RedisSmartSetting:
     def __init__(
         self, prefix="", env_variable="REDIS_URL", fmt="url", extra_values=None
     ):
+        """Build Redis connection parameters from a set of settings:
+            %(prefix)sPROTOCOL, %(prefix)sHOST, %(prefix)sPORT, %(prefix)sDB, %(prefix)sPASSWORD.
+
+        :param prefix: prefix of all settings
+        :param env_variable: if this environment variable is present, override given settings
+        :param fmt: output format (as a dict or as a URL)
+        :param extra_values: added to the output format
+        """
         self.fmt = fmt
         self.prefix = prefix
         self.env_variable = env_variable
@@ -139,7 +147,11 @@ class RedisSmartSetting:
         if values["PASSWORD"]:
             values["AUTH"] = ":%s@" % values["PASSWORD"]
         if self.fmt == "url":
-            return "%(PROTOCOL)s://%(AUTH)s%(HOST)s:%(PORT)s/%(DB)s" % values
+            url = "%(PROTOCOL)s://%(AUTH)s%(HOST)s:%(PORT)s/%(DB)s" % values
+            if self.extra_values:
+                url += "?" + urlencode(self.extra_values)
+            return url
+
         elif self.fmt == "dict":
             result = {
                 "host": values["HOST"] or "localhost",

@@ -49,7 +49,8 @@ from df_config.checks import settings_check_results
 
 
 class DynamicSettting:
-    """Base class for special setting values. When a setting is a :class:`df_config.config.dynamic_settings.DynamicSetting`,
+    """Base class for special setting values. When a setting is a
+    :class:`df_config.config.dynamic_settings.DynamicSetting`,
       then the method `get_value(merger)` is called for getting the definitive value.
     """
 
@@ -252,8 +253,11 @@ class AutocreateFileContent(File):
 
     The file is only written when the "migrate" Django command is called.
     The first arg of the provided `create_function` is a bool, in addition of your own *args and **kwargs:
-        * `"collecstatic"` when Django is ready and your function is called for writing the file during the "migrate" command
-        * `"migrate"` when Django is ready and your function is called for writing the file during the "collectstatic" command
+
+        * `"collecstatic"` when Django is ready and your function is called for writing the file during
+            the "migrate" command
+        * `"migrate"` when Django is ready and your function is called for writing the file during the
+            "collectstatic" command
         * `None` when Django is not ready and your function is called for loading settings
 
     """
