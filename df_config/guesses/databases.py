@@ -14,6 +14,7 @@
 #                                                                              #
 # ##############################################################################
 import os
+import re
 from urllib.parse import urlparse, urlencode
 
 from pkg_resources import DistributionNotFound, get_distribution
@@ -140,10 +141,13 @@ class RedisSmartSetting:
             and self.env_variable
             and self.env_variable in os.environ
         ):
-            redis_url = urlparse(os.environ[self.env_variable])
-            values["HOST"] = redis_url.hostname
-            values["PORT"] = redis_url.port
-            values["PASSWORD"] = redis_url.password
+            parsed_redis_url = urlparse(os.environ[self.env_variable])
+            values["HOST"] = parsed_redis_url.hostname
+            values["PORT"] = parsed_redis_url.port
+            values["PASSWORD"] = parsed_redis_url.password
+            values["DB"] = "0"
+            if re.match(r"^/\d+$", parsed_redis_url.path):
+                values["DB"] = parsed_redis_url.path[1:]
         if values["PASSWORD"]:
             values["AUTH"] = ":%s@" % values["PASSWORD"]
         if self.fmt == "url":
