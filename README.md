@@ -35,7 +35,7 @@ df_config works with:
   * Django 2.0+.
   
 ```bash
-pip install df_config
+python -m pip install df_config
 ```
   
 How to use it?

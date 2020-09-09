@@ -436,7 +436,7 @@ DF_JS_CATALOG_VIEWS = ["django.contrib.admin"]
 DF_INSTALLED_APPS = ["{DF_MODULE_NAME}"]  # your django app!
 DF_MIDDLEWARE = []
 DF_TEMPLATE_CONTEXT_PROCESSORS = []
-DF_PIP_NAME = "{DF_MODULE_NAME}"  # anything such that "pip install {DF_PIP_NAME}" installs your project
+DF_PIP_NAME = "{DF_MODULE_NAME}"  # anything such that "python -m pip install {DF_PIP_NAME}" installs your project
 # only used in docs
 DF_REMOTE_USER_HEADER = None  # HTTP_REMOTE_USER
 DF_DEFAULT_GROUPS = [_("Users")]
