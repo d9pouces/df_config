@@ -26,5 +26,4 @@ def config(request):
         "DF_PROJECT_VERSION": settings.DF_PROJECT_VERSION,
         "SERVER_URL": settings.SERVER_BASE_URL,
         "SERVER_NAME": settings.SERVER_NAME,
-
     }
