@@ -87,7 +87,7 @@ from df_config.guesses.misc import (
     use_x_forwarded_for,
     AutocreateSecretKey,
     get_asgi_application,
-    get_wsgi_application,
+    get_wsgi_application, use_sentry,
 )
 from df_config.guesses.pipeline import (
     pipeline_compilers,
@@ -557,3 +557,6 @@ CELERY_PORT = 6379  # aliased in settings.ini as "[celery]port"
 CELERY_DB = 4  # aliased in settings.ini as "[celery]db"
 CELERY_PASSWORD = None  # aliased in settings.ini as "[celery]password"
 CELERY_PROCESSES = 4
+
+# sentry.io
+USE_SENTRY = CallableSetting(use_sentry)
