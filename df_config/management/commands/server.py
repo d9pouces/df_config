@@ -59,7 +59,12 @@ class Command(BaseCommand):
             return
 
     @staticmethod
-    def get_application():
+    def get_wsgi_application():
+        mod_name, sep, attr_name = settings.WSGI_APPLICATION.rpartition(".")
+        return "%s:%s" % (mod_name, attr_name)
+
+    @staticmethod
+    def get_asgi_application():
         mod_name, sep, attr_name = settings.ASGI_APPLICATION.rpartition(".")
         return "%s:%s" % (mod_name, attr_name)
 
@@ -68,7 +73,7 @@ class Command(BaseCommand):
         from daphne.cli import CommandLineInterface
 
         host, port = self.listen_address, self.listen_port
-        app = self.get_application()
+        app = self.get_asgi_application()
 
         class CLI(CommandLineInterface):
             def __init__(self):
@@ -93,8 +98,8 @@ class Command(BaseCommand):
         # noinspection PyPackageRequirements,PyUnresolvedReferences
         from gunicorn.app.wsgiapp import WSGIApplication
 
-        application = self.get_application()
         if settings.USE_WEBSOCKETS:
+            application = self.get_asgi_application()
             worker_cls = "uvicorn.workers.UvicornWorker"
             if not is_package_present("uvicorn.workers"):
                 self.stderr.write(
@@ -102,6 +107,7 @@ class Command(BaseCommand):
                 )
                 return
         else:
+            application = self.get_wsgi_application()
             worker_cls = "gunicorn.workers.gthread.ThreadWorker"
 
         class Application(WSGIApplication):

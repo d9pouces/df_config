@@ -85,7 +85,9 @@ from df_config.guesses.misc import (
     url_parse_server_protocol,
     url_parse_ssl,
     use_x_forwarded_for,
-    AutocreateSecretKey, get_asgi_application, get_wsgi_application,
+    AutocreateSecretKey,
+    get_asgi_application,
+    get_wsgi_application,
 )
 from df_config.guesses.pipeline import (
     pipeline_compilers,
@@ -191,6 +193,7 @@ LOGIN_REDIRECT_URL = "{URL_PREFIX}"
 # LOGOUT_REDIRECT_URL = '{URL_PREFIX}'
 
 # django.contrib.sessions
+SESSION_ENGINE = "django.contrib.sessions.backends.db"
 if USE_REDIS_SESSIONS:
     SESSION_ENGINE = "redis_sessions.session"
 SESSION_COOKIE_SECURE = SettingReference("USE_SSL")

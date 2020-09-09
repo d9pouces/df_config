@@ -62,7 +62,6 @@ class InstalledApps:
         "df_config",
         "django.contrib.auth",
         "django.contrib.contenttypes",
-        "django.contrib.sessions",
         "django.contrib.messages",
         "django.contrib.humanize",
         "django.contrib.sitemaps",
@@ -91,14 +90,17 @@ class InstalledApps:
         ]
     )
     required_settings = [
-        "DF_INSTALLED_APPS",
         "ALLAUTH_PROVIDER_APPS",
+        "DF_INSTALLED_APPS",
+        "SESSION_ENGINE",
         "USE_ALL_AUTH",
     ] + list(common_third_parties)
     social_apps = SOCIAL_PROVIDER_APPS
 
     def __call__(self, settings_dict):
         apps = self.default_apps
+        if settings_dict["SESSION_ENGINE"] == "django.contrib.sessions.backends.db":
+            apps += ['django.contrib.sessions']
         apps += self.process_django_allauth(settings_dict)
         apps += self.process_third_parties(settings_dict)
         apps += self.base_django_apps
