@@ -68,6 +68,7 @@ from df_config.guesses.databases import (
     databases,
     session_redis_dict,
     websocket_redis_dict,
+    websocket_redis_channels,
 )
 from df_config.guesses.log import log_configuration
 from df_config.guesses.misc import (
@@ -87,7 +88,8 @@ from df_config.guesses.misc import (
     use_x_forwarded_for,
     AutocreateSecretKey,
     get_asgi_application,
-    get_wsgi_application, use_sentry,
+    get_wsgi_application,
+    use_sentry,
 )
 from df_config.guesses.pipeline import (
     pipeline_compilers,
@@ -243,6 +245,7 @@ DF_CHECKED_REQUIREMENTS = CallableSetting(required_packages)
 
 # df_websockets
 WEBSOCKET_URL = "/ws/"  # set to None if you do not use websockets
+# by default, use the same Redis as django-channels
 WEBSOCKET_REDIS_CONNECTION = CallableSetting(websocket_redis_dict)
 WEBSOCKET_SIGNAL_DECODER = "json.JSONDecoder"
 WEBSOCKET_TOPIC_SERIALIZER = "df_websockets.topics.serialize_topic"
@@ -259,23 +262,8 @@ ASGI_APPLICATION = CallableSetting(get_asgi_application)
 
 # django-channels
 # noinspection PyUnresolvedReferences
-CHANNEL_LAYERS = {
-    "default": {
-        "BACKEND": "channels_redis.core.RedisChannelLayer",
-        "CONFIG": {
-            "hosts": [
-                {
-                    "address": (
-                        "{WEBSOCKET_REDIS_HOST}",
-                        SettingReference("WEBSOCKET_REDIS_PORT"),
-                    ),
-                    "password": SettingReference("WEBSOCKET_REDIS_PASSWORD"),
-                    "db": SettingReference("WEBSOCKET_REDIS_DB"),
-                }
-            ]
-        },
-    }
-}
+CHANNEL_REDIS = CallableSetting(websocket_redis_channels)
+CHANNEL_LAYERS = {"default": SettingReference("CHANNEL_REDIS")}
 
 # django-pipeline
 PIPELINE = {

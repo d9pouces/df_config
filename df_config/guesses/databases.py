@@ -124,7 +124,10 @@ class RedisSmartSetting:
 
         :param prefix: prefix of all settings
         :param env_variable: if this environment variable is present, override given settings
-        :param fmt: output format (as a dict or as a URL)
+        :param fmt: output format:
+            "url": redis://:password@host:port/db
+            "dict": {"host": "host", "password": "password" or None, "port": port, "db": db}
+            "channels": expected by django-channels
         :param extra_values: added to the output format
         """
         self.fmt = fmt
@@ -155,7 +158,23 @@ class RedisSmartSetting:
             if self.extra_values:
                 url += "?" + urlencode(self.extra_values)
             return url
-
+        elif self.fmt == "channels":
+            config = {
+                "address": (
+                    values["HOST"] or "localhost",
+                    int(values["PORT"] or 6379),
+                ),
+                "password": values["PASSWORD"] or None,
+                "db": int(values["DB"] or 0),
+            }
+            if self.extra_values:
+                config.update(self.extra_values)
+            # noinspection PyUnresolvedReferences
+            result = {
+                "BACKEND": "channels_redis.core.RedisChannelLayer",
+                "CONFIG": {"hosts": [config]},
+            }
+            return result
         elif self.fmt == "dict":
             result = {
                 "host": values["HOST"] or "localhost",
@@ -181,6 +200,7 @@ session_redis_dict = RedisSmartSetting(
     prefix="SESSION_REDIS_", fmt="dict", extra_values={"prefix": "session"}
 )
 websocket_redis_dict = RedisSmartSetting(prefix="WEBSOCKET_REDIS_", fmt="dict")
+websocket_redis_channels = RedisSmartSetting(prefix="WEBSOCKET_REDIS_", fmt="channels")
 
 
 # noinspection PyUnresolvedReferences
