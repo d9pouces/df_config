@@ -16,12 +16,16 @@
 
 
 def static_storage(settings_dict):
-    if settings_dict["PIPELINE_ENABLED"]:
+    if settings_dict["USE_WHITENOISE"] and settings_dict["PIPELINE_ENABLED"]:
+        return "df_config.apps.pipeline.PipelineCompressedManifestStaticFilesStorage"
+    elif settings_dict["USE_WHITENOISE"]:
+        return 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+    elif settings_dict["PIPELINE_ENABLED"]:
         return "df_config.apps.pipeline.NicerPipelineCachedStorage"
     return "django.contrib.staticfiles.storage.StaticFilesStorage"
 
 
-static_storage.required_settings = ["PIPELINE_ENABLED"]
+static_storage.required_settings = ["PIPELINE_ENABLED", "USE_WHITENOISE"]
 
 
 def pipeline_enabled(settings_dict):

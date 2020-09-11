@@ -31,12 +31,20 @@ if settings.USE_PIPELINE:
     from pipeline.compilers import CompilerBase
 
     # noinspection PyPackageRequirements,PyUnresolvedReferences
-    from pipeline.storage import PipelineManifestStorage
+    from pipeline.storage import PipelineManifestStorage, PipelineMixin
 else:
     CompressorBase = object
     CompilerBase = object
     SubProcessCompressor = object
     PipelineManifestStorage = None
+    PipelineMixin = None
+
+
+if settings.USE_WHITENOISE:
+    # noinspection PyPackageRequirements,PyUnresolvedReferences
+    from whitenoise.storage import CompressedManifestStaticFilesStorage
+else:
+    CompressedManifestStaticFilesStorage = None
 
 
 class RcssCompressor(CompressorBase):
@@ -75,7 +83,7 @@ class TerserCompressor(SubProcessCompressor):
     def compress_js(self, js):
         command = [settings.TERSER_BINARY, settings.TERSER_ARGUMENTS, "--"]
         if self.verbose:
-            command += ['--verbose']
+            command += ["--verbose"]
         return self.execute_command(command, js)
 
     def filter_css(self, css):
@@ -168,3 +176,17 @@ if PipelineManifestStorage:
                 raise ValueError(
                     "%s. Did you run the command 'collectstatic'?" % e.args[0]
                 )
+
+
+else:
+    NicerPipelineCachedStorage = None
+
+if PipelineMixin and CompressedManifestStaticFilesStorage:
+
+    class PipelineCompressedManifestStaticFilesStorage(
+        PipelineMixin, CompressedManifestStaticFilesStorage
+    ):
+        pass
+
+else:
+    PipelineCompressedManifestStaticFilesStorage = None
