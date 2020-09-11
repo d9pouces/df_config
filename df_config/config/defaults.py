@@ -536,3 +536,4 @@ CELERY_PROCESSES = 4
 
 # sentry.io
 USE_SENTRY = CallableSetting(use_sentry)
+SENTRY_DSN = None
