@@ -373,3 +373,15 @@ def use_sentry(settings_dict: Dict) -> bool:
 
 
 use_sentry.required_settings = ["SENTRY_DSN", "USE_CELERY", "DEBUG"]
+
+
+# noinspection PyUnusedLocal
+def web_server(settings_dict) -> str:
+    try:
+        # noinspection PyPackageRequirements
+        import daphne
+        return "daphne"
+    except ImportError:
+        return "gunicorn"
+
+web_server.required_settings = []

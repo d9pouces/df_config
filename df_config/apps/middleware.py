@@ -14,6 +14,7 @@
 #                                                                              #
 # ##############################################################################
 import base64
+import binascii
 import logging
 
 from django.conf import settings
@@ -52,7 +53,12 @@ class DFConfigMiddleware(BaseRemoteUserMiddleware):
             authentication = request.META["HTTP_AUTHORIZATION"]
             authmeth, sep, auth_data = authentication.partition(" ")
             if sep == " " and authmeth.lower() == "basic":
-                auth_data = base64.b64decode(auth_data.strip()).decode("utf-8")
+                try:
+                    auth_data = base64.b64decode(auth_data.strip()).decode("utf-8")
+                except binascii.Error:
+                    auth_data = ""
+                except UnicodeDecodeError:
+                    auth_data = ""
                 username, sep, password = auth_data.partition(":")
                 if sep == ":":
                     user = auth.authenticate(username=username, password=password)

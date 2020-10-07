@@ -13,13 +13,14 @@ If DjangoDebugToolbar is present, then its URL is also registered.
 
 """
 
-from df_config.utils import get_view_from_string
 from django.conf import settings
-from django.conf.urls import include, url
-from django.urls import path
+from django.conf.urls import include
+from django.urls import path, re_path
 from django.utils.module_loading import autodiscover_modules, import_string
 from django.views.i18n import JavaScriptCatalog
 from django.views.static import serve
+
+from df_config.utils import get_view_from_string
 
 
 def common_static_urls():
@@ -99,4 +100,4 @@ if settings.USE_WEBSOCKETS:
 url_prefix = settings.URL_PREFIX[1:]
 
 if url_prefix:
-    urlpatterns = [url("^" + url_prefix, include(urlpatterns))]
+    urlpatterns = [re_path("^" + url_prefix, include(urlpatterns))]

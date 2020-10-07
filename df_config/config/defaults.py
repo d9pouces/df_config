@@ -90,7 +90,7 @@ from df_config.guesses.misc import (
     AutocreateSecretKey,
     get_asgi_application,
     get_wsgi_application,
-    use_sentry,
+    use_sentry, web_server,
 )
 from df_config.guesses.pipeline import (
     pipeline_compilers,
@@ -239,7 +239,7 @@ USE_X_FORWARDED_FOR = CallableSetting(use_x_forwarded_for)  # X-Forwarded-For
 DF_FAKE_AUTHENTICATION_USERNAME = None
 DF_ALLOW_USER_CREATION = True
 
-DF_SERVER = "gunicorn"  # "gunicorn" or "daphne"
+DF_SERVER = CallableSetting(web_server)  # must be "gunicorn" or "daphne" / used by the server command
 DF_REMOVED_DJANGO_COMMANDS = CallableSetting(excluded_django_commands)
 DF_ALLOW_LOCAL_USERS = True
 DF_CHECKED_REQUIREMENTS = CallableSetting(required_packages)
