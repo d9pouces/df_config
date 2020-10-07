@@ -12,10 +12,14 @@ class TestSetEnv(TestCase):
         with EnvPatch(**{MODULE_VARIABLE_NAME: "df_config"}):
             set_env()
             import django
+
             django.setup()
             from django.template.loader import render_to_string
             from django.http import HttpRequest
+
             request = HttpRequest()
-            actual = render_to_string("df_config/test.html", {"value": "test"}, request=request)
+            actual = render_to_string(
+                "df_config/test.html", {"value": "test"}, request=request
+            )
             expected = "<h1>test</h1>"
             self.assertEqual(expected, actual)

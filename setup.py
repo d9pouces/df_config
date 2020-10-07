@@ -44,9 +44,7 @@ setup(
     include_package_data=True,
     zip_safe=False,
     test_suite="test_df_config",
-    install_requires=[
-        "django>=2.1",
-    ],
+    install_requires=["django>=2.1",],
     setup_requires=[],
     tests_require=["tox", "hypothesis"],
     classifiers=[

@@ -11,7 +11,11 @@ import sys
 
 from django.core.checks import Error, register, Warning
 
-from df_config.guesses.pipeline import available_compilers, available_css_compressor, available_js_compressors
+from df_config.guesses.pipeline import (
+    available_compilers,
+    available_css_compressor,
+    available_js_compressors,
+)
 from df_config.utils import is_package_present
 
 settings_check_results = []
@@ -32,6 +36,7 @@ def missing_package(package_name, desc=""):
 
 def get_pipeline_requirements():
     from df_config.config.base import merger
+
     engine_to_binaries = {}  # engine_to_binaries["eng.ine"] = "ENGINE_BINARY"
     engine_to_binaries.update({x[0]: x[1] for x in available_css_compressor if x[1]})
     engine_to_binaries.update({x[0]: x[1] for x in available_js_compressors if x[1]})

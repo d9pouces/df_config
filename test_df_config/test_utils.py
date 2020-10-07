@@ -108,7 +108,7 @@ class TestSendFile(TestCase):
             "Content-Type": "text/plain",
             "Content-Range": "bytes 20-29/90",
             "Content-Length": "10",
-            'Last-Modified': http_date(os.stat(filename).st_mtime),
+            "Last-Modified": http_date(os.stat(filename).st_mtime),
             "Content-Disposition": 'inline; filename="range_data.txt"',
         }
         self.assertEqual(expected_headers, {x: y for (x, y) in r.items()})
@@ -132,7 +132,7 @@ class TestSendFile(TestCase):
         expected_headers = {
             "Content-Type": "text/plain",
             "Content-Length": "30",
-            'Last-Modified': http_date(os.stat(filename).st_mtime),
+            "Last-Modified": http_date(os.stat(filename).st_mtime),
             "Content-Disposition": 'inline; filename="range_data.txt"',
         }
         self.assertEqual(expected_headers, {x: y for (x, y) in r.items()})
@@ -159,7 +159,7 @@ class TestSendFile(TestCase):
         expected_headers = {
             "Content-Type": "text/plain",
             "Content-Length": "90",
-            'Last-Modified': http_date(os.stat(filename).st_mtime),
+            "Last-Modified": http_date(os.stat(filename).st_mtime),
             "Content-Disposition": 'inline; filename="range_data.txt"',
         }
         self.assertEqual(expected_headers, {x: y for (x, y) in r.items()})

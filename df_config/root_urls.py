@@ -69,6 +69,7 @@ if settings.DF_URL_CONF:
 if settings.USE_ALL_AUTH:
     # noinspection PyUnresolvedReferences
     from allauth.account.views import login
+
     urlpatterns += [
         path("admin/login/", login),
         path("accounts/", include("allauth.urls")),
@@ -87,6 +88,7 @@ if settings.DF_ADMIN_SITE:
 if settings.DEBUG and settings.USE_DEBUG_TOOLBAR:
     # noinspection PyPackageRequirements,PyUnresolvedReferences
     import debug_toolbar
+
     urlpatterns += [path("__debug__/", include(debug_toolbar.urls))]
 if settings.DF_INDEX_VIEW:
     urlpatterns += [

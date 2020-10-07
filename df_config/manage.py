@@ -106,6 +106,7 @@ def patch_commands():
     """ patch the runserver command to use the configured LISTEN_ADDRESS"""
     from django.core.management.commands.runserver import Command
     from django.conf import settings
+
     if not hasattr(settings, "LISTEN_ADDRESS"):
         return
     add, sep, port = settings.LISTEN_ADDRESS.rpartition(":")

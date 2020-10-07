@@ -117,7 +117,7 @@ class RedisSmartSetting:
     config_values = ["PROTOCOL", "HOST", "PORT", "DB", "PASSWORD"]
 
     def __init__(
-            self, prefix="", env_variable="REDIS_URL", fmt="url", extra_values=None
+        self, prefix="", env_variable="REDIS_URL", fmt="url", extra_values=None
     ):
         """Build Redis connection parameters from a set of settings:
             %(prefix)sPROTOCOL, %(prefix)sHOST, %(prefix)sPORT, %(prefix)sDB, %(prefix)sPASSWORD.
@@ -140,9 +140,9 @@ class RedisSmartSetting:
         values = {x: settings_dict[self.prefix + x] for x in self.config_values}
         values["AUTH"] = ""
         if (
-                values["PROTOCOL"] == "redis"
-                and self.env_variable
-                and self.env_variable in os.environ
+            values["PROTOCOL"] == "redis"
+            and self.env_variable
+            and self.env_variable in os.environ
         ):
             parsed_redis_url = urlparse(os.environ[self.env_variable])
             values["HOST"] = parsed_redis_url.hostname
@@ -172,8 +172,7 @@ class RedisSmartSetting:
             # noinspection PyUnresolvedReferences
             result = {
                 "BACKEND": "channels_redis.core.RedisChannelLayer",
-                "CONFIG": {"hosts": [config], 'capacity': 5000,
-                           'expiry': 10, },
+                "CONFIG": {"hosts": [config], "capacity": 5000, "expiry": 10,},
             }
             return result
         elif self.fmt == "dict":

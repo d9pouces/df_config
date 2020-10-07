@@ -380,8 +380,10 @@ def web_server(settings_dict) -> str:
     try:
         # noinspection PyPackageRequirements
         import daphne
+
         return "daphne"
     except ImportError:
         return "gunicorn"
+
 
 web_server.required_settings = []

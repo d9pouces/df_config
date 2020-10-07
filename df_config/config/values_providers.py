@@ -71,8 +71,8 @@ class EnvironmentConfigProvider(ConfigProvider):
     def __str__(self):
         count = len(self.exported_values)
         if count <= 1:
-            return '(%s variable)' % count
-        return '(%s variables)' % count
+            return "(%s variable)" % count
+        return "(%s variables)" % count
 
     def has_value(self, config_field: ConfigField):
         key = "%s%s" % (self.prefix, config_field.setting_name)

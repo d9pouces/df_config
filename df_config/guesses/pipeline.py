@@ -50,15 +50,15 @@ available_compilers = [
 
 
 def required_settings(
-        candidates: List[Tuple[str, Optional[str], Optional[str]]]
+    candidates: List[Tuple[str, Optional[str], Optional[str]]]
 ) -> List[str]:
     return [x[1] for x in candidates if x[1]]
 
 
 def guess_pipeline_extension(
-        candidates: List[Tuple[str, Optional[str], Optional[str]]],
-        settings_dict: Dict,
-        one: bool = False,
+    candidates: List[Tuple[str, Optional[str], Optional[str]]],
+    settings_dict: Dict,
+    one: bool = False,
 ) -> Union[List[str], Optional[str]]:
     extensions = []
     for extension, setting, package in candidates:

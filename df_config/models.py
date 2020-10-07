@@ -33,7 +33,9 @@ class MigrationCounter:
 
     # noinspection PyUnusedLocal
     def post_migrate(self, *args, app_config: AppConfig = None, **kwargs):
-        if app_config.name == self.last_app_config:  # this is the post_migrate of the last app
+        if (
+            app_config.name == self.last_app_config
+        ):  # this is the post_migrate of the last app
             merger.call_method_on_config_values("post_migrate")
 
 

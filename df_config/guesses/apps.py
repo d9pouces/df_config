@@ -100,7 +100,7 @@ class InstalledApps:
     def __call__(self, settings_dict):
         apps = self.default_apps
         if settings_dict["SESSION_ENGINE"] == "django.contrib.sessions.backends.db":
-            apps += ['django.contrib.sessions']
+            apps += ["django.contrib.sessions"]
         apps += self.process_django_allauth(settings_dict)
         apps += self.process_third_parties(settings_dict)
         apps += self.base_django_apps

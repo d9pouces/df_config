@@ -192,10 +192,7 @@ class TestPythonModuleProvider(TestCase):
     def test_get_extra_settings(self):
         provider = self.get_provider()
         settings = {k: v for k, v in provider.get_extra_settings()}
-        self.assertEqual({
-            "UNITTEST": True,
-            "UNITTEST_3": False,
-        }, settings)
+        self.assertEqual({"UNITTEST": True, "UNITTEST_3": False,}, settings)
 
     def test_is_valid(self):
         provider = self.get_provider()

@@ -187,7 +187,9 @@ if PipelineMixin and CompressedManifestStaticFilesStorage:
         PipelineMixin, CompressedManifestStaticFilesStorage
     ):
         """mix django-pipeline and whitenoise"""
+
         pass
+
 
 else:
     PipelineCompressedManifestStaticFilesStorage = None

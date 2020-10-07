@@ -28,7 +28,10 @@ from df_config.utils import guess_version, remove_arguments_from_help
 
 __author__ = "Matthieu Gallet"
 
-from df_config.config.values_providers import EnvironmentConfigProvider, IniConfigProvider
+from df_config.config.values_providers import (
+    EnvironmentConfigProvider,
+    IniConfigProvider,
+)
 
 
 class Command(BaseCommand):
