@@ -66,7 +66,7 @@ class DFConfigMiddleware(BaseRemoteUserMiddleware):
                         request.user = user
                         auth.login(request, user)
         username = getattr(settings, "DF_FAKE_AUTHENTICATION_USERNAME", None)
-        if username and settings.DEBUG:
+        if self.header and username and settings.DEBUG:
             remote_addr = request.META.get("REMOTE_ADDR")
             if remote_addr in settings.INTERNAL_IPS:
                 request.META[self.header] = username
