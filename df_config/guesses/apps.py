@@ -181,7 +181,6 @@ class Middlewares:
         [
             ("USE_WHITENOISE", "whitenoise.middleware.WhiteNoiseMiddleware"),
             ("USE_WEBSOCKETS", "df_websockets.middleware.WebsocketMiddleware"),
-            ("USE_DEBUG_TOOLBAR", "debug_toolbar.middleware.DebugToolbarMiddleware"),
         ]
     )
     required_settings = ["DF_MIDDLEWARE"] + list(common_third_parties)
@@ -192,7 +191,8 @@ class Middlewares:
         mw_list += self.base_django_middlewares
         mw_list.append(ExpandIterable("DF_MIDDLEWARE"))
         mw_list += self.process_third_parties(settings_dict)
-
+        if settings_dict["USE_DEBUG_TOOLBAR"]:
+            mw_list.insert(0, "debug_toolbar.middleware.DebugToolbarMiddleware")
         if self.use_cache_middleware:
             mw_list.insert(0, "django.middleware.cache.UpdateCacheMiddleware")
             mw_list.append("django.middleware.cache.FetchFromCacheMiddleware")

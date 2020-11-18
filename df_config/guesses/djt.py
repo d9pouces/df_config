@@ -20,11 +20,12 @@ def guess_djt_panels(settings_dict):
     if not settings_dict["DEBUG"] or not settings_dict["USE_DEBUG_TOOLBAR"]:
         return []
     panels = list(DEBUG_TOOLBAR_PANELS)
+    if is_package_present("djt_og"):
+        panels.insert(2, "djt_og.panel.OpenGraphPanel")
+    if is_package_present("djt_csp"):
+        panels.insert(2, "djt_csp.panel.SecurityPanel")
     if is_package_present("djt_nvu"):
         panels.insert(2, "djt_nvu.panel.W3ValidatorPanel")
-    if is_package_present("djt_og"):
-        panels.insert(3, "djt_og.panel.OpenGraphPanel")
-
     return panels
 
 
