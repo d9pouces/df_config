@@ -226,3 +226,17 @@ Some special environment variables are read:
   * `DATABASE_URL`: set if you use the "heroku-postgresql" addon
   * `PORT`: set by default
   * `HEROKU_APP_NAME`: you should set it in your `app.json` file
+  
+Django app detection
+--------------------
+
+A few well-known Django applications are automatically detected and added to the list of `INSTALLED_APPS`:
+
+  * `django-redis_sessions`
+  * `django-pipeline`
+  * `django-debug-toolbar`
+  * `django-allauth`
+  * `whitenoise`
+  * `django-csp`
+  
+Defaults settings are also proposed so these applications should be working out of the box.
