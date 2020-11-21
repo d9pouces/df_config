@@ -27,6 +27,18 @@ from pkg_resources import DistributionNotFound, get_distribution
 from df_config.checks import missing_package, settings_check_results
 
 
+class CookieName:
+    required_settings = ["USE_SSL"]
+
+    def __init__(self, cookie_name: str):
+        self.cookie_name = cookie_name
+
+    def __call__(self, settings_dict) -> str:
+        if settings_dict["USE_SSL"]:
+            return "__Host-%s" % self.cookie_name
+        return self.cookie_name
+
+
 # noinspection PyMethodMayBeStatic
 class AuthenticationBackends:
     required_settings = [

@@ -60,7 +60,7 @@ from df_config.guesses.auth import (
     ldap_boolean_attribute_map,
     ldap_group_class,
     ldap_group_search,
-    ldap_user_search,
+    ldap_user_search, CookieName,
 )
 from df_config.guesses.databases import (
     cache_redis_url,
@@ -132,7 +132,7 @@ ALLOWED_HOSTS = CallableSetting(allowed_hosts)
 CACHE_URL = CallableSetting(cache_redis_url)
 CACHES = CallableSetting(cache_setting)
 CSRF_COOKIE_DOMAIN = "{SERVER_NAME}"
-CSRF_COOKIE_NAME = "__Host-csrftoken"
+CSRF_COOKIE_NAME = CookieName("csrftoken")
 CSRF_TRUSTED_ORIGINS = ["{SERVER_NAME}", "{SERVER_NAME}:{SERVER_PORT}"]
 DATABASES = CallableSetting(databases)
 
@@ -166,7 +166,7 @@ SECURE_SSL_REDIRECT = SettingReference("USE_SSL")
 SECURE_FRAME_DENY = SettingReference("USE_SSL")
 SERVER_EMAIL = "{ADMIN_EMAIL}"
 SESSION_COOKIE_AGE = 1209600
-SESSION_COOKIE_NAME = "__Host-sessionid"
+SESSION_COOKIE_NAME = CookieName("sessionid")
 TEMPLATES = CallableSetting(template_setting)
 TEMPLATE_DEBUG = SettingReference("DEBUG")
 TEMPLATE_DIRS = ()
