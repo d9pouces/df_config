@@ -181,6 +181,7 @@ class Middlewares:
         [
             ("USE_WHITENOISE", "whitenoise.middleware.WhiteNoiseMiddleware"),
             ("USE_WEBSOCKETS", "df_websockets.middleware.WebsocketMiddleware"),
+            ("USE_CSP", "csp.middleware.CSPMiddleware"),
         ]
     )
     required_settings = ["DF_MIDDLEWARE"] + list(common_third_parties)

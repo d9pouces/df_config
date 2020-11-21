@@ -60,7 +60,8 @@ from df_config.guesses.auth import (
     ldap_boolean_attribute_map,
     ldap_group_class,
     ldap_group_search,
-    ldap_user_search, CookieName,
+    ldap_user_search,
+    CookieName,
 )
 from df_config.guesses.databases import (
     cache_redis_url,
@@ -91,7 +92,7 @@ from df_config.guesses.misc import (
     get_asgi_application,
     get_wsgi_application,
     use_sentry,
-    web_server,
+    web_server, csp_connect,
 )
 from df_config.guesses.pipeline import (
     pipeline_compilers,
@@ -120,6 +121,7 @@ USE_ALL_AUTH = is_package_present("allauth")
 USE_WEBSOCKETS = is_package_present("df_websockets")
 USE_SITE = is_package_present("df_site")
 USE_WHITENOISE = is_package_present("whitenoise")
+USE_CSP = is_package_present("csp")
 
 # ######################################################################################################################
 #
@@ -132,7 +134,7 @@ ALLOWED_HOSTS = CallableSetting(allowed_hosts)
 CACHE_URL = CallableSetting(cache_redis_url)
 CACHES = CallableSetting(cache_setting)
 CSRF_COOKIE_DOMAIN = "{SERVER_NAME}"
-CSRF_COOKIE_NAME = CookieName("csrftoken")
+CSRF_COOKIE_NAME = CallableSetting(CookieName("csrftoken"))
 CSRF_TRUSTED_ORIGINS = ["{SERVER_NAME}", "{SERVER_NAME}:{SERVER_PORT}"]
 DATABASES = CallableSetting(databases)
 
@@ -166,7 +168,7 @@ SECURE_SSL_REDIRECT = SettingReference("USE_SSL")
 SECURE_FRAME_DENY = SettingReference("USE_SSL")
 SERVER_EMAIL = "{ADMIN_EMAIL}"
 SESSION_COOKIE_AGE = 1209600
-SESSION_COOKIE_NAME = CookieName("sessionid")
+SESSION_COOKIE_NAME = CallableSetting(CookieName("sessionid"))
 TEMPLATES = CallableSetting(template_setting)
 TEMPLATE_DEBUG = SettingReference("DEBUG")
 TEMPLATE_DIRS = ()
@@ -404,6 +406,10 @@ SESSION_REDIS = CallableSetting(session_redis_dict)
 # django-smart-selects
 USE_DJANGO_JQUERY = True
 JQUERY_URL = False
+
+# django-csp
+CSP_CONNECT_SRC = CallableSetting(csp_connect)
+CSP_BLOCK_ALL_MIXED_CONTENT = True
 
 # ######################################################################################################################
 #
