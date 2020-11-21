@@ -295,10 +295,17 @@ PIPELINE_CSS = {
 }
 PIPELINE_ENABLED = CallableSetting(pipeline_enabled)
 PIPELINE_JS = {
-    "django.admin": {"source_filenames": [], "output_filename": "js/django-admin.js"},
+    "django.admin": {
+        "source_filenames": [],
+        "output_filename": "js/django-admin.js",
+        "integrity": "sha384",
+        "crossorigin": "anonymous",
+    },
     "default": {
         "source_filenames": [ExpandIterable("DF_JS")],
         "output_filename": "js/default.js",
+        "integrity": "sha384",
+        "crossorigin": "anonymous",
     },
 }
 LIVE_SCRIPT_BINARY = "lsc"
