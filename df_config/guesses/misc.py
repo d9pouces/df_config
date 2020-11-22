@@ -102,7 +102,7 @@ allowed_hosts.required_settings = ["SERVER_NAME", "LISTEN_ADDRESS"]
 
 def secure_hsts_seconds(settings_dict):
     if settings_dict["USE_SSL"]:
-        return 86400 * 31 * 6
+        return 86400 * 31 * 12
     return 0
 
 
