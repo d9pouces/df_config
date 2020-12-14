@@ -35,7 +35,7 @@ class CookieName:
 
     def __call__(self, settings_dict) -> str:
         if settings_dict["USE_SSL"]:
-            return "__Host-%s" % self.cookie_name
+            return "__Secure-%s" % self.cookie_name
         return self.cookie_name
 
 

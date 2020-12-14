@@ -134,7 +134,10 @@ ALLOWED_HOSTS = CallableSetting(allowed_hosts)
 CACHE_URL = CallableSetting(cache_redis_url)
 CACHES = CallableSetting(cache_setting)
 CSRF_COOKIE_DOMAIN = "{SERVER_NAME}"
+CSRF_COOKIE_HTTPONLY = False
 CSRF_COOKIE_NAME = CallableSetting(CookieName("csrftoken"))
+CSRF_COOKIE_SAMESITE = "Lax"
+CSRF_COOKIE_SECURE = SettingReference("USE_SSL")
 CSRF_TRUSTED_ORIGINS = ["{SERVER_NAME}", "{SERVER_NAME}:{SERVER_PORT}"]
 DATABASES = CallableSetting(databases)
 
@@ -147,9 +150,13 @@ DEVELOPMENT = True
 DEFAULT_FROM_EMAIL = "webmaster@{SERVER_NAME}"
 FILE_UPLOAD_TEMP_DIR = Directory("{LOCAL_PATH}/tmp-uploads")
 INSTALLED_APPS = CallableSetting(installed_apps)
+LANGUAGE_COOKIE_NAME = CallableSetting(CookieName("django_language"))
+LANGUAGE_COOKIE_DOMAIN = "{SERVER_NAME}"
+LANGUAGE_COOKIE_SAMESITE = "Lax"
+LANGUAGE_COOKIE_SECURE = SettingReference("USE_SSL")
 LOGGING = CallableSetting(log_configuration)
 MANAGERS = SettingReference("ADMINS")
-MEDIA_ROOT = Directory("{LOCAL_PATH}/media")
+MEDIA_ROOT = Directory("{LOCAL_PATH}/media", mode=0o755)
 MEDIA_URL = "/media/"
 MIDDLEWARE = CallableSetting(middlewares)
 
@@ -168,7 +175,11 @@ SECURE_SSL_REDIRECT = SettingReference("USE_SSL")
 SECURE_FRAME_DENY = SettingReference("USE_SSL")
 SERVER_EMAIL = "{ADMIN_EMAIL}"
 SESSION_COOKIE_AGE = 1209600
+SESSION_COOKIE_HTTPONLY = True
 SESSION_COOKIE_NAME = CallableSetting(CookieName("sessionid"))
+SESSION_COOKIE_DOMAIN = "{SERVER_NAME}"
+SESSION_COOKIE_SAMESITE = "Lax"
+SESSION_COOKIE_SECURE = SettingReference("USE_SSL")
 TEMPLATES = CallableSetting(template_setting)
 TEMPLATE_DEBUG = SettingReference("DEBUG")
 TEMPLATE_DIRS = ()
@@ -211,7 +222,7 @@ CSRF_COOKIE_SECURE = SettingReference("USE_SSL")
 SITE_ID = 1
 
 # django.contrib.staticfiles
-STATIC_ROOT = Directory("{LOCAL_PATH}/static")
+STATIC_ROOT = Directory("{LOCAL_PATH}/static", mode=0o755)
 STATIC_URL = "/static/"
 STATICFILES_STORAGE = CallableSetting(static_storage)
 STATICFILES_FINDERS = CallableSetting(static_finder)
