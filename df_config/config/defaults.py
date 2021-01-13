@@ -389,10 +389,6 @@ AUTH_LDAP_FIND_GROUP_PERMS = False
 AUTH_LDAP_GROUP_SEARCH = CallableSetting(ldap_group_search)
 AUTH_LDAP_GROUP_SEARCH_BASE = "ou=groups,dc=example,dc=com"
 AUTH_LDAP_AUTHORIZE_ALL_USERS = True
-# https://bitbucket.org/illocution/django-auth-ldap/pull-requests/29/kerberos-bind-method-to-provide-multi/diff
-# KRB5_CCACHE = None
-# KRB5_KEYTAB = None
-# KRB5_PRINCIPAL = None
 
 # django-cors-headers
 CORS_ORIGIN_WHITELIST = ("{SERVER_NAME}", "{SERVER_NAME}:{SERVER_PORT}")

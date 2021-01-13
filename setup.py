@@ -19,7 +19,8 @@ import re
 
 from setuptools import find_packages, setup
 
-# avoid a from df_config import __version__ as version (that compiles df_config.__init__ and is not compatible with bdist_deb)
+# avoid a from df_config import __version__ as version
+# (that compiles df_config.__init__ and is not compatible with bdist_deb)
 version = None
 for line in open(os.path.join("df_config", "__init__.py"), "r"):
     matcher = re.match(r"""^__version__\s*=\s*['"](.*)['"]\s*$""", line)
@@ -44,7 +45,7 @@ setup(
     include_package_data=True,
     zip_safe=False,
     test_suite="test_df_config",
-    install_requires=["django>=2.1",],
+    install_requires=["django>=2.2"],
     setup_requires=[],
     tests_require=["tox", "hypothesis"],
     classifiers=[
@@ -60,9 +61,8 @@ setup(
         "Programming Language :: Python :: 3.7",
         "Programming Language :: Python :: 3.8",
         "Programming Language :: Python :: 3.9",
-        "Framework :: Django :: 2.0",
-        "Framework :: Django :: 2.1",
         "Framework :: Django :: 2.2",
         "Framework :: Django :: 3.0",
+        "Framework :: Django :: 3.1",
     ],
 )

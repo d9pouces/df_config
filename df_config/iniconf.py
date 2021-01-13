@@ -13,6 +13,8 @@
 #  or https://cecill.info/licences/Licence_CeCILL-B_V1-fr.txt (French)         #
 #                                                                              #
 # ##############################################################################
+from typing import List
+
 from df_config.config.fields import (
     BooleanConfigField,
     CharConfigField,
@@ -212,7 +214,7 @@ BASE_MAPPING = [
         "EMAIL_USE_SSL",
         help_str='"true" if your SMTP uses SSL (often on port 465)',
     ),
-]
+]  # type: List[ConfigField]
 
 SENDFILE_MAPPING = [
     BooleanConfigField(
@@ -229,45 +231,8 @@ SENDFILE_MAPPING = [
         help_str='"true" is nginx is used as reverse-proxy with x-accel-redirect.'
         "The media directory (and url) must be allowed in the Nginx configuration.",
     ),
-]
-
-AUTH_MAPPING = [
-    BooleanConfigField(
-        "auth.local_users",
-        "DF_ALLOW_LOCAL_USERS",
-        help_str='Set to "false" to deactivate local database of users.',
-    ),
-    BooleanConfigField(
-        "auth.pam",
-        "USE_PAM_AUTHENTICATION",
-        help_str='Set to "true" if you want to activate PAM authentication',
-    ),
-    BooleanConfigField(
-        "auth.create_users",
-        "DF_ALLOW_USER_CREATION",
-        help_str='Set to "false" if users cannot create their account themselvers, or '
-        "only if existing users can by authenticated by the reverse-proxy.",
-    ),
-    IntegerConfigField(
-        "auth.session_duration",
-        "SESSION_COOKIE_AGE",
-        help_str="Duration of the connection sessions "
-        "(in seconds, default to 1,209,600 s / 14 days)",
-    ),
-    CharConfigField(
-        "auth.remote_user_header",
-        "DF_REMOTE_USER_HEADER",
-        help_str='Set it if the reverse-proxy authenticates users, a common value is "HTTP_REMOTE_USER". '
-        "Note: the HTTP_ prefix is automatically added, just set REMOTE_USER in the "
-        "reverse-proxy configuration. ",
-    ),
-    ListConfigField(
-        "auth.remote_user_groups",
-        "DF_DEFAULT_GROUPS",
-        help_str="Comma-separated list of groups, for new users that are automatically created "
-        "when authenticated by remote_user_header. Ignored if groups are read from a LDAP "
-        "server. ",
-    ),
+]  # type: List[ConfigField]
+RADIUS_AUTH_MAPPING = [
     CharConfigField(
         "auth.radius_server",
         "RADIUS_SERVER",
@@ -282,11 +247,8 @@ AUTH_MAPPING = [
         "RADIUS_SECRET",
         help_str="Shared secret if the Radius server",
     ),
-    BooleanConfigField(
-        "auth.allow_basic_auth",
-        "USE_HTTP_BASIC_AUTH",
-        help_str='Set to "true" if you want to allow HTTP basic auth, using the Django database.',
-    ),
+]  # type: List[ConfigField]
+LDAP_AUTH_MAPPING = [
     CharConfigField(
         "auth.ldap_server_url",
         "AUTH_LDAP_SERVER_URI",
@@ -397,14 +359,62 @@ AUTH_MAPPING = [
         },
         help_str="Type of LDAP groups.",
     ),
-    # CharConfigField('auth.ldap_krb5_ccache', 'KRB5_CCACHE',
-    #                 help_str='If your LDAP server needs a Kerberos authentication, '
-    #                          'path of the ccache file (optional).'),
-    # CharConfigField('auth.ldap_krb5_keytab', 'KRB5_KEYTAB',
-    #                 help_str='If your LDAP server needs a Kerberos authentication, path of the client keytab.'),
-    # CharConfigField('auth.ldap_krb5_principal', 'KRB5_PRINCIPAL',
-    #                 help_str='Principal to use for Kerberos authentication on the LDAP server.'),
-]
+]  # type: List[ConfigField]
+PAM_AUTH_MAPPING = [
+    BooleanConfigField(
+        "auth.pam",
+        "USE_PAM_AUTHENTICATION",
+        help_str='Set to "true" if you want to activate PAM authentication',
+    ),
+]  # type: List[ConfigField]
+HTTP_AUTH_MAPPING = [
+    CharConfigField(
+        "auth.remote_user_header",
+        "DF_REMOTE_USER_HEADER",
+        help_str='Set it if the reverse-proxy authenticates users, a common value is "HTTP_REMOTE_USER". '
+        "Note: the HTTP_ prefix is automatically added, just set REMOTE_USER in the "
+        "reverse-proxy configuration. ",
+    ),
+    ListConfigField(
+        "auth.remote_user_groups",
+        "DF_DEFAULT_GROUPS",
+        help_str="Comma-separated list of groups, for new users that are automatically created "
+        "when authenticated by remote_user_header. Ignored if groups are read from a LDAP "
+        "server. ",
+    ),
+]  # type: List[ConfigField]
+
+DJANGO_AUTH_MAPPING = [
+    BooleanConfigField(
+        "auth.local_users",
+        "DF_ALLOW_LOCAL_USERS",
+        help_str='Set to "false" to deactivate local database of users.',
+    ),
+    BooleanConfigField(
+        "auth.create_users",
+        "DF_ALLOW_USER_CREATION",
+        help_str='Set to "false" if users cannot create their account themselvers, or '
+        "only if existing users can by authenticated by the reverse-proxy.",
+    ),
+    IntegerConfigField(
+        "auth.session_duration",
+        "SESSION_COOKIE_AGE",
+        help_str="Duration of the connection sessions "
+        "(in seconds, default to 1,209,600 s / 14 days)",
+    ),
+    BooleanConfigField(
+        "auth.allow_basic_auth",
+        "USE_HTTP_BASIC_AUTH",
+        help_str='Set to "true" if you want to allow HTTP basic auth, using the Django database.',
+    ),
+]  # type: List[ConfigField]
+AUTH_MAPPING = (
+    DJANGO_AUTH_MAPPING
+    + RADIUS_AUTH_MAPPING
+    + LDAP_AUTH_MAPPING
+    + PAM_AUTH_MAPPING
+    + HTTP_AUTH_MAPPING
+)  # type: List[ConfigField]
 ALLAUTH_MAPPING = []
 # empty settings (please use the `social_authentications` management command instead)
 INI_MAPPING = (
