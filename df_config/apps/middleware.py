@@ -24,6 +24,7 @@ from django.contrib.auth.middleware import (
 )
 from django.core.exceptions import ImproperlyConfigured
 from django.http import HttpRequest
+from django.utils.functional import cached_property
 
 logger = logging.getLogger("django.request")
 
@@ -37,9 +38,12 @@ class DFConfigMiddleware(BaseRemoteUserMiddleware):
     * set response header for Internet Explorer (to use its most recent render engine)
     """
 
-    header = settings.DF_REMOTE_USER_HEADER
-    if header:
-        header = header.upper().replace("-", "_")
+    @cached_property
+    def header(self):
+        header = settings.DF_REMOTE_USER_HEADER
+        if header:
+            header = header.upper().replace("-", "_")
+        return header
 
     def process_request(self, request: HttpRequest):
         request.remote_username = None
