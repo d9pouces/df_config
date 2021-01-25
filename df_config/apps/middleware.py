@@ -16,6 +16,7 @@
 import base64
 import binascii
 import logging
+from functools import lru_cache
 
 from django.conf import settings
 from django.contrib import auth
@@ -29,6 +30,7 @@ from django.utils.functional import cached_property
 logger = logging.getLogger("django.request")
 
 
+
 class DFConfigMiddleware(BaseRemoteUserMiddleware):
     """Like :class:`django.contrib.auth.middleware.RemoteUserMiddleware` but:
 
@@ -38,8 +40,9 @@ class DFConfigMiddleware(BaseRemoteUserMiddleware):
     * set response header for Internet Explorer (to use its most recent render engine)
     """
 
-    @cached_property
-    def header(self):
+    @lru_cache()
+    def get_remoteuser_header(self):
+        # avoid cached_property to ease unittests
         header = settings.DF_REMOTE_USER_HEADER
         if header:
             header = header.upper().replace("-", "_")
@@ -70,10 +73,12 @@ class DFConfigMiddleware(BaseRemoteUserMiddleware):
                         request.user = user
                         auth.login(request, user)
         username = getattr(settings, "DF_FAKE_AUTHENTICATION_USERNAME", None)
-        if self.header and username and settings.DEBUG:
+
+        header = self.get_remoteuser_header()
+        if header and username and settings.DEBUG:
             remote_addr = request.META.get("REMOTE_ADDR")
             if remote_addr in settings.INTERNAL_IPS:
-                request.META[self.header] = username
+                request.META[header] = username
             elif remote_addr:
                 logger.warning(
                     "Unable to use `settings.DF_FAKE_AUTHENTICATION_USERNAME`. "
@@ -81,8 +86,8 @@ class DFConfigMiddleware(BaseRemoteUserMiddleware):
                     % remote_addr
                 )
 
-        if self.header and self.header in request.META:
-            remote_username = request.META.get(self.header)
+        if header and header in request.META:
+            remote_username = request.META.get(header)
             if (
                 not remote_username or remote_username == "(null)"
             ):  # special case due to apache2+auth_mod_kerb :-(
