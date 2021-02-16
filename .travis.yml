@@ -14,13 +14,13 @@ python:
 matrix:
   exclude:
     - python: "3.6"
-      env: DJANGO_VERSION="https://github.com/django/django/archive/master.tar.gz"
+      env: DJANGO_VERSION='https://github.com/django/django/archive/master.tar.gz'
     - python: "3.7"
-      env: DJANGO_VERSION="https://github.com/django/django/archive/master.tar.gz"
+      env: DJANGO_VERSION='https://github.com/django/django/archive/master.tar.gz'
     - python: "3.8"
       env: DJANGO_VERSION="Django>=2.1,<2.2"
 install:
-    - python setup.py develop
+    - python -m pip install -e .
 before_script:
     - python -m pip install "$DJANGO_VERSION"
 script:
