@@ -117,7 +117,7 @@ class RedisSmartSetting:
     config_values = ["PROTOCOL", "HOST", "PORT", "DB", "PASSWORD"]
 
     def __init__(
-        self, prefix="", env_variable="REDIS_URL", fmt="url", extra_values=None
+        self, prefix="", env_variable="REDIS_URL", fmt="url", extra_values=None, only_redis: bool=True
     ):
         """Build Redis connection parameters from a set of settings:
             %(prefix)sPROTOCOL, %(prefix)sHOST, %(prefix)sPORT, %(prefix)sDB, %(prefix)sPASSWORD.
@@ -133,11 +133,15 @@ class RedisSmartSetting:
         self.fmt = fmt
         self.prefix = prefix
         self.env_variable = env_variable
+        self.only_redis = only_redis
         self.required_settings = [prefix + x for x in self.config_values]
+        if not only_redis:
+            self.required_settings += [prefix + x for x in ("USERNAME", )]
         self.extra_values = extra_values
 
     def __call__(self, settings_dict):
         values = {x: settings_dict[self.prefix + x] for x in self.config_values}
+        values.setdefault("USERNAME", None)
         values["AUTH"] = ""
         if (
             values["PROTOCOL"] == "redis"
@@ -152,7 +156,7 @@ class RedisSmartSetting:
             if re.match(r"^/\d+$", parsed_redis_url.path):
                 values["DB"] = parsed_redis_url.path[1:]
         if values["PASSWORD"]:
-            values["AUTH"] = ":%s@" % values["PASSWORD"]
+            values["AUTH"] = "%s:%s@" % (values["USERNAME"] or "", values["PASSWORD"])
         if self.fmt == "url":
             url = "%(PROTOCOL)s://%(AUTH)s%(HOST)s:%(PORT)s/%(DB)s" % values
             if self.extra_values:
@@ -195,7 +199,8 @@ class RedisSmartSetting:
 
 
 cache_redis_url = RedisSmartSetting(prefix="CACHE_", fmt="url")
-celery_redis_url = RedisSmartSetting(prefix="CELERY_", fmt="url")
+celery_broker_url = RedisSmartSetting(prefix="CELERY_", fmt="url", only_redis=False)
+celery_result_url = RedisSmartSetting(prefix="CELERY_RESULT_", fmt="url", only_redis=False)
 session_redis_dict = RedisSmartSetting(
     prefix="SESSION_REDIS_", fmt="dict", extra_values={"prefix": "session"}
 )

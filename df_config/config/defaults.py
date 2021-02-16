@@ -66,11 +66,11 @@ from df_config.guesses.auth import (
 from df_config.guesses.databases import (
     cache_redis_url,
     cache_setting,
-    celery_redis_url,
+    celery_broker_url,
     databases,
     session_redis_dict,
     websocket_redis_dict,
-    websocket_redis_channels,
+    websocket_redis_channels, celery_result_url,
 )
 from df_config.guesses.log import log_configuration
 from df_config.guesses.misc import (
@@ -228,11 +228,11 @@ STATICFILES_STORAGE = CallableSetting(static_storage)
 STATICFILES_FINDERS = CallableSetting(static_finder)
 
 # celery
-BROKER_URL = CallableSetting(celery_redis_url)
+BROKER_URL = CallableSetting(celery_broker_url)
 CELERY_DEFAULT_QUEUE = "celery"
 CELERY_TIMEZONE = "{TIME_ZONE}"
 CELERY_RESULT_EXCHANGE = "{DF_MODULE_NAME}_results"
-CELERY_RESULT_BACKEND = "{BROKER_URL}"
+CELERY_RESULT_BACKEND = CallableSetting(celery_result_url)
 CELERY_RESULT_SERIALIZER = "json"
 CELERY_ACCEPT_CONTENT = ["json", "yaml", "msgpack"]
 CELERY_APP = "df_websockets"
@@ -557,7 +557,16 @@ CELERY_HOST = "localhost"  # aliased in settings.ini as "[celery]host"
 CELERY_PORT = 6379  # aliased in settings.ini as "[celery]port"
 CELERY_DB = 4  # aliased in settings.ini as "[celery]db"
 CELERY_PASSWORD = None  # aliased in settings.ini as "[celery]password"
+CELERY_USERNAME = None  # only useful for amqp
 CELERY_PROCESSES = 4
+
+# celery
+CELERY_RESULT_PROTOCOL = SettingReference("CELERY_PROTOCOL")
+CELERY_RESULT_HOST = SettingReference("CELERY_HOST")
+CELERY_RESULT_PORT = SettingReference("CELERY_PORT")
+CELERY_RESULT_DB = SettingReference("CELERY_DB")
+CELERY_RESULT_PASSWORD = SettingReference("CELERY_PASSWORD")
+CELERY_RESULT_USERNAME = SettingReference("CELERY_USERNAME")
 
 # sentry.io
 USE_SENTRY = CallableSetting(use_sentry)
