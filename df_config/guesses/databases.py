@@ -114,7 +114,7 @@ class RedisSmartSetting:
     Can be used as :class:`df_config.config.dynamic_settings.CallableSetting`.
     """
 
-    config_values = ["PROTOCOL", "HOST", "PORT", "DB", "PASSWORD"]
+    _config_values = ["PROTOCOL", "HOST", "PORT", "DB", "PASSWORD"]
 
     def __init__(
         self, prefix="", env_variable="REDIS_URL", fmt="url", extra_values=None, only_redis: bool=True
@@ -134,9 +134,10 @@ class RedisSmartSetting:
         self.prefix = prefix
         self.env_variable = env_variable
         self.only_redis = only_redis
-        self.required_settings = [prefix + x for x in self.config_values]
+        self.config_values = list(self._config_values)
         if not only_redis:
-            self.required_settings += [prefix + x for x in ("USERNAME", )]
+            self.config_values += ["USERNAME"]
+        self.required_settings = [prefix + x for x in self.config_values]
         self.extra_values = extra_values
 
     def __call__(self, settings_dict):
