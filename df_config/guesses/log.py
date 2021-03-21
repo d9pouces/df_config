@@ -293,7 +293,7 @@ class LogConfiguration:
             has_handler = True
 
         has_handler = self.add_remote_collector(
-            settings_dict["LOG_REMOTE_URL"], settings_dict["LOG_REMOTE_ACCESS"]
+            settings_dict["LOG_REMOTE_URL"], settings_dict["LOG_REMOTE_ACCESS"], level=log_level
         ) or has_handler
         if not has_handler or not self.log_suffix:
             # (no file or interactive command) and no logd/syslog => we print to the console (like the debug mode)
@@ -308,7 +308,7 @@ class LogConfiguration:
     def __repr__(self):
         return "%s.%s" % (self.__module__, "log_configuration")
 
-    def add_remote_collector(self, log_remote_url, log_remote_access):
+    def add_remote_collector(self, log_remote_url, log_remote_access, level="WARN"):
         has_handler = False
         if not log_remote_url:
             return has_handler
@@ -322,7 +322,7 @@ class LogConfiguration:
             self.add_handler(
                 "ROOT",
                 "syslog",
-                level="WARN",
+                level=level,
                 address=address,
                 facility=facility,
                 socktype=socktype,
