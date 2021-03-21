@@ -292,9 +292,9 @@ class LogConfiguration:
                 self.add_handler(logger, "access", level="DEBUG", formatter="nocolor")
             has_handler = True
 
-        has_handler = has_handler or self.add_remote_collector(
+        has_handler = self.add_remote_collector(
             settings_dict["LOG_REMOTE_URL"], settings_dict["LOG_REMOTE_ACCESS"]
-        )
+        ) or has_handler
         if not has_handler or not self.log_suffix:
             # (no file or interactive command) and no logd/syslog => we print to the console (like the debug mode)
             self.add_handler("ROOT", "stdout", level=log_level, formatter="colorized")
