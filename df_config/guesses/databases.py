@@ -58,9 +58,12 @@ def database_engine(settings_dict):
         try:
             get_distribution("mysqlclient")
         except DistributionNotFound:
-            settings_check_results.append(
-                missing_package("mysqlclient", " to use MySQL or MariaDB database")
-            )
+            try:
+                get_distribution("pymysql")
+            except DistributionNotFound:
+                settings_check_results.append(
+                    missing_package("mysqlclient or pymysql", " to use MySQL or MariaDB database")
+                )
     return engine
 
 
