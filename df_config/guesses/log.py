@@ -236,6 +236,7 @@ class LogConfiguration:
         self.excluded_commands = {}
         self.stdout = stdout or sys.stdout
         self.stderr = stderr or sys.stderr
+        self.log_directory_warning = False  # True when a warning has been emitted
 
     def __call__(self, settings_dict, argv=None):
         if argv is None:
@@ -476,13 +477,15 @@ class LogConfiguration:
         else:  # basename of a plain-text log
             log_directory = os.path.normpath(self.log_directory)
             if not os.path.isdir(log_directory):
-                warning = Warning(
-                    'Missing directory, you can create it with \nmkdir -p "%s"'
-                    % log_directory,
-                    hint=None,
-                    obj=log_directory,
-                )
-                settings_check_results.append(warning)
+                if not self.log_directory_warning:
+                    warning = Warning(
+                        'Missing directory "%s"'
+                        % log_directory,
+                        hint=None,
+                        obj=log_directory,
+                    )
+                    settings_check_results.append(warning)
+                    self.log_directory_warning = True
                 self.add_handler(logger, "stdout", level=level, **kwargs)
                 return
             basename = "%s-%s.log" % (self.log_suffix, filename)
@@ -503,6 +506,7 @@ class LogConfiguration:
                 )
                 settings_check_results.append(warning_)
                 self.add_handler(logger, "stdout", level=level, **kwargs)
+                return
             handler_name = "%s.%s" % (self.log_suffix, filename)
             handler = {
                 "class": "logging.handlers.RotatingFileHandler",
@@ -511,14 +515,15 @@ class LogConfiguration:
                 "formatter": "nocolor",
                 "filename": log_filename,
                 "level": level,
+                "delay": True,
             }
 
         if handler_name not in self.handlers:
             self.handlers[handler_name] = handler
-        if logger == "ROOT":
-            self.root["handlers"].append(handler_name)
-        else:
-            self.loggers[logger]["handlers"].append(handler_name)
+            if logger == "ROOT":
+                self.root["handlers"].append(handler_name)
+            else:
+                self.loggers[logger]["handlers"].append(handler_name)
 
     @staticmethod
     def get_smart_command_name(module_name, argv, excluded_commands=None):
