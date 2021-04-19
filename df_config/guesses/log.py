@@ -203,9 +203,11 @@ class LogConfiguration:
     access_loggers = {
         "aiohttp.access": _level_access,
         "django.server": _level_access,
+        "django.channels.server": _level_access,
         "geventwebsocket.handler": _level_access,
         "gunicorn.access": _level_access,
     }
+
     problem_loggers = {
         "django": _level_up,
         "django.db": _level_up,
@@ -518,12 +520,16 @@ class LogConfiguration:
                 "delay": True,
             }
 
+        if not handler_name:
+            return
         if handler_name not in self.handlers:
             self.handlers[handler_name] = handler
-            if logger == "ROOT":
-                self.root["handlers"].append(handler_name)
-            else:
-                self.loggers[logger]["handlers"].append(handler_name)
+        if logger == "ROOT":
+            target = self.root
+        else:
+            target = self.loggers[logger]
+        if handler_name not in target["handlers"]:
+            target["handlers"].append(handler_name)
 
     @staticmethod
     def get_smart_command_name(module_name, argv, excluded_commands=None):
