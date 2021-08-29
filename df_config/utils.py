@@ -210,6 +210,7 @@ def send_file(
     :param force_download: always force the client to download the file.
     :param attachment_filename: filename used in the "Content-Disposition" header (when used)
     :param chunk_size: size of chunks for large files. Useful at least for unittests
+    :param etag: ETag header to add to the response
     :rtype: :class:`django.http.response.StreamingHttpResponse` or :class:`django.http.response.HttpResponse`
     """
     if mimetype is None:
@@ -260,6 +261,7 @@ def send_file(
     if settings.USE_X_SEND_FILE and not ranges:
         response = HttpResponse(content_type=mimetype)
         response["X-SENDFILE"] = filepath
+        response["Content-Length"] = str(content_size)
     elif settings.X_ACCEL_REDIRECT and not ranges:
         for dirpath, alias_url in settings.X_ACCEL_REDIRECT:
             dirpath = os.path.abspath(dirpath)
@@ -268,6 +270,7 @@ def send_file(
                 response["X-Accel-Redirect"] = os.path.join(
                     alias_url, os.path.relpath(filepath, dirpath)
                 )
+                response["Content-Length"] = str(content_size)
                 break
     if response is None:
         fileobj = open(filepath, "rb")
