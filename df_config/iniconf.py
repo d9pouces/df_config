@@ -82,22 +82,6 @@ REDIS_MAPPING = [
 
 CELERY_MAPPING = [
     IntegerConfigField(
-        "websocket.db",
-        "WEBSOCKET_REDIS_DB",
-        help_str="Database number of the Redis websocket DB",
-    ),
-    CharConfigField(
-        "websocket.host", "WEBSOCKET_REDIS_HOST", help_str="Redis websocket DB host"
-    ),
-    CharConfigField(
-        "websocket.password",
-        "WEBSOCKET_REDIS_PASSWORD",
-        help_str="Redis websocket DB password (if required)",
-    ),
-    IntegerConfigField(
-        "websocket.port", "WEBSOCKET_REDIS_PORT", help_str="Redis websocket DB port"
-    ),
-    IntegerConfigField(
         "celery.db",
         "CELERY_DB",
         help_str="Database number of the Redis Celery DB\n"

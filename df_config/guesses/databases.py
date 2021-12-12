@@ -17,9 +17,11 @@ import os
 import re
 from urllib.parse import urlparse, urlencode
 
+from django.core.exceptions import ImproperlyConfigured
 from pkg_resources import DistributionNotFound, get_distribution
 
 from df_config.checks import missing_package, settings_check_results
+from df_config.utils import is_package_present
 
 _default_database_engines = {
     "mysql": "django.db.backends.mysql",
@@ -62,7 +64,9 @@ def database_engine(settings_dict):
                 get_distribution("pymysql")
             except DistributionNotFound:
                 settings_check_results.append(
-                    missing_package("mysqlclient or pymysql", " to use MySQL or MariaDB database")
+                    missing_package(
+                        "mysqlclient or pymysql", " to use MySQL or MariaDB database"
+                    )
                 )
     return engine
 
@@ -120,7 +124,12 @@ class RedisSmartSetting:
     _config_values = ["PROTOCOL", "HOST", "PORT", "DB", "PASSWORD"]
 
     def __init__(
-        self, prefix="", env_variable="REDIS_URL", fmt="url", extra_values=None, only_redis: bool=True
+        self,
+        prefix="",
+        env_variable="REDIS_URL",
+        fmt="url",
+        extra_values=None,
+        only_redis: bool = True,
     ):
         """Build Redis connection parameters from a set of settings:
             %(prefix)sPROTOCOL, %(prefix)sHOST, %(prefix)sPORT, %(prefix)sDB, %(prefix)sPASSWORD.
@@ -204,7 +213,9 @@ class RedisSmartSetting:
 
 cache_redis_url = RedisSmartSetting(prefix="CACHE_", fmt="url")
 celery_broker_url = RedisSmartSetting(prefix="CELERY_", fmt="url", only_redis=False)
-celery_result_url = RedisSmartSetting(prefix="CELERY_RESULT_", fmt="url", only_redis=False)
+celery_result_url = RedisSmartSetting(
+    prefix="CELERY_RESULT_", fmt="url", only_redis=False
+)
 session_redis_dict = RedisSmartSetting(
     prefix="SESSION_REDIS_", fmt="dict", extra_values={"prefix": "session"}
 )
@@ -223,27 +234,39 @@ def cache_setting(settings_dict):
     :return:
     """
     parsed_url = urlparse(settings_dict["CACHE_URL"])
+    django_version = get_complete_version()
     if settings_dict["DEBUG"]:
         return {"default": {"BACKEND": "django.core.cache.backends.dummy.DummyCache"}}
-    elif settings_dict["USE_REDIS_CACHE"] and parsed_url.scheme == "redis":
+    elif django_version >= (4, 0) and parsed_url.scheme == "redis":
         return {
             "default": {
-                "BACKEND": "django_redis.cache.RedisCache",
+                "BACKEND": "django.core.cache.backends.redis.RedisCache",
                 "LOCATION": "{CACHE_URL}",
-                "OPTIONS": {"CLIENT_CLASS": "django_redis.client.DefaultClient"},
             }
         }
+    elif parsed_url.scheme == "redis":
+        if is_package_present("django_redis"):
+            return {
+                "default": {
+                    "BACKEND": "django_redis.cache.RedisCache",
+                    "LOCATION": "{CACHE_URL}",
+                    "OPTIONS": {"CLIENT_CLASS": "django_redis.client.DefaultClient"},
+                }
+            }
     elif parsed_url.scheme == "memcache":
+        if django_version >= (3, 2) and is_package_present("pymemcache"):
+            backend = "django.core.cache.backends.memcached.PyMemcacheCache"
+        elif django_version >= (3, 2) and is_package_present("pylibmc"):
+            backend = "django.core.cache.backends.memcached.PyLibMCCache"
+        elif is_package_present("memcache"):
+            backend = "django.core.cache.backends.memcached.MemcachedCache"
+        else:
+            raise ImproperlyConfigured("Please install 'pylibmc' package before using memcache engine.")
         location = "%s:%s" % (
             parsed_url.hostname or "localhost",
             parsed_url.port or 11211,
         )
-        return {
-            "default": {
-                "BACKEND": "django.core.cache.backends.memcached.MemcachedCache",
-                "LOCATION": location,
-            }
-        }
+        return {"default": {"BACKEND": backend, "LOCATION": location,}}
     return {
         "default": {
             "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
@@ -252,4 +275,4 @@ def cache_setting(settings_dict):
     }
 
 
-cache_setting.required_settings = ["USE_REDIS_CACHE", "DEBUG", "CACHE_URL"]
+cache_setting.required_settings = ["DEBUG", "CACHE_URL"]

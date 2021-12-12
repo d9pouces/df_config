@@ -106,13 +106,6 @@ from df_config.guesses.staticfiles import (
 )
 from df_config.utils import guess_version, is_package_present
 
-try:
-    import django_redis  # does not work with is_package_present (???)
-
-    USE_REDIS_CACHE = True
-except ImportError:
-    django_redis = None
-    USE_REDIS_CACHE = False
 USE_CELERY = is_package_present("celery")
 USE_REDIS_SESSIONS = is_package_present("redis_sessions")
 USE_PIPELINE = is_package_present("pipeline")
@@ -138,7 +131,7 @@ CSRF_COOKIE_HTTPONLY = False
 CSRF_COOKIE_NAME = CallableSetting(CookieName("csrftoken"))
 CSRF_COOKIE_SAMESITE = "Lax"
 CSRF_COOKIE_SECURE = SettingReference("USE_SSL")
-CSRF_TRUSTED_ORIGINS = ["{SERVER_NAME}", "{SERVER_NAME}:{SERVER_PORT}"]
+CSRF_TRUSTED_ORIGINS = ["{SERVER_BASE_URL}", "{SERVER_NAME}", "{SERVER_NAME}:{SERVER_PORT}"]
 DATABASES = CallableSetting(databases)
 
 DEBUG = False
@@ -543,13 +536,6 @@ CACHE_HOST = "localhost"  # aliased in settings.ini as "[cache]host"
 CACHE_PORT = 6379  # aliased in settings.ini as "[cache]port"
 CACHE_DB = 2  # aliased in settings.ini as "[cache]db"
 CACHE_PASSWORD = None  # aliased in settings.ini as "[cache]password"
-
-# websockets
-WEBSOCKET_REDIS_PROTOCOL = "redis"
-WEBSOCKET_REDIS_HOST = "localhost"  # aliased in settings.ini as "[websocket]host"
-WEBSOCKET_REDIS_PORT = 6379  # aliased in settings.ini as "[websocket]port"
-WEBSOCKET_REDIS_DB = 3  # aliased in settings.ini as "[websocket]db"
-WEBSOCKET_REDIS_PASSWORD = None  # aliased in settings.ini as "[websocket]password"
 
 # celery
 CELERY_PROTOCOL = "redis"
