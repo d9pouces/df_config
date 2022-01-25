@@ -391,9 +391,9 @@ web_server.required_settings = []
 
 def csp_connect(settings_dict) -> List[str]:
     values = ["'self'"]
-    if settings_dict["USE_SSL"] and settings_dict["USE_WEBSOCKETS"]:
+    if settings_dict.get("USE_SSL") and settings_dict.get("USE_WEBSOCKETS"):
         values.append("wss://%(SERVER_NAME)s:%(SERVER_PORT)s" % settings_dict)
-    elif settings_dict["USE_WEBSOCKETS"]:
+    elif settings_dict.get("USE_WEBSOCKETS"):
         values.append("ws://%(SERVER_NAME)s:%(SERVER_PORT)s" % settings_dict)
     return values
 
