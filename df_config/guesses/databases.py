@@ -16,7 +16,7 @@
 import os
 import re
 from urllib.parse import urlparse, urlencode
-
+from django.utils.version import get_complete_version
 from django.core.exceptions import ImproperlyConfigured
 from pkg_resources import DistributionNotFound, get_distribution
 
@@ -223,7 +223,6 @@ websocket_redis_dict = RedisSmartSetting(prefix="WEBSOCKET_REDIS_", fmt="dict")
 websocket_redis_channels = RedisSmartSetting(prefix="WEBSOCKET_REDIS_", fmt="channels")
 
 
-# noinspection PyUnresolvedReferences
 def cache_setting(settings_dict):
     """Automatically compute cache settings:
       * if debug mode is set, then caching is disabled
@@ -238,6 +237,7 @@ def cache_setting(settings_dict):
     if settings_dict["DEBUG"]:
         return {"default": {"BACKEND": "django.core.cache.backends.dummy.DummyCache"}}
     elif django_version >= (4, 0) and parsed_url.scheme == "redis":
+        # noinspection PyUnresolvedReferences
         return {
             "default": {
                 "BACKEND": "django.core.cache.backends.redis.RedisCache",
@@ -246,6 +246,7 @@ def cache_setting(settings_dict):
         }
     elif parsed_url.scheme == "redis":
         if is_package_present("django_redis"):
+            # noinspection PyUnresolvedReferences
             return {
                 "default": {
                     "BACKEND": "django_redis.cache.RedisCache",
