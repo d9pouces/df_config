@@ -1,7 +1,7 @@
 # ##############################################################################
 #  This file is part of df_config                                              #
 #                                                                              #
-#  Copyright (C) 2020 Matthieu Gallet <github@19pouces.net>                    #
+#  Copyright (C) 2020 Matthieu Gallet <df_config@19pouces.net>                    #
 #  All Rights Reserved                                                         #
 #                                                                              #
 #  You may use, distribute and modify this code under the                      #
@@ -264,6 +264,7 @@ WEBSOCKET_TOPIC_SERIALIZER = "df_websockets.topics.serialize_topic"
 WEBSOCKET_SIGNAL_ENCODER = "django.core.serializers.json.DjangoJSONEncoder"
 WEBSOCKET_REDIS_PREFIX = "ws"
 WEBSOCKET_REDIS_EXPIRE = 36000
+
 WINDOW_INFO_MIDDLEWARES = [
     "df_websockets.ws_middleware.WindowKeyMiddleware",
     "df_websockets.ws_middleware.DjangoAuthMiddleware",
@@ -553,6 +554,13 @@ CELERY_RESULT_PORT = SettingReference("CELERY_PORT")
 CELERY_RESULT_DB = SettingReference("CELERY_DB")
 CELERY_RESULT_PASSWORD = SettingReference("CELERY_PASSWORD")
 CELERY_RESULT_USERNAME = SettingReference("CELERY_USERNAME")
+
+# df_websockets
+WEBSOCKET_REDIS_PROTOCOL = "redis"
+WEBSOCKET_REDIS_HOST = "localhost"
+WEBSOCKET_REDIS_PORT = 6379
+WEBSOCKET_REDIS_DB = 1
+WEBSOCKET_REDIS_PASSWORD = None
 
 # sentry.io
 USE_SENTRY = CallableSetting(use_sentry)

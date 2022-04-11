@@ -2,7 +2,7 @@
 # ##############################################################################
 #  This file is part of df_websockets                                          #
 #                                                                              #
-#  Copyright (C) 2020 Matthieu Gallet <github@19pouces.net>                    #
+#  Copyright (C) 2020 Matthieu Gallet <df_config@19pouces.net>                    #
 #  All Rights Reserved                                                         #
 #                                                                              #
 #  You may use, distribute and modify this code under the                      #
