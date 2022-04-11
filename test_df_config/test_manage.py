@@ -13,7 +13,9 @@
 #  or https://cecill.info/licences/Licence_CeCILL-B_V1-fr.txt (French)         #
 #                                                                              #
 # ##############################################################################
+import io
 import os
+import sys
 from unittest import TestCase
 
 from df_config.manage import (
@@ -64,6 +66,8 @@ class TestSetEnv(TestCase):
 
     def test_manage(self):
         with EnvPatch(**{MODULE_VARIABLE_NAME: "df_config"}):
+            sys.stdout = io.StringIO()
+            sys.stderr = io.StringIO()
             manage(["df-config-ctl"])
 
     def test_get_merger_from_env(self):
