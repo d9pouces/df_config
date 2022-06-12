@@ -76,7 +76,7 @@ from df_config.guesses.log import log_configuration
 from df_config.guesses.misc import (
     DefaultListenAddress,
     allowed_hosts,
-    excluded_django_commands,
+    csrf_trusted_origins, excluded_django_commands,
     project_name,
     required_packages,
     secure_hsts_seconds,
@@ -131,7 +131,7 @@ CSRF_COOKIE_HTTPONLY = False
 CSRF_COOKIE_NAME = CallableSetting(CookieName("csrftoken"))
 CSRF_COOKIE_SAMESITE = "Lax"
 CSRF_COOKIE_SECURE = SettingReference("USE_SSL")
-CSRF_TRUSTED_ORIGINS = ["{SERVER_BASE_URL}", "{SERVER_NAME}", "{SERVER_NAME}:{SERVER_PORT}"]
+CSRF_TRUSTED_ORIGINS = CallableSetting(csrf_trusted_origins)
 DATABASES = CallableSetting(databases)
 
 DEBUG = False

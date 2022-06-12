@@ -100,6 +100,17 @@ def allowed_hosts(settings_dict):
 allowed_hosts.required_settings = ["SERVER_NAME", "LISTEN_ADDRESS"]
 
 
+def csrf_trusted_origins(settings_dict):
+    # noinspection PyUnresolvedReferences
+    from django import VERSION as version
+    if version[0] >= 4:
+        return [settings_dict["SERVER_BASE_URL"]]
+    return [f"{settings_dict['SERVER_NAME']}", f"{settings_dict['SERVER_NAME']}:{settings_dict['SERVER_PORT']}"]
+
+
+csrf_trusted_origins.required_settings = ["SERVER_NAME", "SERVER_BASE_URL", "SERVER_PORT"]
+
+
 def secure_hsts_seconds(settings_dict):
     if settings_dict["USE_SSL"]:
         return 86400 * 31 * 12
@@ -134,9 +145,9 @@ def url_parse_server_port(settings_dict):
 
     """
     return (
-        urlparse(settings_dict["SERVER_BASE_URL"]).port
-        or (settings_dict["USE_SSL"] and 443)
-        or 80
+            urlparse(settings_dict["SERVER_BASE_URL"]).port
+            or (settings_dict["USE_SSL"] and 443)
+            or 80
     )
 
 
