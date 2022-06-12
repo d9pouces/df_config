@@ -18,7 +18,9 @@ import re
 from typing import Dict, List
 from urllib.parse import urlparse
 
+# noinspection PyPackageRequirements
 from django.core.checks import Warning
+# noinspection PyPackageRequirements
 from django.utils.crypto import get_random_string
 from pkg_resources import DistributionNotFound, VersionConflict, get_distribution
 
@@ -101,9 +103,9 @@ allowed_hosts.required_settings = ["SERVER_NAME", "LISTEN_ADDRESS"]
 
 
 def csrf_trusted_origins(settings_dict):
-    # noinspection PyUnresolvedReferences
-    from django import VERSION as version
-    if version[0] >= 4:
+    # noinspection PyPackageRequirements
+    from django import VERSION
+    if VERSION[0] >= 4:
         return [settings_dict["SERVER_BASE_URL"]]
     return [f"{settings_dict['SERVER_NAME']}", f"{settings_dict['SERVER_NAME']}:{settings_dict['SERVER_PORT']}"]
 
