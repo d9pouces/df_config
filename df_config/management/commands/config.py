@@ -39,7 +39,7 @@ class Command(BaseCommand):
         "show the current configuration."
         'Can display as python file ("config python") or as .ini file ("config ini"). Use -v 2 to display more info.'
     )
-    requires_system_checks = False
+    requires_system_checks = []
     options = {
         "python": "display the current config as Python module",
         "ini": "display the current config as .ini file",

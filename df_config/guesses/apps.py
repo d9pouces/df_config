@@ -84,7 +84,7 @@ class InstalledApps:
                     "smart_selects",
                 ],
             ),
-            ("USE_DEBUG_TOOLBAR", ["'debug_toolbar.apps.DebugToolbarConfig'"]),
+            ("USE_DEBUG_TOOLBAR", ["debug_toolbar.apps.DebugToolbarConfig"]),
             ("USE_PIPELINE", ["pipeline"]),
             ("USE_PAM_AUTHENTICATION", ["django_pam"]),
         ]
