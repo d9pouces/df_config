@@ -369,11 +369,10 @@ def use_sentry(settings_dict: Dict) -> bool:
     # noinspection PyUnresolvedReferences
     from sentry_sdk.integrations.django import DjangoIntegration
 
-    # noinspection PyUnresolvedReferences
-    from sentry_sdk.integrations.celery import CeleryIntegration
-
     integrations = [DjangoIntegration()]
     if settings_dict["USE_CELERY"]:
+        # noinspection PyUnresolvedReferences
+        from sentry_sdk.integrations.celery import CeleryIntegration
         integrations.append(CeleryIntegration())
     sentry_sdk.init(
         dsn=sentry_dsn,
