@@ -15,9 +15,10 @@
 # ##############################################################################
 import os
 import re
-from urllib.parse import urlparse, urlencode
-from django.utils.version import get_complete_version
+from urllib.parse import urlencode, urlparse
+
 from django.core.exceptions import ImproperlyConfigured
+from django.utils.version import get_complete_version
 from pkg_resources import DistributionNotFound, get_distribution
 
 from df_config.checks import missing_package, settings_check_results
@@ -75,8 +76,11 @@ database_engine.required_settings = ["DATABASE_ENGINE"]
 
 
 def databases(settings_dict):
-    """Build a complete DATABASES setting, taking into account the `DATABASE_URL` environment variable if present
-     (used on the Heroku platform)."""
+    """Build a complete DATABASES setting.
+
+    If present, Takes the `DATABASE_URL` environment variable into account
+    (used on the Heroku platform).
+    """
     engine = database_engine(settings_dict)
     name = settings_dict["DATABASE_NAME"]
     user = settings_dict["DATABASE_USER"]
@@ -189,7 +193,11 @@ class RedisSmartSetting:
             # noinspection PyUnresolvedReferences
             result = {
                 "BACKEND": "channels_redis.core.RedisChannelLayer",
-                "CONFIG": {"hosts": [config], "capacity": 5000, "expiry": 10,},
+                "CONFIG": {
+                    "hosts": [config],
+                    "capacity": 5000,
+                    "expiry": 10,
+                },
             }
             return result
         elif self.fmt == "dict":
@@ -235,7 +243,7 @@ def cache_setting(settings_dict):
     parsed_url = urlparse(settings_dict["CACHE_URL"])
     django_version = get_complete_version()
     if settings_dict["DEBUG"]:
-        return {"default": {"BACKEND": "django.core.cache.backends.dummy.DummyCache"}}
+        return {"default": {"BACKEND": "django.core.cache.backends.locmem.LocMemCache"}}
     elif django_version >= (4, 0) and parsed_url.scheme == "redis":
         # noinspection PyUnresolvedReferences
         return {
@@ -262,12 +270,19 @@ def cache_setting(settings_dict):
         elif is_package_present("memcache"):
             backend = "django.core.cache.backends.memcached.MemcachedCache"
         else:
-            raise ImproperlyConfigured("Please install 'pylibmc' package before using memcache engine.")
+            raise ImproperlyConfigured(
+                "Please install 'pylibmc' package before using memcache engine."
+            )
         location = "%s:%s" % (
             parsed_url.hostname or "localhost",
             parsed_url.port or 11211,
         )
-        return {"default": {"BACKEND": backend, "LOCATION": location,}}
+        return {
+            "default": {
+                "BACKEND": backend,
+                "LOCATION": location,
+            }
+        }
     return {
         "default": {
             "BACKEND": "django.core.cache.backends.locmem.LocMemCache",

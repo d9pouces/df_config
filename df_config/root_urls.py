@@ -63,8 +63,11 @@ urlpatterns = [
 urlpatterns += common_static_urls()
 
 if settings.DF_URL_CONF:
-    extra_urls = import_string(settings.DF_URL_CONF)
-    urlpatterns += list(extra_urls)
+    try:
+        extra_urls = import_string(settings.DF_URL_CONF)
+        urlpatterns += list(extra_urls)
+    except ModuleNotFoundError:
+        pass
 
 if settings.USE_ALL_AUTH:
     # noinspection PyUnresolvedReferences
