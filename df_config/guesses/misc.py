@@ -15,21 +15,22 @@
 # ##############################################################################
 import os
 import re
-from typing import Dict, List
+from typing import Dict, Iterable, List
 from urllib.parse import urlparse
 
 # noinspection PyPackageRequirements
 from django.core.checks import Warning
+
 # noinspection PyPackageRequirements
 from django.utils.crypto import get_random_string
 from pkg_resources import DistributionNotFound, VersionConflict, get_distribution
 
 from df_config.checks import missing_package, settings_check_results
-from df_config.config.dynamic_settings import DynamicSettting, AutocreateFileContent
+from df_config.config.dynamic_settings import AutocreateFileContent, DynamicSettting
 from df_config.utils import is_package_present
 
 
-def smart_hostname(settings_dict):
+def smart_hostname(settings_dict) -> str:
     """
     By default, use the listen address and port as server name.
     Use the "HEROKU_APP_NAME" environment variable if present.
@@ -38,15 +39,15 @@ def smart_hostname(settings_dict):
     :return:
     """
     if "HEROKU_APP_NAME" in os.environ:
-        return "https://%s.herokuapp.com/" % os.environ["HEROKU_APP_NAME"]
-    return "http://%s/" % settings_dict["LISTEN_ADDRESS"]
+        return "https://%(HEROKU_APP_NAME)s.herokuapp.com/" % os.environ
+    return "http://%(LISTEN_ADDRESS)s/" % settings_dict
 
 
 smart_hostname.required_settings = ["LISTEN_ADDRESS"]
 
 
 class DefaultListenAddress(DynamicSettting):
-    def get_value(self, merger, provider_name: str, setting_name: str):
+    def get_value(self, merger, provider_name: str, setting_name: str) -> str:
         port = os.environ.get("PORT", "")
         if re.match(r"^([1-9]\d*)$", port) and 1 <= int(port) <= 65535:
             return "0.0.0.0:%s" % port
@@ -90,7 +91,7 @@ template_setting.required_settings = [
 ]
 
 
-def allowed_hosts(settings_dict):
+def allowed_hosts(settings_dict) -> List[str]:
     result = {"127.0.0.1", "::1", "localhost"}
     listened_ip, sep, port = settings_dict["LISTEN_ADDRESS"].rpartition(":")
     if sep == ":" and listened_ip not in ("::", "0.0.0.0"):
@@ -102,18 +103,37 @@ def allowed_hosts(settings_dict):
 allowed_hosts.required_settings = ["SERVER_NAME", "LISTEN_ADDRESS"]
 
 
-def csrf_trusted_origins(settings_dict):
+def csrf_trusted_origins(settings_dict) -> List[str]:
     # noinspection PyPackageRequirements
     from django import VERSION
+
     if VERSION[0] >= 4:
-        return [settings_dict["SERVER_BASE_URL"]]
-    return [f"{settings_dict['SERVER_NAME']}", f"{settings_dict['SERVER_NAME']}:{settings_dict['SERVER_PORT']}"]
+        # do not append a slash at the end, so cannot reuse SERVER_BASE_URL
+        if settings_dict["SERVER_PORT"] == 443 and settings_dict["USE_SSL"]:
+            return [
+                f"https://{settings_dict['SERVER_NAME']}",
+                f"https://{settings_dict['SERVER_NAME']}:443",
+            ]
+        elif settings_dict["SERVER_PORT"] == 80 and not settings_dict["USE_SSL"]:
+            return [
+                f"http://{settings_dict['SERVER_NAME']}",
+                f"http://{settings_dict['SERVER_NAME']}:80",
+            ]
+        elif settings_dict["USE_SSL"]:
+            return [
+                f"https://{settings_dict['SERVER_NAME']}:{settings_dict['SERVER_PORT']}"
+            ]
+        return [f"http://{settings_dict['SERVER_NAME']}:{settings_dict['SERVER_PORT']}"]
+    return [
+        f"{settings_dict['SERVER_NAME']}",
+        f"{settings_dict['SERVER_NAME']}:{settings_dict['SERVER_PORT']}",
+    ]
 
 
-csrf_trusted_origins.required_settings = ["SERVER_NAME", "SERVER_BASE_URL", "SERVER_PORT"]
+csrf_trusted_origins.required_settings = ["SERVER_NAME", "SERVER_PORT", "USE_SSL"]
 
 
-def secure_hsts_seconds(settings_dict):
+def secure_hsts_seconds(settings_dict) -> int:
     if settings_dict["USE_SSL"]:
         return 86400 * 31 * 12
     return 0
@@ -122,20 +142,20 @@ def secure_hsts_seconds(settings_dict):
 secure_hsts_seconds.required_settings = ["USE_SSL"]
 
 
-def url_parse_server_name(settings_dict):
+def url_parse_server_name(settings_dict) -> str:
     """Return the public hostname, given the public base URL
 
     >>> url_parse_server_name({'SERVER_BASE_URL': 'https://demo.example.org/'})
     'demo.example.org'
 
     """
-    return urlparse(settings_dict["SERVER_BASE_URL"]).hostname
+    return urlparse(settings_dict["SERVER_BASE_URL"]).hostname or "localhost"
 
 
 url_parse_server_name.required_settings = ["SERVER_BASE_URL"]
 
 
-def url_parse_server_port(settings_dict):
+def url_parse_server_port(settings_dict) -> int:
     """Return the public port, given the public base URL
 
     >>> url_parse_server_port({'SERVER_BASE_URL': 'https://demo.example.org/', 'USE_SSL': True})
@@ -146,17 +166,15 @@ def url_parse_server_port(settings_dict):
     8010
 
     """
-    return (
-            urlparse(settings_dict["SERVER_BASE_URL"]).port
-            or (settings_dict["USE_SSL"] and 443)
-            or 80
-    )
+    port = urlparse(settings_dict["SERVER_BASE_URL"]).port
+    https_port = settings_dict["USE_SSL"] and 443
+    return port or https_port or 80
 
 
 url_parse_server_port.required_settings = ["SERVER_BASE_URL", "USE_SSL"]
 
 
-def url_parse_server_protocol(settings_dict):
+def url_parse_server_protocol(settings_dict) -> str:
     """Return the public HTTP protocol, given the public base URL
 
     >>> url_parse_server_protocol({'USE_SSL': True})
@@ -172,7 +190,7 @@ def url_parse_server_protocol(settings_dict):
 url_parse_server_protocol.required_settings = ["USE_SSL"]
 
 
-def url_parse_prefix(settings_dict):
+def url_parse_prefix(settings_dict) -> str:
     """Return the public URL prefix, given the public base URL
 
     >>> url_parse_prefix({'SERVER_BASE_URL': 'https://demo.example.org/demo/'})
@@ -192,7 +210,7 @@ def url_parse_prefix(settings_dict):
 url_parse_prefix.required_settings = ["SERVER_BASE_URL"]
 
 
-def url_parse_ssl(settings_dict):
+def url_parse_ssl(settings_dict) -> bool:
     """Return True if the public URL uses https
 
     >>> url_parse_ssl({'SERVER_BASE_URL': 'https://demo.example.org/demo/'})
@@ -207,14 +225,14 @@ def url_parse_ssl(settings_dict):
 url_parse_ssl.required_settings = ["SERVER_BASE_URL"]
 
 
-def use_x_forwarded_for(settings_dict):
+def use_x_forwarded_for(settings_dict) -> bool:
     """Return `True` if this server is assumed to be behind a reverse proxy.
      Heuristic: the external port (in SERVER_PORT) is different from the actually listened port (in LISTEN_ADDRESS).
 
-     >>> use_x_forwarded_for({'SERVER_PORT': 8000, 'LISTEN_ADDRESS': 'localhost:8000'})
-     False
-     >>> use_x_forwarded_for({'SERVER_PORT': 443, 'LISTEN_ADDRESS': 'localhost:8000'})
-     True
+    >>> use_x_forwarded_for({'SERVER_PORT': 8000, 'LISTEN_ADDRESS': 'localhost:8000'})
+    False
+    >>> use_x_forwarded_for({'SERVER_PORT': 443, 'LISTEN_ADDRESS': 'localhost:8000'})
+    True
 
     """
     listen_address, sep, listen_port = settings_dict["LISTEN_ADDRESS"].rpartition(":")
@@ -226,16 +244,11 @@ def use_x_forwarded_for(settings_dict):
 use_x_forwarded_for.required_settings = ["SERVER_PORT", "LISTEN_ADDRESS"]
 
 
-def project_name(settings_dict):
-    """Transform the base module name into a nicer project name
-
+def project_name(settings_dict) -> str:
+    """Transform the base module name into a nicer project name.
     >>> project_name({'DF_MODULE_NAME': 'my_project'})
     'My Project'
-
-    :param settings_dict:
-    :return:
     """
-
     return " ".join(
         [
             x.capitalize()
@@ -251,21 +264,22 @@ class AutocreateSecretKey(AutocreateFileContent):
     def __init__(self, filename):
         super().__init__(filename, generate_secret_key, mode=0o600, length=60)
 
-    def get_value(self, merger, provider_name: str, setting_name: str):
+    def get_value(self, merger, provider_name: str, setting_name: str) -> str:
         if "SECRET_KEY" in os.environ:
             return os.environ["SECRET_KEY"]
         return super().get_value(merger, provider_name, setting_name)
 
 
-def generate_secret_key(django_ready, length=60):
+def generate_secret_key(django_ready, length=60) -> str:
     if not django_ready:
         return get_random_string(length=length)
+    # noinspection PyPackageRequirements
     from django.conf import settings
 
     return settings.SECRET_KEY
 
 
-def required_packages(settings_dict):
+def required_packages(settings_dict) -> List[str]:
     """
     Return a sorted list of the Python packages required by the current project (with their dependencies).
     A warning is added for each missing package.
@@ -274,7 +288,7 @@ def required_packages(settings_dict):
     :return:
     """
 
-    def get_requirements(package_name, parent=None):
+    def get_requirements(package_name, parent=None) -> Iterable[str]:
         try:
             yield str(package_name)
             d = get_distribution(package_name)
@@ -373,6 +387,7 @@ def use_sentry(settings_dict: Dict) -> bool:
     if settings_dict["USE_CELERY"]:
         # noinspection PyUnresolvedReferences
         from sentry_sdk.integrations.celery import CeleryIntegration
+
         integrations.append(CeleryIntegration())
     sentry_sdk.init(
         dsn=sentry_dsn,
