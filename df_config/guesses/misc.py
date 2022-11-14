@@ -38,7 +38,9 @@ def smart_hostname(settings_dict) -> str:
     :param settings_dict:
     :return:
     """
-    if "HEROKU_APP_NAME" in os.environ:
+    if "SERVER_URL" in os.environ:
+        return os.environ["SERVER_URL"]
+    elif "HEROKU_APP_NAME" in os.environ:
         return "https://%(HEROKU_APP_NAME)s.herokuapp.com/" % os.environ
     return "http://%(LISTEN_ADDRESS)s/" % settings_dict
 
