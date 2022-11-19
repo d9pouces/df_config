@@ -15,15 +15,12 @@ settings_check_results = []
 
 def missing_package(package_name, desc=""):
     if hasattr(sys, "real_prefix"):  # inside a virtualenv
-        cmd = "Try 'python -m pip install %s' to install it." % package_name
+        cmd = f"Try 'python -m pip install {package_name}' to install it."
     elif __file__.startswith(os.environ.get("HOME", "/home")):
-        cmd = "Try 'python3 -m pip install --user %s' to install it." % package_name
+        cmd = f"Try 'python3 -m pip install --user {package_name}' to install it."
     else:
-        cmd = "Try 'sudo python3 -m pip install %s' to install it." % package_name
+        cmd = f"Try 'sudo python3 -m pip install {package_name}' to install it."
     return Warning(
-        "Python package '%s' is required%s. %s" % (package_name, desc, cmd),
+        f"Python package '{package_name}' is required{desc}. {cmd}",
         obj="configuration",
     )
-
-
-

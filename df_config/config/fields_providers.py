@@ -14,14 +14,25 @@
 #                                                                              #
 # ##############################################################################
 from importlib import import_module
-from typing import List
+from typing import Any, List, Optional, Tuple
 
 from df_config.config.fields import ConfigField
 
 
+def import_attribute(value: str, default=None) -> Tuple[Optional[Any], bool]:
+    if value is None:
+        return default, False
+    module_name, sep, attribute_name = value.partition(":")
+    try:
+        module = import_module(module_name, package=None)
+        return getattr(module, attribute_name, default), True
+    except ImportError:
+        return default, False
+
+
 class ConfigFieldsProvider:
     """Provides a list of :class:`df_config.config.fields.ConfigField`.
-Used for retrieving settings from a config file.
+    Used for retrieving settings from a config file.
     """
 
     name = None
@@ -36,32 +47,20 @@ Used for retrieving settings from a config file.
 
 
 class PythonConfigFieldsProvider(ConfigFieldsProvider):
-    """Provide a list of :class:`df_config.config.fields.ConfigField` from an attribute in a Python module. """
+    """Provide a list of :class:`df_config.config.fields.ConfigField` from an attribute in a Python module."""
 
     name = "Python attribute"
 
     def __init__(self, value=None):
-        if value is None:
-            module_name, attribute_name = None, None
-        else:
-            module_name, sep, attribute_name = value.partition(":")
-        self.module_name = module_name
-        self.attribute_name = attribute_name
-        self.module = None
-        if module_name is not None:
-            try:
-                self.module = import_module(module_name, package=None)
-            except ImportError:
-                pass
+        self.attribute_name = value or "df_config.iniconf:EMPTY_INI_MAPPING"
+        self.mapping, self.valid = import_attribute(self.attribute_name, [])
 
     def is_valid(self) -> bool:
-        return self.module is not None
+        return self.valid
 
     def get_config_fields(self):
         """Return the list that is defined in the module by the attribute name"""
-        if self.module:
-            return getattr(self.module, self.attribute_name, [])
-        return []
+        return self.mapping
 
     def __str__(self):
-        return "%s:%s" % (self.module_name, self.attribute_name)
+        return self.attribute_name

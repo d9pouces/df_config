@@ -217,10 +217,10 @@ class ChoiceConfigFile(ConfigField):
     def __init__(self, name, setting_name, choices, help_str="", **kwargs):
         def from_str(value):
             if value not in choices:
-                valid = ", ".join(['"%s"' % x for x in choices])
+                valid = ", ".join([f'"{x}"' for x in choices])
                 settings_check_results.append(
                     Error(
-                        'Invalid value "%s". Valid choices: %s.' % (value, valid),
+                        f'Invalid value "{value}". Valid choices: {valid}.',
                         obj="configuration",
                     )
                 )
@@ -234,9 +234,9 @@ class ChoiceConfigFile(ConfigField):
 
         valid_values = ", ".join(['"%s"' % x for x in choices])
         if help_str:
-            help_str += " Valid choices: %s" % valid_values
+            help_str += f" Valid choices: {valid_values}"
         else:
-            help_str = "Valid choices: %s" % valid_values
+            help_str = f"Valid choices: {valid_values}"
 
         super().__init__(
             name,
@@ -244,5 +244,5 @@ class ChoiceConfigFile(ConfigField):
             from_str=from_str,
             to_str=to_str,
             help_str=help_str,
-            **kwargs
+            **kwargs,
         )

@@ -49,8 +49,7 @@ def ensure_dir(path, parent=True):
 
     """
     dirname = os.path.dirname(path) if parent else path
-    if not os.path.isdir(dirname):
-        os.makedirs(dirname)
+    os.makedirs(dirname, exist_ok=True)
     return path
 
 
@@ -108,7 +107,7 @@ def get_view_from_string(view_as_str):
 
 
 class ChunkReader:
-    """ read a file object in chunks of the given size.
+    """read a file object in chunks of the given size.
 
     Return an iterator of data
 

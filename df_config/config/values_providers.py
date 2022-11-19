@@ -24,6 +24,7 @@ from io import StringIO
 from typing import Any, Iterable, Tuple
 
 from df_config.config.fields import ConfigField
+from df_config.config.fields_providers import import_attribute
 
 
 class ConfigProvider:
@@ -41,14 +42,15 @@ class ConfigProvider:
 
     def get_value(self, config_field: ConfigField):
         """Get the internal value if the config field is present in its internal values.
-Otherwise returns the current value of the config field."""
+        Otherwise returns the current value of the config field.
+        """
         raise NotImplementedError
 
     def get_extra_settings(self) -> Iterable[Tuple[str, Any]]:
         """Return all settings internally defined.
 
-
-    :return: an iterable of (setting_name, value)"""
+        :return: an iterable of (setting_name, value).
+        """
         raise NotImplementedError
 
     def is_valid(self) -> bool:
@@ -62,32 +64,37 @@ Otherwise returns the current value of the config field."""
 
 class EnvironmentConfigProvider(ConfigProvider):
     name = "Environment"
+    default_mapping = "df_config.iniconf:EMPTY_ENV_MAPPING"
 
-    def __init__(self, prefix):
+    def __init__(self, prefix, mapping: str = None):
         self.prefix = prefix
+        self.mapping_attribute = mapping
+        self.mapping, __ = import_attribute(mapping or self.default_mapping, {})
         self.exports = ""
         self.exported_values = set()
 
     def __str__(self):
         count = len(self.exported_values)
         if count <= 1:
-            return "(%s variable)" % count
-        return "(%s variables)" % count
+            return f"({count} variable)"
+        return f"({count} variables)"
 
     def has_value(self, config_field: ConfigField):
-        key = "%s%s" % (self.prefix, config_field.setting_name)
+        key = self.get_key(config_field)
         return key in os.environ
+
+    def get_key(self, config_field):
+        key = f"{self.prefix}{config_field.setting_name}"
+        key = self.mapping.get(config_field.setting_name, key)
+        return key
 
     def set_value(self, config_field, include_doc=False):
         value = config_field.to_str(config_field.value)
-        self.exports += "%s%s=%s\n" % (
-            self.prefix,
-            config_field.setting_name,
-            shlex.quote(value),
-        )
+        key = self.get_key(config_field)
+        self.exports += "%s=%s\n" % (shlex.quote(key), shlex.quote(value))
 
     def get_value(self, config_field):
-        key = "%s%s" % (self.prefix, config_field.setting_name)
+        key = self.get_key(config_field)
         if key in os.environ:
             self.exported_values.add(key)
             return config_field.from_str(os.environ[key])
@@ -123,7 +130,7 @@ class IniConfigProvider(ConfigProvider):
         return section, option
 
     def set_value(self, config_field: ConfigField, include_doc: bool = False):
-        """update the internal config file """
+        """update the internal config file"""
         section, option = self.__get_info(config_field)
         if not self.parser.has_section(section):
             self.parser.add_section(section)
@@ -142,7 +149,7 @@ class IniConfigProvider(ConfigProvider):
         return config_field.value
 
     def has_value(self, config_field: ConfigField):
-        """return `True` if the option is defined in the config file """
+        """return `True` if the option is defined in the config file"""
         section, option = self.__get_info(config_field)
         return self.parser.has_option(section=section, option=option)
 
@@ -151,11 +158,11 @@ class IniConfigProvider(ConfigProvider):
         return []
 
     def is_valid(self):
-        """Return `True` if the config file exists """
+        """Return `True` if the config file exists"""
         return os.path.isfile(self.config_file)
 
     def to_str(self):
-        """Display the config file """
+        """Display the config file"""
         fd = StringIO()
         self.parser.write(fd)
         return fd.getvalue()
@@ -190,7 +197,7 @@ class PythonModuleProvider(ConfigProvider):
         return getattr(self.module, config_field.setting_name)
 
     def has_value(self, config_field):
-        """`True` if the corresponding variable is defined in the module"""
+        """Return `True` if the corresponding variable is defined in the module"""
         return self.module is not None and hasattr(
             self.module, config_field.setting_name
         )
@@ -237,7 +244,7 @@ class PythonFileProvider(PythonModuleProvider):
 
 
 class DictProvider(ConfigProvider):
-    """Use a plain Python dict as a setting provider """
+    """Use a plain Python dict as a setting provider"""
 
     name = "dict"
 
@@ -252,24 +259,24 @@ class DictProvider(ConfigProvider):
                 yield k, v
 
     def set_value(self, config_field, include_doc=False):
-        """modify the internal dict for storing the value """
+        """modify the internal dict for storing the value"""
         self.values[config_field.setting_name] = config_field.value
 
     def get_value(self, config_field):
-        """get a value from the internal dict if present """
+        """get a value from the internal dict if present"""
         return self.values.get(config_field.setting_name, config_field.value)
 
     def has_value(self, config_field):
-        """check if the value is present in the internal dict """
+        """check if the value is present in the internal dict"""
         return config_field.setting_name in self.values
 
     def __str__(self):
         return self.name
 
     def is_valid(self):
-        """always `True`"""
+        """Return always `True`"""
         return True
 
     def to_str(self):
-        """display the internal dict"""
+        """Display the internal dict"""
         return "%r" % dict(self.values)

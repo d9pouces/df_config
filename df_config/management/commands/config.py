@@ -75,7 +75,6 @@ class Command(BaseCommand):
             fd = io.StringIO()
             self.stdout = OutputWrapper(fd)
             self.style = no_style()
-
         if action == "python":
             self.show_python_config(verbosity)
         elif action == "ini":
@@ -129,12 +128,13 @@ class Command(BaseCommand):
             if not isinstance(provider, EnvironmentConfigProvider):
                 continue
             prefix = provider.prefix
+            mapping_attribute = provider.mapping_attribute
         if not prefix:
             self.stderr.write("Environment variables are not used•")
             return
         if verbosity >= 2:
             self.stdout.write(self.style.SUCCESS("# read environment variables:"))
-        provider = EnvironmentConfigProvider(prefix)
+        provider = EnvironmentConfigProvider(prefix, mapping_attribute)
         merger.write_provider(provider, include_doc=verbosity >= 2)
         self.stdout.write(provider.to_str())
 

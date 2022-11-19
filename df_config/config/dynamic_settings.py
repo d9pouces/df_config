@@ -18,8 +18,7 @@
 ===========================
 
 Allow to define settings based on references to other settings (overriden in other config files).
-
-Examples:
+Some examples are given below.
 
 .. code-block:: python
 
@@ -58,7 +57,7 @@ class DynamicSettting:
         self.value = value
 
     def get_value(self, merger, provider_name: str, setting_name: str):
-        """ Return the intepreted value
+        """Return the intepreted value.
 
         :param merger: merger object, with all interpreted settings
         :type merger: :class:`df_config.config.merger.SettingMerger`
@@ -69,26 +68,26 @@ class DynamicSettting:
 
     # noinspection PyMethodMayBeStatic
     def pre_collectstatic(self, merger, provider_name, setting_name, value):
-        """Called before the "collectstatic" command (at least the one provided by Djangofloor).
+        """Add extra commands before the "collectstatic" command (at least the one provided by Djangofloor).
         Could be used for creating public files or directories (static files, required directories...).
         """
         pass
 
     # noinspection PyMethodMayBeStatic
     def pre_migrate(self, merger, provider_name, setting_name, value):
-        """Called before the "migrate" command.
+        """Add extra commands before the "migrate" command.
         Could be used for creating private files (like the SECRET_KEY file)
         """
         pass
 
     # noinspection PyMethodMayBeStatic
     def post_collectstatic(self, merger, provider_name, setting_name, value):
-        """Called after the "collectstatic" command"""
+        """Add extra commands after the "collectstatic" command"""
         pass
 
     # noinspection PyMethodMayBeStatic
     def post_migrate(self, merger, provider_name, setting_name, value):
-        """Called after the "migrate" command"""
+        """Add extra commands  after the "migrate" command"""
         pass
 
     def __repr__(self):
@@ -105,22 +104,27 @@ class DynamicSettting:
             and sys.argv[1:2][0] in excluded_commands
         ):
             return
-        settings_check_results.append(Warning(msg, obj="configuration",))
+        settings_check_results.append(
+            Warning(
+                msg,
+                obj="configuration",
+            )
+        )
 
 
 class RawValue(DynamicSettting):
     """Return the value as-is. Since by defaults all string values are assumed to be formatted string,
-you need to use :class:`RawValue` for using values that should be formatted.
+    you need to use :class:`RawValue` for using values that should be formatted.
 
-.. code-block:: python
+    .. code-block:: python
 
-    from df_config.config.dynamic_settings import RawValue
-    SETTING_1 = '{DEBUG}'  # will be transformed to 'True' or 'False'
-    SETTING_2 = Raw('{DEBUG}')  # will be kept as  '{DEBUG}'
+        from df_config.config.dynamic_settings import RawValue
+        SETTING_1 = '{DEBUG}'  # will be transformed to 'True' or 'False'
+        SETTING_2 = Raw('{DEBUG}')  # will be kept as  '{DEBUG}'
     """
 
     def get_value(self, merger, provider_name: str, setting_name: str):
-        """ Return the non-intepreted value
+        """Return the non-intepreted value
 
         :param merger: merger object, with all interpreted settings
         :type merger: :class:`df_config.config.merger.SettingMerger`
@@ -138,7 +142,7 @@ class Path(DynamicSettting):
         self.mode = mode
 
     def get_value(self, merger, provider_name, setting_name):
-        """ Return the value
+        """Return the value
 
         :param merger: merger object, with all interpreted settings
         :type merger: :class:`df_config.config.merger.SettingMerger`
@@ -163,11 +167,11 @@ class Path(DynamicSettting):
         if os.path.exists(dirname):
             merger.stderr.write("'%s' already exists and is not a directory.")
             return
-        merger.stdout.write("Creating directory '%s'" % dirname)
+        merger.stdout.write(f"Creating directory '{dirname}'")
         try:
             os.makedirs(dirname)
         except Exception as e:
-            merger.stderr.write("Unable to create directory '%s' (%s)" % (dirname, e))
+            merger.stderr.write(f"Unable to create directory '{dirname}' ({e})")
 
     def chmod(self, merger, filename):
         if not filename or not os.path.exists(filename):
@@ -179,15 +183,16 @@ class Path(DynamicSettting):
         try:
             os.chmod(filename, self.mode)
         except Exception as e:
-            merger.stderr.write("Unable to change mode of '%s' (%s)" % (filename, e))
+            merger.stderr.write(f"Unable to change mode of '{filename}' ({e})")
 
 
 class Directory(Path):
     """Represent a directory on the filesystem, that is automatically created by the "migrate" and "collectstatic"
-    commands. The resulting value always finishes by a '/' """
+    commands. The resulting value always finishes by a '/'.
+    """
 
     def get_value(self, merger, provider_name: str, setting_name: str):
-        """ Return the value
+        """Return the value
 
         :param merger: merger object, with all interpreted settings
         :type merger: :class:`df_config.config.merger.SettingMerger`
@@ -221,7 +226,7 @@ class File(Path):
     """
 
     def get_value(self, merger, provider_name: str, setting_name: str):
-        """ Return the value
+        """Return the value
 
         :param merger: merger object, with all interpreted settings
         :type merger: :class:`df_config.config.merger.SettingMerger`
@@ -270,7 +275,7 @@ class AutocreateFileContent(File):
         use_collectstatic: bool = False,
         use_migrate: bool = True,
         *args,
-        **kwargs
+        **kwargs,
     ):
         """
 
@@ -325,7 +330,7 @@ class AutocreateFileContent(File):
             )
 
     def get_value(self, merger, provider_name: str, setting_name: str):
-        """ Return the value
+        """Return the value
 
         :param merger: merger object, with all interpreted settings
         :type merger: :class:`df_config.config.merger.SettingMerger`
@@ -354,7 +359,8 @@ class AutocreateFileContent(File):
                 excluded = set()
 
             self.add_warning(
-                "'%s' does not exist.%s" % (filename, bit), excluded,
+                "'%s' does not exist.%s" % (filename, bit),
+                excluded,
             )
             result = self.create_function(None, *self.args, **self.kwargs)
         return result
@@ -379,14 +385,13 @@ class AutocreateFileContent(File):
 
 
 class AutocreateFile(AutocreateFileContent):
-    """Represent a file name. If this file does not exist, an empty file is created by collectstatic/migrate commands
-     """
+    """Represent a file name. If this file does not exist, an empty file is created by collectstatic/migrate commands"""
 
     def __init__(self, value, mode=None, *args, **kwargs):
         super().__init__(value, lambda x: "", mode=mode, *args, **kwargs)
 
     def get_value(self, merger, provider_name: str, setting_name: str):
-        """ Return the value
+        """Return the value
 
         :param merger: merger object, with all interpreted settings
         :type merger: :class:`df_config.config.merger.SettingMerger`
@@ -430,7 +435,7 @@ class SettingReference(DynamicSettting):
         self.func = func
 
     def get_value(self, merger, provider_name: str, setting_name: str):
-        """ Return the value
+        """Return the value
 
         :param merger: merger object, with all interpreted settings
         :type merger: :class:`df_config.config.merger.SettingMerger`
@@ -486,7 +491,7 @@ class CallableSetting(DynamicSettting):
             self.required = required
 
     def get_value(self, merger, provider_name: str, setting_name: str):
-        """ Return the value
+        """Return the value
 
         :param merger: merger object, with all interpreted settings
         :type merger: :class:`df_config.config.merger.SettingMerger`

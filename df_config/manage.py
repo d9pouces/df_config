@@ -41,7 +41,7 @@ def set_env(module_name: str = None, argv: List[str] = None):
 
     """
     if MODULE_VARIABLE_NAME not in os.environ:
-        script_re = re.compile(r"^([\w_\-.]+)-(?:\w+)(?:\.py|\.pyc|)$")
+        script_re = re.compile(r"^([\w_\-.]+)-\w+(?:\.py|\.pyc|)$")
         if not module_name:
             if PYCHARM_VARIABLE_NAME in os.environ:
                 pycharm_matcher = script_re.match(os.environ[PYCHARM_VARIABLE_NAME])
@@ -61,33 +61,47 @@ def set_env(module_name: str = None, argv: List[str] = None):
 
 
 def get_merger_from_env() -> SettingMerger:
-    """ Should be used after set_env(); determine all available settings in this order:
+    """Return a settingmerger to determien all available settings, should be used after set_env().
+    Settings are found in this order:
 
-   * df_config.config.defaults
-   * {project_name}.defaults (overrides df_config.config.defaults)
-   * {root}/etc/{project_name}/settings.ini (overrides {project_name}.settings)
-   * {root}/etc/{project_name}/settings.py (overrides {root}/etc/{project_name}/settings.ini)
-   * ./local_settings.ini (overrides {root}/etc/{project_name}/settings.py)
-   * ./local_settings.py (overrides ./local_settings.ini)
-   * environment variables (overrides ./local_settings.py)
+    * df_config.config.defaults
+    * {project_name}.defaults (overrides df_config.config.defaults)
+    * {root}/etc/{project_name}/settings.ini (overrides {project_name}.settings)
+    * {root}/etc/{project_name}/settings.py (overrides {root}/etc/{project_name}/settings.ini)
+    * ./local_settings.ini (overrides {root}/etc/{project_name}/settings.py)
+    * ./local_settings.py (overrides ./local_settings.ini)
+    * environment variables (overrides ./local_settings.py)
     """
     # required if set_env is not called
     module_name = set_env()
     prefix = os.path.abspath(sys.prefix)
     if prefix == "/usr":
         prefix = ""
-    mapping = "%s.iniconf:INI_MAPPING" % module_name
+    ini_mapping = f"{module_name}.iniconf:INI_MAPPING"
+    environ_mapping = f"{module_name}.iniconf:ENVIRON_MAPPING"
     config_providers = [
         DictProvider({"DF_MODULE_NAME": module_name}, name="default values"),
         PythonModuleProvider("df_config.config.defaults"),
         PythonModuleProvider("%s.defaults" % module_name),
-        IniConfigProvider("%s/etc/%s/settings.ini" % (prefix, module_name,)),
-        PythonFileProvider("%s/etc/%s/settings.py" % (prefix, module_name,)),
+        IniConfigProvider(
+            "%s/etc/%s/settings.ini"
+            % (
+                prefix,
+                module_name,
+            )
+        ),
+        PythonFileProvider(
+            "%s/etc/%s/settings.py"
+            % (
+                prefix,
+                module_name,
+            )
+        ),
         IniConfigProvider(os.path.abspath("local_settings.ini")),
         PythonFileProvider(os.path.abspath("local_settings.py")),
-        EnvironmentConfigProvider("%s_" % module_name.upper()),
+        EnvironmentConfigProvider("%s_" % module_name.upper(), environ_mapping),
     ]
-    fields_provider = PythonConfigFieldsProvider(mapping)
+    fields_provider = PythonConfigFieldsProvider(ini_mapping)
     return SettingMerger(fields_provider, config_providers)
 
 
@@ -103,9 +117,9 @@ def manage(argv=None):
 
 
 def patch_commands():
-    """ patch the runserver command to use the configured LISTEN_ADDRESS"""
-    from django.core.management.commands.runserver import Command
+    """patch the runserver command to use the configured LISTEN_ADDRESS"""
     from django.conf import settings
+    from django.core.management.commands.runserver import Command
 
     if not hasattr(settings, "LISTEN_ADDRESS"):
         return

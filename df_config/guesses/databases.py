@@ -167,7 +167,7 @@ class RedisSmartSetting:
         ):
             parsed_redis_url = urlparse(os.environ[self.env_variable])
             values["HOST"] = parsed_redis_url.hostname
-            values["PORT"] = parsed_redis_url.port
+            values["PORT"] = parsed_redis_url.port or 6379
             values["PASSWORD"] = parsed_redis_url.password
             values["DB"] = "0"
             if re.match(r"^/\d+$", parsed_redis_url.path):
