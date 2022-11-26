@@ -49,11 +49,10 @@ from df_config.config.dynamic_settings import (
     CallableSetting,
     Directory,
     ExpandIterable,
-    ParsedURLSetting,
     Path,
     SettingReference,
 )
-from df_config.config.url import DatabaseURL
+from df_config.config.url import DatabaseURL, URLSetting
 from df_config.guesses.apps import allauth_provider_apps, installed_apps, middlewares
 from df_config.guesses.auth import (
     CookieName,
@@ -515,22 +514,26 @@ DATABASE_PORT = DatabaseURL(
 ).port()  # aliased in settings.ini as "[database]port"
 DATABASE_OPTIONS = {}
 EMAIL_HOST_URL = None
-EMAIL_HOST = ParsedURLSetting(
-    "EMAIL_HOST_URL", "localhost"
+EMAIL_HOST = URLSetting("EMAIL_HOST_URL").hostname(
+    "localhost"
 )  # aliased in settings.ini as "[email]host"
-EMAIL_HOST_PASSWORD = ParsedURLSetting(
-    "EMAIL_HOST_PASSWORD", ""
+EMAIL_HOST_PASSWORD = URLSetting("EMAIL_HOST_URL").password(
+    ""
 )  # aliased in settings.ini as "[email]password"
-EMAIL_HOST_USER = ParsedURLSetting(
-    "EMAIL_HOST_USER", ""
+EMAIL_HOST_USER = URLSetting("EMAIL_HOST_URL").username(
+    ""
 )  # aliased in settings.ini as "[email]user"
 EMAIL_FROM = "{ADMIN_EMAIL}"  # aliased in settings.ini as "[email]from"
-EMAIL_PORT = ParsedURLSetting(
-    "EMAIL_PORT", 25, formatter=int
+EMAIL_PORT = URLSetting("EMAIL_HOST_URL").port(
+    25
 )  # aliased in settings.ini as "[email]port"
 EMAIL_SUBJECT_PREFIX = "[{SERVER_NAME}] "
-EMAIL_USE_TLS = False  # aliased in settings.ini as "[email]use_tls"
-EMAIL_USE_SSL = False  # aliased in settings.ini as "[email]use_ssl"
+EMAIL_USE_TLS = URLSetting(
+    "EMAIL_HOST_URL"
+).use_tls()  # aliased in settings.ini as "[email]use_tls"
+EMAIL_USE_SSL = URLSetting(
+    "EMAIL_HOST_URL"
+).use_ssl()  # aliased in settings.ini as "[email]use_ssl"
 EMAIL_SSL_CERTFILE = None
 EMAIL_SSL_KEYFILE = None
 LANGUAGE_CODE = "en"  # aliased in settings.ini as "[global]language_code"
