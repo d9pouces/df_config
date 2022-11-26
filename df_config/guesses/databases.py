@@ -13,7 +13,6 @@
 #  or https://cecill.info/licences/Licence_CeCILL-B_V1-fr.txt (French)         #
 #                                                                              #
 # ##############################################################################
-import re
 from urllib.parse import urlencode, urlparse
 
 from django.core.exceptions import ImproperlyConfigured
@@ -85,25 +84,13 @@ class RedisSmartSetting:
         self.config_values = list(self._config_values)
         if not only_redis:
             self.config_values += ["USERNAME"]
-        self.required_settings = [prefix + x for x in self.config_values] + [
-            "COMMON_REDIS_URL"
-        ]
+        self.required_settings = [prefix + x for x in self.config_values]
         self.extra_values = extra_values
 
     def __call__(self, settings_dict):
         values = {x: settings_dict[self.prefix + x] for x in self.config_values}
-        values.setdefault("USERNAME", None)
+        values.setdefault("USERNAME")
         values["AUTH"] = ""
-        global_redis_url = settings_dict["COMMON_REDIS_URL"]
-        if global_redis_url:
-            parsed_redis_url = urlparse(global_redis_url)
-            values["PROTOCOL"] = parsed_redis_url.scheme
-            values["HOST"] = parsed_redis_url.hostname
-            values["PORT"] = parsed_redis_url.port or 6379
-            values["PASSWORD"] = parsed_redis_url.password
-            values["DB"] = "0"
-            if re.match(r"^/\d+$", parsed_redis_url.path):
-                values["DB"] = parsed_redis_url.path[1:]
         if values["PASSWORD"]:
             values["AUTH"] = "%s:%s@" % (values["USERNAME"] or "", values["PASSWORD"])
         if self.fmt == "url":

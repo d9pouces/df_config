@@ -25,7 +25,13 @@ class Attribute(DynamicSettting):
 class URLSetting:
     ENGINES = {}
     REQUIREMENTS = {}
+    SCHEME_ALIASES = {
+        "psql": "postgres",
+        "postgresql": "postgres",
+        "sqlite": "sqlite3",
+    }
     SCHEMES = {
+        "amqp": (5672, False, False),
         "file": (None, False, False),
         "http": (80, False, False),
         "https": (443, True, False),
@@ -33,9 +39,7 @@ class URLSetting:
         "mariadb": (3306, False, False),
         "mysql": (3306, False, False),
         "oracle": (1521, False, False),
-        "psql": (5432, False, False),
         "postgres": (5432, False, False),
-        "postgresql": (5432, False, False),
         "redis": (6379, False, False),
         "rediss": (6379, True, False),
         "smtp": (25, False, False),
@@ -67,11 +71,13 @@ class URLSetting:
             return
         for required in self.required:
             merger.get_setting_value(required)
-        self._url_str = merger.get_setting_value(self.setting_name)
-        if self._url_str:
-            self.parsed_url = urllib.parse.urlparse(self._url_str)
-        else:
+        value = merger.get_setting_value(self.setting_name)
+        if value is self or not value:
+            self._url_str = None
             self.parsed_url = None
+        else:
+            self._url_str = value
+            self.parsed_url = urllib.parse.urlparse(self._url_str)
         self._loaded = True
 
     def hostname(self, default="localhost"):
@@ -120,7 +126,10 @@ class URLSetting:
         return Attribute(self, self.scheme_, default=default)
 
     def scheme_(self):
-        return self.parsed_url.scheme.lower() if self.parsed_url else None
+        if self.parsed_url is None:
+            return None
+        s = self.parsed_url.scheme.lower()
+        return self.SCHEME_ALIASES.get(s, s)
 
     def username(self, default=None):
         return Attribute(self, self.username_, default=default)
@@ -148,7 +157,8 @@ class URLSetting:
             return None
         if self.parsed_url.port:
             return int(self.parsed_url.port)
-        return self.SCHEMES[self.parsed_url.scheme.lower()][0]
+        s = self.scheme_()
+        return self.SCHEMES[s][0]
 
     def use_tls(self, default=False):
         return Attribute(self, self.use_tls_, default=default)
@@ -156,7 +166,8 @@ class URLSetting:
     def use_tls_(self):
         if not self.parsed_url:
             return False
-        return self.SCHEMES[self.parsed_url.scheme.lower()][2]
+        s = self.scheme_()
+        return self.SCHEMES[s][2]
 
     def use_ssl(self, default=False):
         return Attribute(self, self.use_ssl_, default=default)
@@ -164,7 +175,8 @@ class URLSetting:
     def use_ssl_(self):
         if not self.parsed_url:
             return False
-        return self.SCHEMES[self.parsed_url.scheme.lower()][1]
+        s = self.scheme_()
+        return self.SCHEMES[s][1]
 
     def engine(self, default=None):
         return Attribute(self, self.engine_, default=default)
@@ -210,3 +222,15 @@ class DatabaseURL(URLSetting):
         "django.db.backends.oracle": ["cx_Oracle"],
         "django.db.backends.mysql": ["mysqlclient", "pymysql"],
     }
+
+
+class RedisURL(URLSetting):
+    def database_(self):
+        if self.parsed_url is None:
+            return None
+        elif not self.parsed_url.path:
+            return 1
+        matcher = re.match(r"/(0|[1-9]\d*)$", self.parsed_url.path)
+        if not matcher:
+            return 0
+        return int(matcher.group(1))

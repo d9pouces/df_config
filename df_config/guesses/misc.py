@@ -29,7 +29,7 @@ from df_config.config.dynamic_settings import AutocreateFileContent
 from df_config.utils import is_package_present
 
 
-def smart_hostname(settings_dict) -> str:
+def smart_base_url(settings_dict) -> str:
     """
     By default, use the listen address and port as server name.
     Use the "HEROKU_APP_NAME" environment variable if present.
@@ -42,7 +42,7 @@ def smart_hostname(settings_dict) -> str:
     return "http://%(LISTEN_ADDRESS)s/" % settings_dict
 
 
-smart_hostname.required_settings = ["LISTEN_ADDRESS", "HEROKU_APP_NAME"]
+smart_base_url.required_settings = ["LISTEN_ADDRESS", "HEROKU_APP_NAME"]
 
 
 def smart_listen_address(settings_dict):

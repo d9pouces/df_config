@@ -52,7 +52,7 @@ from df_config.config.dynamic_settings import (
     Path,
     SettingReference,
 )
-from df_config.config.url import DatabaseURL, URLSetting
+from df_config.config.url import DatabaseURL, RedisURL, URLSetting
 from df_config.guesses.apps import allauth_provider_apps, installed_apps, middlewares
 from df_config.guesses.auth import (
     CookieName,
@@ -86,7 +86,7 @@ from df_config.guesses.misc import (
     project_name,
     required_packages,
     secure_hsts_seconds,
-    smart_hostname,
+    smart_base_url,
     smart_listen_address,
     template_setting,
     url_parse_prefix,
@@ -426,7 +426,6 @@ CSP_BLOCK_ALL_MIXED_CONTENT = True
 DF_CSS = []
 DF_JS = []
 DF_INDEX_VIEW = None
-DF_SITE_SEARCH_VIEW = None  # 'djangofloor.views.search.UserSearchView'
 DF_PROJECT_NAME = CallableSetting(project_name)
 DF_URL_CONF = "{DF_MODULE_NAME}.urls.urlpatterns"
 DF_ADMIN_SITE = "django.contrib.admin.site"
@@ -493,94 +492,64 @@ LOG_LEVEL = None
 #
 # ######################################################################################################################
 ADMIN_EMAIL = "admin@{SERVER_NAME}"  # aliased in settings.ini as "[global]admin_email"
-DATABASE_URL = None
-DATABASE_ENGINE = DatabaseURL("DATABASE_URL").engine(
-    "sqlite3"
-)  # aliased in settings.ini as "[database]engine"
-DATABASE_NAME = DatabaseURL("DATABASE_URL").database(
-    Path("{LOCAL_PATH}/database.sqlite3")
-)  # aliased in settings.ini as "[database]name"
-DATABASE_USER = DatabaseURL("DATABASE_URL").username(
-    ""
-)  # aliased in settings.ini as "[database]user"
-DATABASE_PASSWORD = DatabaseURL("DATABASE_URL").password(
-    ""
-)  # aliased in settings.ini as "[database]password"
-DATABASE_HOST = DatabaseURL("DATABASE_URL").hostname(
-    "localhost"
-)  # aliased in settings.ini as "[database]host"
-DATABASE_PORT = DatabaseURL(
-    "DATABASE_URL"
-).port()  # aliased in settings.ini as "[database]port"
+DATABASE_URL = DatabaseURL("DATABASE_URL")
+DATABASE_ENGINE = DATABASE_URL.engine("sqlite3")
+DATABASE_NAME = DATABASE_URL.database(Path("{LOCAL_PATH}/database.sqlite3"))
+DATABASE_USER = DATABASE_URL.username("")
+DATABASE_PASSWORD = DATABASE_URL.password("")
+DATABASE_HOST = DATABASE_URL.hostname("localhost")
+DATABASE_PORT = DATABASE_URL.port()
 DATABASE_OPTIONS = {}
-EMAIL_HOST_URL = None
-EMAIL_HOST = URLSetting("EMAIL_HOST_URL").hostname(
-    "localhost"
-)  # aliased in settings.ini as "[email]host"
-EMAIL_HOST_PASSWORD = URLSetting("EMAIL_HOST_URL").password(
-    ""
-)  # aliased in settings.ini as "[email]password"
-EMAIL_HOST_USER = URLSetting("EMAIL_HOST_URL").username(
-    ""
-)  # aliased in settings.ini as "[email]user"
-EMAIL_FROM = "{ADMIN_EMAIL}"  # aliased in settings.ini as "[email]from"
-EMAIL_PORT = URLSetting("EMAIL_HOST_URL").port(
-    25
-)  # aliased in settings.ini as "[email]port"
+EMAIL_HOST_URL = URLSetting("EMAIL_HOST_URL")
+EMAIL_HOST = EMAIL_HOST_URL.hostname("localhost")
+EMAIL_HOST_PASSWORD = EMAIL_HOST_URL.password("")
+EMAIL_HOST_USER = EMAIL_HOST_URL.username("")
+EMAIL_FROM = "{ADMIN_EMAIL}"
+EMAIL_PORT = EMAIL_HOST_URL.port(25)
 EMAIL_SUBJECT_PREFIX = "[{SERVER_NAME}] "
-EMAIL_USE_TLS = URLSetting(
-    "EMAIL_HOST_URL"
-).use_tls()  # aliased in settings.ini as "[email]use_tls"
-EMAIL_USE_SSL = URLSetting(
-    "EMAIL_HOST_URL"
-).use_ssl()  # aliased in settings.ini as "[email]use_ssl"
+EMAIL_USE_TLS = EMAIL_HOST_URL.use_tls()
+EMAIL_USE_SSL = EMAIL_HOST_URL.use_ssl()
 EMAIL_SSL_CERTFILE = None
 EMAIL_SSL_KEYFILE = None
 LANGUAGE_CODE = "en"  # aliased in settings.ini as "[global]language_code"
 TIME_ZONE = "Europe/Paris"  # aliased in settings.ini as "[global]time_zone"
-SERVER_BASE_URL = CallableSetting(
-    smart_hostname
-)  # aliased in settings.ini as "[global]server_url"
+SERVER_BASE_URL = CallableSetting(smart_base_url)
 HEROKU_APP_NAME = None  # used by HEROKU
 
 # df_config
-LISTEN_ADDRESS = CallableSetting(
-    smart_listen_address
-)  # aliased in settings.ini as "[global]listen_address"
+LISTEN_ADDRESS = CallableSetting(smart_listen_address)
 LISTEN_PORT = None  # listen port (if value is set, listen on 0.0.0.0)
-
-LOCAL_PATH = "./django_data"  # aliased in settings.ini as "[global]data"
+LOCAL_PATH = Path("./django_data")  # aliased in settings.ini as "[global]data"
 __split_path = __file__.split(os.path.sep)
 if "lib" in __split_path:
     prefix = os.path.join(*__split_path[: __split_path.index("lib")])
-    LOCAL_PATH = Directory("/%s/var/{DF_MODULE_NAME}" % prefix)
+    LOCAL_PATH = Path("/%s/var/{DF_MODULE_NAME}" % prefix)
 
-COMMON_REDIS_URL = None
+COMMON_REDIS_URL = RedisURL("COMMON_REDIS_URL")
 
 # django-redis-sessions
-SESSION_REDIS_PROTOCOL = "redis"
-SESSION_REDIS_HOST = "localhost"  # aliased in settings.ini as "[session]host"
-SESSION_REDIS_PORT = 6379  # aliased in settings.ini as "[session]port"
-SESSION_REDIS_DB = 1  # aliased in settings.ini as "[session]db"
-SESSION_REDIS_PASSWORD = None  # aliased in settings.ini as "[session]password"
+SESSION_REDIS_PROTOCOL = COMMON_REDIS_URL.scheme("redis")
+SESSION_REDIS_HOST = COMMON_REDIS_URL.hostname("localhost")
+SESSION_REDIS_PORT = COMMON_REDIS_URL.port_int(6379)
+SESSION_REDIS_DB = COMMON_REDIS_URL.database(1)
+SESSION_REDIS_PASSWORD = COMMON_REDIS_URL.password()
 
 # django_redis (cache)
-CACHE_PROTOCOL = "redis"
-CACHE_HOST = "localhost"  # aliased in settings.ini as "[cache]host"
-CACHE_PORT = 6379  # aliased in settings.ini as "[cache]port"
-CACHE_DB = 2  # aliased in settings.ini as "[cache]db"
-CACHE_PASSWORD = None  # aliased in settings.ini as "[cache]password"
+CACHE_PROTOCOL = COMMON_REDIS_URL.scheme("redis")
+CACHE_HOST = COMMON_REDIS_URL.hostname("localhost")
+CACHE_PORT = COMMON_REDIS_URL.port_int(6379)
+CACHE_DB = COMMON_REDIS_URL.database(2)
+CACHE_PASSWORD = COMMON_REDIS_URL.password()
 
 # celery
-CELERY_PROTOCOL = "redis"
-CELERY_HOST = "localhost"  # aliased in settings.ini as "[celery]host"
-CELERY_PORT = 6379  # aliased in settings.ini as "[celery]port"
-CELERY_DB = 4  # aliased in settings.ini as "[celery]db"
-CELERY_PASSWORD = None  # aliased in settings.ini as "[celery]password"
+CELERY_PROTOCOL = COMMON_REDIS_URL.scheme("redis")
+CELERY_HOST = COMMON_REDIS_URL.hostname("localhost")
+CELERY_PORT = COMMON_REDIS_URL.port_int(6379)
+CELERY_DB = COMMON_REDIS_URL.database(4)
+CELERY_PASSWORD = COMMON_REDIS_URL.password()
 CELERY_USERNAME = None  # only useful for amqp
 CELERY_PROCESSES = 4
 
-# celery
 CELERY_RESULT_PROTOCOL = SettingReference("CELERY_PROTOCOL")
 CELERY_RESULT_HOST = SettingReference("CELERY_HOST")
 CELERY_RESULT_PORT = SettingReference("CELERY_PORT")
@@ -589,11 +558,11 @@ CELERY_RESULT_PASSWORD = SettingReference("CELERY_PASSWORD")
 CELERY_RESULT_USERNAME = SettingReference("CELERY_USERNAME")
 
 # df_websockets
-WEBSOCKET_REDIS_PROTOCOL = "redis"
-WEBSOCKET_REDIS_HOST = "localhost"
-WEBSOCKET_REDIS_PORT = 6379
-WEBSOCKET_REDIS_DB = 1
-WEBSOCKET_REDIS_PASSWORD = None
+WEBSOCKET_REDIS_PROTOCOL = COMMON_REDIS_URL.scheme("redis")
+WEBSOCKET_REDIS_HOST = COMMON_REDIS_URL.hostname("localhost")
+WEBSOCKET_REDIS_PORT = COMMON_REDIS_URL.port_int(6379)
+WEBSOCKET_REDIS_DB = COMMON_REDIS_URL.database(1)
+WEBSOCKET_REDIS_PASSWORD = COMMON_REDIS_URL.password()
 
 # sentry.io
 USE_SENTRY = CallableSetting(use_sentry)
