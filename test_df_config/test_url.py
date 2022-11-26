@@ -40,6 +40,8 @@ class TestDynamicSettingURL(TestDynamicSetting):
                 "use_ssl": False,
             },
         )
+
+    def test_url_missing_values(self):
         values = {"DATABASE_URL": "psql://localhost"}
         self.check_alls(
             values,
@@ -59,6 +61,8 @@ class TestDynamicSettingURL(TestDynamicSetting):
                 "use_ssl": False,
             },
         )
+
+    def test_default_values(self):
         values = {"DATABASE_URL": None}
         self.check_alls(
             values,
@@ -83,5 +87,4 @@ class TestDynamicSettingURL(TestDynamicSetting):
         setting = URLSetting("DATABASE_URL")
         for key, value in attributes.items():
             dynamic_setting = getattr(setting, key)()
-            print(key, value)
             self.check(dynamic_setting, value, previous_settings=values)

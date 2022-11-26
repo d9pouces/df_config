@@ -53,6 +53,7 @@ from df_config.config.dynamic_settings import (
     Path,
     SettingReference,
 )
+from df_config.config.url import DatabaseURL
 from df_config.guesses.apps import allauth_provider_apps, installed_apps, middlewares
 from df_config.guesses.auth import (
     CookieName,
@@ -494,14 +495,24 @@ LOG_LEVEL = None
 # ######################################################################################################################
 ADMIN_EMAIL = "admin@{SERVER_NAME}"  # aliased in settings.ini as "[global]admin_email"
 DATABASE_URL = None
-DATABASE_ENGINE = "sqlite3"  # aliased in settings.ini as "[database]engine"
-DATABASE_NAME = Path(
-    "{LOCAL_PATH}/database.sqlite3"
+DATABASE_ENGINE = DatabaseURL("DATABASE_URL").engine(
+    "sqlite3"
+)  # aliased in settings.ini as "[database]engine"
+DATABASE_NAME = DatabaseURL("DATABASE_URL").database(
+    Path("{LOCAL_PATH}/database.sqlite3")
 )  # aliased in settings.ini as "[database]name"
-DATABASE_USER = ""  # aliased in settings.ini as "[database]user"
-DATABASE_PASSWORD = ""  # aliased in settings.ini as "[database]password"
-DATABASE_HOST = ""  # aliased in settings.ini as "[database]host"
-DATABASE_PORT = ""  # aliased in settings.ini as "[database]port"
+DATABASE_USER = DatabaseURL("DATABASE_URL").username(
+    ""
+)  # aliased in settings.ini as "[database]user"
+DATABASE_PASSWORD = DatabaseURL("DATABASE_URL").password(
+    ""
+)  # aliased in settings.ini as "[database]password"
+DATABASE_HOST = DatabaseURL("DATABASE_URL").hostname(
+    "localhost"
+)  # aliased in settings.ini as "[database]host"
+DATABASE_PORT = DatabaseURL(
+    "DATABASE_URL"
+).port()  # aliased in settings.ini as "[database]port"
 DATABASE_OPTIONS = {}
 EMAIL_HOST_URL = None
 EMAIL_HOST = ParsedURLSetting(
@@ -541,7 +552,7 @@ if "lib" in __split_path:
     prefix = os.path.join(*__split_path[: __split_path.index("lib")])
     LOCAL_PATH = Directory("/%s/var/{DF_MODULE_NAME}" % prefix)
 
-GLOBAL_REDIS_URL = None
+COMMON_REDIS_URL = None
 
 # django-redis-sessions
 SESSION_REDIS_PROTOCOL = "redis"

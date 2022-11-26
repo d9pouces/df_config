@@ -13,66 +13,14 @@
 #  or https://cecill.info/licences/Licence_CeCILL-B_V1-fr.txt (French)         #
 #                                                                              #
 # ##############################################################################
-import os
 import re
 from urllib.parse import urlencode, urlparse
 
 from django.core.exceptions import ImproperlyConfigured
 from django.utils.version import get_complete_version
-from pkg_resources import DistributionNotFound, get_distribution
 
-from df_config.checks import missing_package, settings_check_results
+from df_config.config.url import DatabaseURL
 from df_config.utils import is_package_present
-
-_default_database_engines = {
-    "mysql": "django.db.backends.mysql",
-    "mariadb": "django.db.backends.mysql",
-    "oracle": "django.db.backends.oracle",
-    "postgres": "django.db.backends.postgresql",
-    "postgresql": "django.db.backends.postgresql",
-    "sqlite": "django.db.backends.sqlite3",
-    "sqlite3": "django.db.backends.sqlite3",
-}
-
-
-def database_engine(settings_dict):
-    """Allow to use aliases for database engines, as well as the default dotted name"""
-    engine = _default_database_engines.get(
-        settings_dict["DATABASE_ENGINE"].lower(), settings_dict["DATABASE_ENGINE"]
-    )
-    if engine == "django.db.backends.postgresql":
-        try:
-            get_distribution("psycopg2-binary")
-        except DistributionNotFound:
-            try:
-                get_distribution("psycopg2")
-            except DistributionNotFound:
-                settings_check_results.append(
-                    missing_package("psycopg2-binary", " to use PostgreSQL database")
-                )
-    elif engine == "django.db.backends.oracle":
-        try:
-            get_distribution("cx_Oracle")
-        except DistributionNotFound:
-            settings_check_results.append(
-                missing_package("cx_Oracle", " to use Oracle database")
-            )
-    elif engine == "django.db.backends.mysql":
-        try:
-            get_distribution("mysqlclient")
-        except DistributionNotFound:
-            try:
-                get_distribution("pymysql")
-            except DistributionNotFound:
-                settings_check_results.append(
-                    missing_package(
-                        "mysqlclient or pymysql", " to use MySQL or MariaDB database"
-                    )
-                )
-    return engine
-
-
-database_engine.required_settings = ["DATABASE_ENGINE"]
 
 
 def databases(settings_dict):
@@ -81,37 +29,19 @@ def databases(settings_dict):
     If present, Takes the `DATABASE_URL` environment variable into account
     (used on the Heroku platform).
     """
-    url = settings_dict["DATABASE_URL"]
-    if url:
-        parsed = urlparse(url)
-        eng = database_engine({"DATABASE_ENGINE": parsed.scheme})
-        user = parsed.username
-        name = parsed.path[1:]
-        pwd = parsed.password
-        host = parsed.hostname
-        port = parsed.port
-    else:
-        eng = database_engine(settings_dict)
-        name = settings_dict["DATABASE_NAME"]
-        user = settings_dict["DATABASE_USER"]
-        pwd = settings_dict["DATABASE_PASSWORD"]
-        host = settings_dict["DATABASE_HOST"]
-        port = settings_dict["DATABASE_PORT"]
-    opts = settings_dict["DATABASE_OPTIONS"]
     default = {
-        "ENGINE": eng,
-        "NAME": name,
-        "USER": user,
-        "OPTIONS": opts,
-        "PASSWORD": pwd,
-        "HOST": host,
-        "PORT": port,
+        "ENGINE": DatabaseURL.normalize_engine(settings_dict["DATABASE_ENGINE"]),
+        "NAME": settings_dict["DATABASE_NAME"],
+        "USER": settings_dict["DATABASE_USER"],
+        "OPTIONS": settings_dict["DATABASE_OPTIONS"],
+        "PASSWORD": settings_dict["DATABASE_PASSWORD"],
+        "HOST": settings_dict["DATABASE_HOST"],
+        "PORT": settings_dict["DATABASE_PORT"],
     }
     return {"default": default}
 
 
 databases.required_settings = [
-    "DATABASE_URL",
     "DATABASE_ENGINE",
     "DATABASE_NAME",
     "DATABASE_USER",
@@ -156,7 +86,7 @@ class RedisSmartSetting:
         if not only_redis:
             self.config_values += ["USERNAME"]
         self.required_settings = [prefix + x for x in self.config_values] + [
-            "GLOBAL_REDIS_URL"
+            "COMMON_REDIS_URL"
         ]
         self.extra_values = extra_values
 
@@ -164,7 +94,7 @@ class RedisSmartSetting:
         values = {x: settings_dict[self.prefix + x] for x in self.config_values}
         values.setdefault("USERNAME", None)
         values["AUTH"] = ""
-        global_redis_url = settings_dict["GLOBAL_REDIS_URL"]
+        global_redis_url = settings_dict["COMMON_REDIS_URL"]
         if global_redis_url:
             parsed_redis_url = urlparse(global_redis_url)
             values["PROTOCOL"] = parsed_redis_url.scheme

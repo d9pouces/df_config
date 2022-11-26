@@ -2,6 +2,8 @@ import re
 import urllib.parse
 from typing import List, Optional
 
+from pkg_resources import DistributionNotFound, get_distribution
+
 from df_config.config.dynamic_settings import DynamicSettting
 
 
@@ -16,23 +18,31 @@ class Attribute(DynamicSettting):
         if self.url_setting.parsed_url:
             value = self.value()
         else:
-            return self.default
+            value = self.default
         return merger.analyze_raw_value(value, provider_name, setting_name)
 
 
 class URLSetting:
-    defaults = {
-        "smtp": (25, False, False),
-        "smtps": (465, True, False),
-        "smtp+tls": (487, False, True),
+    ENGINES = {}
+    REQUIREMENTS = {}
+    SCHEMES = {
+        "file": (None, False, False),
         "http": (80, False, False),
         "https": (443, True, False),
+        "memcache": (11211, False, False),
+        "mariadb": (3306, False, False),
+        "mysql": (3306, False, False),
+        "oracle": (1521, False, False),
+        "psql": (5432, False, False),
+        "postgres": (5432, False, False),
+        "postgresql": (5432, False, False),
         "redis": (6379, False, False),
         "rediss": (6379, True, False),
-        "mysql": (3306, False, False),
-        "psql": (5432, False, False),
-        "oracle": (1521, False, False),
-        "memcache": (11211, False, False),
+        "smtp": (25, False, False),
+        "smtp+tls": (487, False, True),
+        "smtps": (465, True, False),
+        "sqlite": (None, False, False),
+        "sqlite3": (None, False, False),
     }
 
     def __init__(
@@ -110,7 +120,7 @@ class URLSetting:
         return Attribute(self, self.scheme_, default=default)
 
     def scheme_(self):
-        return self.parsed_url.scheme if self.parsed_url else None
+        return self.parsed_url.scheme.lower() if self.parsed_url else None
 
     def username(self, default=None):
         return Attribute(self, self.username_, default=default)
@@ -138,7 +148,7 @@ class URLSetting:
             return None
         if self.parsed_url.port:
             return int(self.parsed_url.port)
-        return self.defaults[self.parsed_url.scheme.lower()][0]
+        return self.SCHEMES[self.parsed_url.scheme.lower()][0]
 
     def use_tls(self, default=False):
         return Attribute(self, self.use_tls_, default=default)
@@ -146,7 +156,7 @@ class URLSetting:
     def use_tls_(self):
         if not self.parsed_url:
             return False
-        return self.defaults[self.parsed_url.scheme.lower()][2]
+        return self.SCHEMES[self.parsed_url.scheme.lower()][2]
 
     def use_ssl(self, default=False):
         return Attribute(self, self.use_ssl_, default=default)
@@ -154,8 +164,49 @@ class URLSetting:
     def use_ssl_(self):
         if not self.parsed_url:
             return False
-        return self.defaults[self.parsed_url.scheme.lower()][1]
+        return self.SCHEMES[self.parsed_url.scheme.lower()][1]
+
+    def engine(self, default=None):
+        return Attribute(self, self.engine_, default=default)
+
+    def engine_(self):
+        if not self.parsed_url:
+            return None
+        return self.normalize_engine(self.scheme_())
+
+    @classmethod
+    def normalize_engine(cls, scheme):
+        engine = cls.ENGINES.get(scheme, scheme)
+        requirements = cls.REQUIREMENTS.get(engine, [])
+        found = False
+        for req in requirements:
+            try:
+                get_distribution(req)
+                found = True
+            except DistributionNotFound:
+                pass
+        if not found and requirements:
+            from df_config.checks import missing_package, settings_check_results
+
+            settings_check_results.append(
+                missing_package("/".join(requirements), f" to use {engine}.")
+            )
+        return engine
 
 
-class DatabaseURL:
-    pass
+class DatabaseURL(URLSetting):
+    ENGINES = {
+        "mysql": "django.db.backends.mysql",
+        "mariadb": "django.db.backends.mysql",
+        "oracle": "django.db.backends.oracle",
+        "psql": "django.db.backends.postgresql",
+        "postgres": "django.db.backends.postgresql",
+        "postgresql": "django.db.backends.postgresql",
+        "sqlite": "django.db.backends.sqlite3",
+        "sqlite3": "django.db.backends.sqlite3",
+    }
+    REQUIREMENTS = {
+        "django.db.backends.postgresql": ["psycopg2-binary", "psycopg2"],
+        "django.db.backends.oracle": ["cx_Oracle"],
+        "django.db.backends.mysql": ["mysqlclient", "pymysql"],
+    }
