@@ -37,7 +37,6 @@ written in .ini files. The mapping between the Python setting and the [section/o
 """
 import os
 
-from df_config.guesses.djt import guess_djt_panels
 from django.utils.translation import gettext_lazy as _
 
 # ######################################################################################################################
@@ -50,49 +49,54 @@ from df_config.config.dynamic_settings import (
     CallableSetting,
     Directory,
     ExpandIterable,
+    ParsedURLSetting,
     Path,
     SettingReference,
 )
 from df_config.guesses.apps import allauth_provider_apps, installed_apps, middlewares
 from df_config.guesses.auth import (
+    CookieName,
     authentication_backends,
     ldap_attribute_map,
     ldap_boolean_attribute_map,
     ldap_group_class,
     ldap_group_search,
     ldap_user_search,
-    CookieName,
 )
 from df_config.guesses.databases import (
     cache_redis_url,
     cache_setting,
     celery_broker_url,
+    celery_result_url,
     databases,
     session_redis_dict,
+    websocket_redis_channels,
     websocket_redis_dict,
-    websocket_redis_channels, celery_result_url,
 )
+from df_config.guesses.djt import guess_djt_panels
 from df_config.guesses.log import log_configuration
 from df_config.guesses.misc import (
-    DefaultListenAddress,
+    AutocreateSecretKey,
     allowed_hosts,
-    csrf_trusted_origins, excluded_django_commands,
+    csp_connect,
+    csrf_trusted_origins,
+    excluded_django_commands,
+    get_asgi_application,
+    get_wsgi_application,
     project_name,
     required_packages,
     secure_hsts_seconds,
     smart_hostname,
+    smart_listen_address,
     template_setting,
     url_parse_prefix,
     url_parse_server_name,
     url_parse_server_port,
     url_parse_server_protocol,
     url_parse_ssl,
-    use_x_forwarded_for,
-    AutocreateSecretKey,
-    get_asgi_application,
-    get_wsgi_application,
     use_sentry,
-    web_server, csp_connect,
+    use_x_forwarded_for,
+    web_server,
 )
 from df_config.guesses.pipeline import (
     pipeline_compilers,
@@ -479,6 +483,8 @@ LOG_EXCLUDED_COMMANDS = {
     "test",
     "testserver",
 }
+LOG_REMOTE_URL = None  # aliased in settings.ini as "[global]log_remote_url"
+LOG_LEVEL = None
 
 # ######################################################################################################################
 #
@@ -487,6 +493,7 @@ LOG_EXCLUDED_COMMANDS = {
 #
 # ######################################################################################################################
 ADMIN_EMAIL = "admin@{SERVER_NAME}"  # aliased in settings.ini as "[global]admin_email"
+DATABASE_URL = None
 DATABASE_ENGINE = "sqlite3"  # aliased in settings.ini as "[database]engine"
 DATABASE_NAME = Path(
     "{LOCAL_PATH}/database.sqlite3"
@@ -496,11 +503,20 @@ DATABASE_PASSWORD = ""  # aliased in settings.ini as "[database]password"
 DATABASE_HOST = ""  # aliased in settings.ini as "[database]host"
 DATABASE_PORT = ""  # aliased in settings.ini as "[database]port"
 DATABASE_OPTIONS = {}
-EMAIL_HOST = "localhost"  # aliased in settings.ini as "[email]host"
-EMAIL_HOST_PASSWORD = ""  # aliased in settings.ini as "[email]password"
-EMAIL_HOST_USER = ""  # aliased in settings.ini as "[email]user"
+EMAIL_HOST_URL = None
+EMAIL_HOST = ParsedURLSetting(
+    "EMAIL_HOST_URL", "localhost"
+)  # aliased in settings.ini as "[email]host"
+EMAIL_HOST_PASSWORD = ParsedURLSetting(
+    "EMAIL_HOST_PASSWORD", ""
+)  # aliased in settings.ini as "[email]password"
+EMAIL_HOST_USER = ParsedURLSetting(
+    "EMAIL_HOST_USER", ""
+)  # aliased in settings.ini as "[email]user"
 EMAIL_FROM = "{ADMIN_EMAIL}"  # aliased in settings.ini as "[email]from"
-EMAIL_PORT = 25  # aliased in settings.ini as "[email]port"
+EMAIL_PORT = ParsedURLSetting(
+    "EMAIL_PORT", 25, formatter=int
+)  # aliased in settings.ini as "[email]port"
 EMAIL_SUBJECT_PREFIX = "[{SERVER_NAME}] "
 EMAIL_USE_TLS = False  # aliased in settings.ini as "[email]use_tls"
 EMAIL_USE_SSL = False  # aliased in settings.ini as "[email]use_ssl"
@@ -508,21 +524,24 @@ EMAIL_SSL_CERTFILE = None
 EMAIL_SSL_KEYFILE = None
 LANGUAGE_CODE = "en"  # aliased in settings.ini as "[global]language_code"
 TIME_ZONE = "Europe/Paris"  # aliased in settings.ini as "[global]time_zone"
-LOG_REMOTE_URL = None  # aliased in settings.ini as "[global]log_remote_url"
-LOG_LEVEL = None
 SERVER_BASE_URL = CallableSetting(
     smart_hostname
 )  # aliased in settings.ini as "[global]server_url"
+HEROKU_APP_NAME = None  # used by HEROKU
 
 # df_config
-LISTEN_ADDRESS = DefaultListenAddress(
-    9000
+LISTEN_ADDRESS = CallableSetting(
+    smart_listen_address
 )  # aliased in settings.ini as "[global]listen_address"
+LISTEN_PORT = None  # listen port (if value is set, listen on 0.0.0.0)
+
 LOCAL_PATH = "./django_data"  # aliased in settings.ini as "[global]data"
 __split_path = __file__.split(os.path.sep)
 if "lib" in __split_path:
     prefix = os.path.join(*__split_path[: __split_path.index("lib")])
     LOCAL_PATH = Directory("/%s/var/{DF_MODULE_NAME}" % prefix)
+
+GLOBAL_REDIS_URL = None
 
 # django-redis-sessions
 SESSION_REDIS_PROTOCOL = "redis"

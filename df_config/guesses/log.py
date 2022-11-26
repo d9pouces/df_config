@@ -18,12 +18,12 @@ import logging
 import logging.handlers
 import os
 import re
+import sys
+import time
 import warnings
 from traceback import extract_stack
 from urllib.parse import urlparse
 
-import sys
-import time
 from django.core.checks.messages import Warning
 from django.core.management import color_style
 from django.utils.log import AdminEmailHandler as BaseAdminEmailHandler
@@ -32,8 +32,7 @@ from df_config.checks import settings_check_results
 
 
 class ColorizedFormatter(logging.Formatter):
-    """Used in console for applying colors to log lines, corresponding to the log level.
-    """
+    """Used in console for applying colors to log lines, corresponding to the log level."""
 
     def __init__(self, *args, **kwargs):
         self.style = color_style()
@@ -108,8 +107,9 @@ class ServerFormatter(logging.Formatter):
 # noinspection PyClassHasNoInit
 class AdminEmailHandler(BaseAdminEmailHandler):
     """Enhance the AdminEmailHandler provided by Django:
-     Does not try to send email if `settings.EMAIL_HOST` is not set.
-     Also limits the mail rates to avoid to spam the poor admins."""
+    Does not try to send email if `settings.EMAIL_HOST` is not set.
+    Also limits the mail rates to avoid to spam the poor admins.
+    """
 
     _previous_email_time = None
     min_interval = 600
@@ -143,8 +143,7 @@ class AdminEmailHandler(BaseAdminEmailHandler):
 
 
 class RemoveDuplicateWarnings(logging.Filter):
-    """Displays py.warnings messages unless the same warning was already sent.
-    """
+    """Displays py.warnings messages unless the same warning was already sent."""
 
     def __init__(self, name=""):
         super().__init__(name=name)
@@ -169,14 +168,15 @@ class LogConfiguration:
 
     Required values in the `settings_dict`:
 
-    *  `DEBUG`: `True` or `False`
-    *  `DF_MODULE_NAME`: your project name, used to determine log filenames,
-    *  `LOG_DIRECTORY`: dirname where log files are written (!),
-    *  `LOG_REMOTE_URL`: examples: "syslog+tcp://localhost:514/user", "syslog:///local7"
+    * `DEBUG`: `True` or `False`
+    * `DF_MODULE_NAME`: your project name, used to determine log filenames,
+    * `LOG_DIRECTORY`: dirname where log files are written (!),
+    * `LOG_LEVEL`: one of "debug", "info", "warn", "error", "critical"
+    * `LOG_REMOTE_URL`: examples: "syslog+tcp://localhost:514/user", "syslog:///local7"
          "syslog:///dev/log/daemon", "logd:///project_name"
-    *  `LOG_REMOTE_ACCESS`: also send HTTP requests to syslog/journald
-    *  `SERVER_NAME`: the public name of the server (like "www.example.com")
-    *  `SERVER_PORT`: the public port (probably 80 or 443)
+    * `LOG_REMOTE_ACCESS`: also send HTTP requests to syslog/journald
+    * `SERVER_NAME`: the public name of the server (like "www.example.com")
+    * `SERVER_PORT`: the public port (probably 80 or 443)
     * `LOG_EXCLUDED_COMMANDS`: Django commands that do not write logs
     """
 
@@ -259,7 +259,9 @@ class LogConfiguration:
         self.handlers = self.get_default_handlers()
         self.root = self.get_default_root()
         self.log_suffix = self.get_smart_command_name(
-            self.module_name, argv, self.excluded_commands,
+            self.module_name,
+            argv,
+            self.excluded_commands,
         )
         self.log_directory = settings_dict["LOG_DIRECTORY"]
         config = {
@@ -295,9 +297,14 @@ class LogConfiguration:
                 self.add_handler(logger, "access", level="DEBUG", formatter="nocolor")
             has_handler = True
 
-        has_handler = self.add_remote_collector(
-            settings_dict["LOG_REMOTE_URL"], settings_dict["LOG_REMOTE_ACCESS"], level=log_level
-        ) or has_handler
+        has_handler = (
+            self.add_remote_collector(
+                settings_dict["LOG_REMOTE_URL"],
+                settings_dict["LOG_REMOTE_ACCESS"],
+                level=log_level,
+            )
+            or has_handler
+        )
         if not has_handler or not self.log_suffix:
             # (no file or interactive command) and no logd/syslog => we print to the console (like the debug mode)
             self.add_handler("ROOT", "stdout", level=log_level, formatter="colorized")
@@ -481,8 +488,7 @@ class LogConfiguration:
             if not os.path.isdir(log_directory):
                 if not self.log_directory_warning:
                     warning = Warning(
-                        'Missing directory "%s"'
-                        % log_directory,
+                        'Missing directory "%s"' % log_directory,
                         hint=None,
                         obj=log_directory,
                     )

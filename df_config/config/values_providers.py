@@ -67,9 +67,13 @@ class EnvironmentConfigProvider(ConfigProvider):
     default_mapping = "df_config.iniconf:EMPTY_ENV_MAPPING"
 
     def __init__(self, prefix, mapping: str = None):
+        from df_config.iniconf import ENVIRON_MAPPING
+
         self.prefix = prefix
         self.mapping_attribute = mapping
-        self.mapping, __ = import_attribute(mapping or self.default_mapping, {})
+        self.mapping, __ = import_attribute(
+            mapping or self.default_mapping, ENVIRON_MAPPING
+        )
         self.exports = ""
         self.exported_values = set()
 

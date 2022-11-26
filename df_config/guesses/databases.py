@@ -81,35 +81,37 @@ def databases(settings_dict):
     If present, Takes the `DATABASE_URL` environment variable into account
     (used on the Heroku platform).
     """
-    engine = database_engine(settings_dict)
-    name = settings_dict["DATABASE_NAME"]
-    user = settings_dict["DATABASE_USER"]
-    options = settings_dict["DATABASE_OPTIONS"]
-    password = settings_dict["DATABASE_PASSWORD"]
-    host = settings_dict["DATABASE_HOST"]
-    port = settings_dict["DATABASE_PORT"]
-    if "DATABASE_URL" in os.environ:  # Used on Heroku environment
-        parsed = urlparse(os.environ["DATABASE_URL"])
-        engine = database_engine({"DATABASE_ENGINE": parsed.scheme})
+    url = settings_dict["DATABASE_URL"]
+    if url:
+        parsed = urlparse(url)
+        eng = database_engine({"DATABASE_ENGINE": parsed.scheme})
         user = parsed.username
         name = parsed.path[1:]
-        password = parsed.password
+        pwd = parsed.password
         host = parsed.hostname
         port = parsed.port
-    return {
-        "default": {
-            "ENGINE": engine,
-            "NAME": name,
-            "USER": user,
-            "OPTIONS": options,
-            "PASSWORD": password,
-            "HOST": host,
-            "PORT": port,
-        }
+    else:
+        eng = database_engine(settings_dict)
+        name = settings_dict["DATABASE_NAME"]
+        user = settings_dict["DATABASE_USER"]
+        pwd = settings_dict["DATABASE_PASSWORD"]
+        host = settings_dict["DATABASE_HOST"]
+        port = settings_dict["DATABASE_PORT"]
+    opts = settings_dict["DATABASE_OPTIONS"]
+    default = {
+        "ENGINE": eng,
+        "NAME": name,
+        "USER": user,
+        "OPTIONS": opts,
+        "PASSWORD": pwd,
+        "HOST": host,
+        "PORT": port,
     }
+    return {"default": default}
 
 
 databases.required_settings = [
+    "DATABASE_URL",
     "DATABASE_ENGINE",
     "DATABASE_NAME",
     "DATABASE_USER",
@@ -153,19 +155,19 @@ class RedisSmartSetting:
         self.config_values = list(self._config_values)
         if not only_redis:
             self.config_values += ["USERNAME"]
-        self.required_settings = [prefix + x for x in self.config_values]
+        self.required_settings = [prefix + x for x in self.config_values] + [
+            "GLOBAL_REDIS_URL"
+        ]
         self.extra_values = extra_values
 
     def __call__(self, settings_dict):
         values = {x: settings_dict[self.prefix + x] for x in self.config_values}
         values.setdefault("USERNAME", None)
         values["AUTH"] = ""
-        if (
-            values["PROTOCOL"] == "redis"
-            and self.env_variable
-            and self.env_variable in os.environ
-        ):
-            parsed_redis_url = urlparse(os.environ[self.env_variable])
+        global_redis_url = settings_dict["GLOBAL_REDIS_URL"]
+        if global_redis_url:
+            parsed_redis_url = urlparse(global_redis_url)
+            values["PROTOCOL"] = parsed_redis_url.scheme
             values["HOST"] = parsed_redis_url.hostname
             values["PORT"] = parsed_redis_url.port or 6379
             values["PASSWORD"] = parsed_redis_url.password
@@ -242,25 +244,25 @@ def cache_setting(settings_dict):
     """
     parsed_url = urlparse(settings_dict["CACHE_URL"])
     django_version = get_complete_version()
+    default = {
+        "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
+        "LOCATION": "unique-snowflake",
+    }
     if settings_dict["DEBUG"]:
-        return {"default": {"BACKEND": "django.core.cache.backends.locmem.LocMemCache"}}
-    elif django_version >= (4, 0) and parsed_url.scheme == "redis":
+        pass
+    elif django_version >= (4, 0) and parsed_url.scheme in ("redis", "rediss"):
         # noinspection PyUnresolvedReferences
-        return {
-            "default": {
-                "BACKEND": "django.core.cache.backends.redis.RedisCache",
-                "LOCATION": "{CACHE_URL}",
-            }
+        default = {
+            "BACKEND": "django.core.cache.backends.redis.RedisCache",
+            "LOCATION": "{CACHE_URL}",
         }
-    elif parsed_url.scheme == "redis":
+    elif parsed_url.scheme in ("redis", "rediss"):
         if is_package_present("django_redis"):
             # noinspection PyUnresolvedReferences
-            return {
-                "default": {
-                    "BACKEND": "django_redis.cache.RedisCache",
-                    "LOCATION": "{CACHE_URL}",
-                    "OPTIONS": {"CLIENT_CLASS": "django_redis.client.DefaultClient"},
-                }
+            default = {
+                "BACKEND": "django_redis.cache.RedisCache",
+                "LOCATION": "{CACHE_URL}",
+                "OPTIONS": {"CLIENT_CLASS": "django_redis.client.DefaultClient"},
             }
     elif parsed_url.scheme == "memcache":
         if django_version >= (3, 2) and is_package_present("pymemcache"):
@@ -277,18 +279,11 @@ def cache_setting(settings_dict):
             parsed_url.hostname or "localhost",
             parsed_url.port or 11211,
         )
-        return {
-            "default": {
-                "BACKEND": backend,
-                "LOCATION": location,
-            }
+        default = {
+            "BACKEND": backend,
+            "LOCATION": location,
         }
-    return {
-        "default": {
-            "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
-            "LOCATION": "unique-snowflake",
-        }
-    }
+    return {"default": default}
 
 
 cache_setting.required_settings = ["DEBUG", "CACHE_URL"]

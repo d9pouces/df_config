@@ -13,7 +13,6 @@
 #  or https://cecill.info/licences/Licence_CeCILL-B_V1-fr.txt (French)         #
 #                                                                              #
 # ##############################################################################
-import os
 import re
 from typing import Dict, Iterable, List
 from urllib.parse import urlparse
@@ -26,7 +25,7 @@ from django.utils.crypto import get_random_string
 from pkg_resources import DistributionNotFound, VersionConflict, get_distribution
 
 from df_config.checks import missing_package, settings_check_results
-from df_config.config.dynamic_settings import AutocreateFileContent, DynamicSettting
+from df_config.config.dynamic_settings import AutocreateFileContent
 from df_config.utils import is_package_present
 
 
@@ -38,22 +37,25 @@ def smart_hostname(settings_dict) -> str:
     :param settings_dict:
     :return:
     """
-    if "SERVER_URL" in os.environ:
-        return os.environ["SERVER_URL"]
-    elif "HEROKU_APP_NAME" in os.environ:
-        return "https://%(HEROKU_APP_NAME)s.herokuapp.com/" % os.environ
+    if settings_dict["HEROKU_APP_NAME"]:
+        return "https://%(HEROKU_APP_NAME)s.herokuapp.com/" % settings_dict
     return "http://%(LISTEN_ADDRESS)s/" % settings_dict
 
 
-smart_hostname.required_settings = ["LISTEN_ADDRESS"]
+smart_hostname.required_settings = ["LISTEN_ADDRESS", "HEROKU_APP_NAME"]
 
 
-class DefaultListenAddress(DynamicSettting):
-    def get_value(self, merger, provider_name: str, setting_name: str) -> str:
-        port = os.environ.get("PORT", "")
-        if re.match(r"^([1-9]\d*)$", port) and 1 <= int(port) <= 65535:
-            return "0.0.0.0:%s" % port
-        return "localhost:%d" % self.value
+def smart_listen_address(settings_dict):
+    """Return the address to listen to with the server command."""
+    port = settings_dict["LISTEN_PORT"]
+    if isinstance(port, int) and 1 <= port <= 65535:
+        return f"0.0.0.0:{port}"
+    elif port and re.match(r"^([1-9]\d*)$", port) and 1 <= int(port) <= 65535:
+        return f"0.0.0.0:{port}"
+    return "localhost:8000"
+
+
+smart_listen_address.required_settings = ["LISTEN_PORT"]
 
 
 def template_setting(settings_dict):
@@ -267,8 +269,6 @@ class AutocreateSecretKey(AutocreateFileContent):
         super().__init__(filename, generate_secret_key, mode=0o600, length=60)
 
     def get_value(self, merger, provider_name: str, setting_name: str) -> str:
-        if "SECRET_KEY" in os.environ:
-            return os.environ["SECRET_KEY"]
         return super().get_value(merger, provider_name, setting_name)
 
 

@@ -13,8 +13,10 @@
 #  or https://cecill.info/licences/Licence_CeCILL-B_V1-fr.txt (French)         #
 #                                                                              #
 # ##############################################################################
+import copy
 import os
 import tempfile
+from typing import Dict, Union
 from unittest import TestCase
 
 from df_config.checks import settings_check_results
@@ -34,6 +36,9 @@ from df_config.config.values_providers import DictProvider
 
 
 class TestDynamicSetting(TestCase):
+    setting_name = "X"
+    other_values: Dict[str, Union[str, DynamicSettting]] = {"OTHER": "42"}
+
     def check(
         self,
         dynamic_setting: DynamicSettting,
@@ -42,37 +47,41 @@ class TestDynamicSetting(TestCase):
         pre_migrate=False,
         post_collectstatic=False,
         post_migrate=False,
+        previous_settings=None,
     ):
         p_values = [x for x in settings_check_results]
         settings_check_results[:] = []
-        setting_name = "X"
-        provider = DictProvider(
-            {setting_name: dynamic_setting, "OTHER": "42"}, name="d1"
-        )
-        merger = SettingMerger(None, [provider],)
+        values = previous_settings or copy.copy(self.other_values)
+        values[self.setting_name] = dynamic_setting
+        provider = DictProvider(values, name="d1")
+        merger = SettingMerger(None, [provider])
         merger.load_raw_settings()
-        actual_value = dynamic_setting.get_value(merger, provider.name, setting_name)
+        actual_value = dynamic_setting.get_value(
+            merger, provider.name, self.setting_name
+        )
         self.assertEqual(expected_value, actual_value)
         if pre_collectstatic:
             dynamic_setting.pre_collectstatic(
-                merger, provider.name, setting_name, actual_value
+                merger, provider.name, self.setting_name, actual_value
             )
         if pre_migrate:
             dynamic_setting.pre_migrate(
-                merger, provider.name, setting_name, actual_value
+                merger, provider.name, self.setting_name, actual_value
             )
         if post_collectstatic:
             dynamic_setting.post_collectstatic(
-                merger, provider.name, setting_name, actual_value
+                merger, provider.name, self.setting_name, actual_value
             )
         if post_migrate:
             dynamic_setting.post_migrate(
-                merger, provider.name, setting_name, actual_value
+                merger, provider.name, self.setting_name, actual_value
             )
         n_values = [x for x in settings_check_results]
         settings_check_results[:] = p_values
         return n_values
 
+
+class TestDynamicSettingClasses(TestDynamicSetting):
     def test_raw_value(self):
         self.check(RawValue("{X}"), "{X}")
 

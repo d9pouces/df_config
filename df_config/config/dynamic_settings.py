@@ -38,8 +38,10 @@ Since the second file overrides the first one, `TEMPLATE_DEBUG` always has the s
 
 """
 import os
+import socket
 import sys
 from typing import Any, Set
+from urllib.parse import urlparse
 
 from django.core.checks import Warning
 from django.utils.module_loading import import_string
@@ -511,6 +513,38 @@ class CallableSetting(DynamicSettting):
             fn,
             ", ".join(["%r" % x for x in self.required]),
         )
+
+
+class ParsedURLSetting(CallableSetting):
+    default_ports = {
+        "smtp": 25,
+        "smtps": 465,
+        "smtp+tls": 487,
+        "http": 80,
+        "https": 443,
+        "redis": 6379,
+        "rediss": 6379,
+        "mysql": 3306,
+        "psql": 5432,
+        "oracle": 1521,
+        "memcache": 11211,
+    }
+
+    def __init__(self, url_setting, url_attr, default_value=None, formatter=str):
+        self.url_setting = url_setting
+        self.url_attribute = url_attr
+        self.default_value = default_value
+        self.formatter = formatter
+        super().__init__(self.parse_value, self.url_setting)
+
+    def parse_value(self, settings_dict):
+        url = settings_dict[self.url_setting]
+        if not url:
+            return self.default_value
+        parsed_url = urlparse(url)
+        if self.url_attribute == "port" and not parsed_url.port:
+            return self.formatter(self.default_ports.get(parsed_url.scheme))
+        return self.formatter(getattr(parsed_url, self.url_attribute))
 
 
 class ExpandIterable(SettingReference):
