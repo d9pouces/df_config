@@ -32,54 +32,101 @@ def x_accel_converter(value):
     return []
 
 
-REDIS_MAPPING = [
-    IntegerConfigField(
-        "cache.db",
-        "CACHE_DB",
-        help_str="Database number (redis only). \n"
-        'Python package "django-redis" is also required to use Redis.',
+ALLAUTH_MAPPING = []
+BASE_MAPPING = [
+    CharConfigField(
+        "global.admin_email",
+        "ADMIN_EMAIL",
+        help_str="e-mail address for receiving logged errors",
+        env_name="ADMIN_EMAIL",
     ),
     CharConfigField(
-        "cache.host", "CACHE_HOST", help_str="cache server host (redis or memcache)"
+        None,
+        "SECRET_KEY",
+        help_str="Secret key to provide cryptographic signing, and should be set to a unique, unpredictable value.",
+        env_name="SECRET_KEY",
     ),
     CharConfigField(
-        "cache.password",
-        "CACHE_PASSWORD",
-        help_str="cache server password (if required by redis)",
-    ),
-    IntegerConfigField(
-        "cache.port", "CACHE_PORT", help_str="cache server port (redis or memcache)"
-    ),
-    ChoiceConfigFile(
-        "cache.engine",
-        "CACHE_PROTOCOL",
-        choices={
-            "redis": "redis",
-            "memcache": "memcache",
-            "locmem": "locmem",
-            "file": "file",
-        },
-        help_str='cache storage engine ("locmem", "redis" or "memcache")',
-    ),
-    IntegerConfigField(
-        "sessions.db",
-        "SESSION_REDIS_DB",
-        help_str="Database number of the Redis sessions DB\n"
-        'Python package "django-redis-sessions" is required.',
+        "global.data",
+        "LOCAL_PATH",
+        help_str="where all data will be stored (static/uploaded/temporary files, …). "
+        "If you change it, you must run the collectstatic and migrate commands again.\n",
     ),
     CharConfigField(
-        "sessions.host", "SESSION_REDIS_HOST", help_str="Redis sessions DB host"
+        "global.upload_directory",
+        "MEDIA_ROOT",
+        help_str="where uploaded media files will be stored.",
+        env_name="UPLOAD_DIRECTORY",
     ),
     CharConfigField(
-        "sessions.password",
-        "SESSION_REDIS_PASSWORD",
-        help_str="Redis sessions DB password (if required)",
+        "global.data",
+        "FILE_UPLOAD_TEMP_DIR",
+        help_str="where temporary data will be stored.",
+        env_name="TEMP_DIRECTORY",
+    ),
+    CharConfigField(
+        "global.language_code",
+        "LANGUAGE_CODE",
+        help_str="default to fr_FR",
+        env_name="LANGUAGE_CODE",
+    ),
+    CharConfigField(
+        "global.listen_address",
+        "LISTEN_ADDRESS",
+        help_str="address used by your web server (like 127.0.0.1:8000).",
     ),
     IntegerConfigField(
-        "sessions.port", "SESSION_REDIS_PORT", help_str="Redis sessions DB port"
+        None,
+        "LISTEN_PORT",
+        help_str="port to listen to (force to listen on 0.0.0.0:$PORT).",
+        env_name="PORT",
+    ),
+    CharConfigField(
+        "global.server_url",
+        "SERVER_BASE_URL",
+        help_str="Public URL of your website. \n"
+        'Default to "http://{listen_address}/" but should '
+        "be different if you use a reverse proxy like "
+        "Apache or Nginx. Example: http://www.example.org/.",
+        env_name="SERVER_URL",
+    ),
+    CharConfigField(
+        None,
+        "HEROKU_APP_NAME",
+        help_str="Heroku's application name, when deploying your on Heroku.",
+        env_name="HEROKU_APP_NAME",
+    ),
+    CharConfigField(
+        "global.time_zone",
+        "TIME_ZONE",
+        help_str="default to Europe/Paris",
+        env_name="TIME_ZONE",
+    ),
+    CharConfigField(
+        None,
+        "EMAIL_HOST_URL",
+        help_str="SMTP server for sending admin emails. \n"
+        "smtp+tls://account@example.com:password@smtp.example.com:587/",
+        env_name="EMAIL_HOST_URL",
+    ),
+    CharConfigField("email.host", "EMAIL_HOST", help_str="SMTP server"),
+    CharConfigField("email.password", "EMAIL_HOST_PASSWORD", help_str="SMTP password"),
+    IntegerConfigField(
+        "email.port", "EMAIL_PORT", help_str="SMTP port (often 25, 465 or 587)"
+    ),
+    CharConfigField("email.user", "EMAIL_HOST_USER", help_str="SMTP user"),
+    CharConfigField("email.from", "EMAIL_FROM", help_str="Displayed sender email"),
+    BooleanConfigField(
+        "email.use_tls",
+        "EMAIL_USE_TLS",
+        help_str='"true" if your SMTP uses STARTTLS ' "(often on port 587)",
+    ),
+    BooleanConfigField(
+        "email.use_ssl",
+        "EMAIL_USE_SSL",
+        help_str='"true" if your SMTP uses SSL (often on port 465)',
     ),
 ]
-
 CELERY_MAPPING = [
     IntegerConfigField(
         "celery.db",
@@ -98,140 +145,79 @@ CELERY_MAPPING = [
         "celery.processes", "CELERY_PROCESSES", help_str="number of Celery processes"
     ),
 ]
-
-BASE_MAPPING = [
+DATABASE_MAPPING = [
     CharConfigField(
-        "global.admin_email",
-        "ADMIN_EMAIL",
-        help_str="e-mail address for receiving logged errors",
-    ),
-    CharConfigField(
-        "global.data",
-        "LOCAL_PATH",
-        help_str="where all data will be stored (static/uploaded/temporary files, …). "
-        "If you change it, you must run the collectstatic and migrate commands again.\n",
-    ),
-    CharConfigField(
-        "global.language_code", "LANGUAGE_CODE", help_str="default to fr_FR"
-    ),
-    CharConfigField(
-        "global.listen_address",
-        "LISTEN_ADDRESS",
-        help_str="address used by your web server.",
-    ),
-    CharConfigField(
-        "global.server_url",
-        "SERVER_BASE_URL",
-        help_str="Public URL of your website. \n"
-        'Default to "http://{listen_address}/" but should '
-        "be different if you use a reverse proxy like "
-        "Apache or Nginx. Example: http://www.example.org/.",
-    ),
-    CharConfigField(
-        "global.time_zone", "TIME_ZONE", help_str="default to Europe/Paris"
-    ),
-    CharConfigField(
-        "global.log_remote_url",
-        "LOG_REMOTE_URL",
-        help_str="Send logs to a syslog service. \n"
-        "Examples: syslog+tcp://localhost:514/user, syslog:///local7 "
-        "or syslog:///dev/log/daemon.",
-    ),
-    CharConfigField(
-        "global.log_sentry_dsn",
-        "SENTRY_DSN",
-        help_str="sentry DSN (see https://sentry.io/)",
-    ),
-    CharConfigField(
-        "global.log_directory",
-        "LOG_DIRECTORY",
-        help_str="Write all local logs to this directory.",
-    ),
-    ChoiceConfigFile(
-        "global.log_level",
-        "LOG_LEVEL",
-        help_str="Log level (one of 'debug', 'info', 'warn', 'error' or 'critical').",
-        choices={
-            "debug": "DEBUG",
-            "info": "INFO",
-            "warn": "WARN",
-            "error": "ERROR",
-            "critical": "CRITICAL",
-        },
-    ),
-    BooleanConfigField(
-        "global.log_remote_access",
-        "LOG_REMOTE_ACCESS",
-        help_str="If true, log of HTTP connections are also sent to syslog/logd",
+        None, "DATABASE_URL", help_str="URL of the database", env_name="DATABASE_URL"
     ),
     CharConfigField(
         "database.db",
         "DATABASE_NAME",
-        help_str="Main database name (or path of the sqlite3 database)",
+        help_str="Database name (or path of the sqlite3 database)",
+        env_name=None,
     ),
     CharConfigField(
         "database.engine",
         "DATABASE_ENGINE",
-        help_str='Main database engine ("mysql", "postgresql", "sqlite3", "oracle", or the dotted name of '
+        help_str='Database engine ("mysql", "postgresql", "sqlite3", "oracle", or the dotted name of '
         "the Django backend)",
+        env_name=None,
     ),
-    CharConfigField("database.host", "DATABASE_HOST", help_str="Main database host"),
     CharConfigField(
-        "database.password", "DATABASE_PASSWORD", help_str="Main database password"
+        "database.host", "DATABASE_HOST", help_str="Database host", env_name=None
     ),
-    IntegerConfigField("database.port", "DATABASE_PORT", help_str="Main database port"),
-    CharConfigField("database.user", "DATABASE_USER", help_str="Main database user"),
-    CharConfigField("email.host", "EMAIL_HOST", help_str="SMTP server"),
-    CharConfigField("email.password", "EMAIL_HOST_PASSWORD", help_str="SMTP password"),
-    IntegerConfigField(
-        "email.port", "EMAIL_PORT", help_str="SMTP port (often 25, 465 or 587)"
-    ),
-    CharConfigField("email.user", "EMAIL_HOST_USER", help_str="SMTP user"),
-    CharConfigField("email.from", "EMAIL_FROM", help_str="Displayed sender email"),
-    BooleanConfigField(
-        "email.use_tls",
-        "EMAIL_USE_TLS",
-        help_str='"true" if your SMTP uses STARTTLS ' "(often on port 587)",
-    ),
-    BooleanConfigField(
-        "email.use_ssl",
-        "EMAIL_USE_SSL",
-        help_str='"true" if your SMTP uses SSL (often on port 465)',
-    ),
-]  # type: List[ConfigField]
-
-SENDFILE_MAPPING = [
-    BooleanConfigField(
-        "global.use_apache",
-        "USE_X_SEND_FILE",
-        help_str='"true" if Apache is used as reverse-proxy with mod_xsendfile.'
-        "The X-SENDFILE header must be allowed from file directories",
-    ),
-    ConfigField(
-        "global.use_nginx",
-        "X_ACCEL_REDIRECT",
-        from_str=x_accel_converter,
-        to_str=lambda x: "True" if x else "False",
-        help_str='"true" is nginx is used as reverse-proxy with x-accel-redirect.'
-        "The media directory (and url) must be allowed in the Nginx configuration.",
-    ),
-]  # type: List[ConfigField]
-RADIUS_AUTH_MAPPING = [
     CharConfigField(
-        "auth.radius_server",
-        "RADIUS_SERVER",
-        help_str="IP or FQDN of the Radius server. "
-        'Python package "django-radius" is required.',
+        "database.password",
+        "DATABASE_PASSWORD",
+        help_str="Database password",
+        env_name=None,
     ),
     IntegerConfigField(
-        "auth.radius_port", "RADIUS_PORT", help_str="port of the Radius server."
+        "database.port", "DATABASE_PORT", help_str="Database port", env_name=None
     ),
     CharConfigField(
-        "auth.radius_secret",
-        "RADIUS_SECRET",
-        help_str="Shared secret if the Radius server",
+        "database.user", "DATABASE_USER", help_str="Database user", env_name=None
+    ),
+]
+DJANGO_AUTH_MAPPING = [
+    BooleanConfigField(
+        "auth.local_users",
+        "DF_ALLOW_LOCAL_USERS",
+        help_str='Set to "false" to deactivate local database of users.',
+    ),
+    BooleanConfigField(
+        "auth.create_users",
+        "DF_ALLOW_USER_CREATION",
+        help_str='Set to "false" if users cannot create their account themselvers, or '
+        "only if existing users can by authenticated by the reverse-proxy.",
+    ),
+    IntegerConfigField(
+        "auth.session_duration",
+        "SESSION_COOKIE_AGE",
+        help_str="Duration of the connection sessions "
+        "(in seconds, default to 1,209,600 s / 14 days)",
+    ),
+    BooleanConfigField(
+        "auth.allow_basic_auth",
+        "USE_HTTP_BASIC_AUTH",
+        help_str='Set to "true" if you want to allow HTTP basic auth, using the Django database.',
     ),
 ]  # type: List[ConfigField]
+HTTP_AUTH_MAPPING = [
+    CharConfigField(
+        "auth.remote_user_header",
+        "DF_REMOTE_USER_HEADER",
+        help_str='Set it if the reverse-proxy authenticates users, a common value is "HTTP_REMOTE_USER". '
+        "Note: the HTTP_ prefix is automatically added, just set REMOTE_USER in the "
+        "reverse-proxy configuration. ",
+    ),
+    ListConfigField(
+        "auth.remote_user_groups",
+        "DF_DEFAULT_GROUPS",
+        help_str="Comma-separated list of groups, for new users that are automatically created "
+        "when authenticated by remote_user_header. Ignored if groups are read from a LDAP "
+        "server. ",
+    ),
+]
 LDAP_AUTH_MAPPING = [
     CharConfigField(
         "auth.ldap_server_url",
@@ -343,81 +329,156 @@ LDAP_AUTH_MAPPING = [
         },
         help_str="Type of LDAP groups.",
     ),
-]  # type: List[ConfigField]
+]
+LOG_MAPPING = [
+    CharConfigField(
+        "global.log_remote_url",
+        "LOG_REMOTE_URL",
+        help_str="Send logs to a syslog service. \n"
+        "Examples: syslog+tcp://localhost:514/user, syslog:///local7 "
+        "or syslog:///dev/log/daemon.",
+    ),
+    CharConfigField(
+        "global.log_sentry_dsn",
+        "SENTRY_DSN",
+        help_str="sentry DSN (see https://sentry.io/)",
+        env_name="SENTRY_DSN",
+    ),
+    CharConfigField(
+        "global.log_directory",
+        "LOG_DIRECTORY",
+        help_str="Write all local logs to this directory.",
+        env_name="LOG_DIRECTORY",
+    ),
+    ChoiceConfigFile(
+        "global.log_level",
+        "LOG_LEVEL",
+        help_str="Log level (one of 'debug', 'info', 'warn', 'error' or 'critical').",
+        choices={
+            "debug": "DEBUG",
+            "info": "INFO",
+            "warn": "WARN",
+            "error": "ERROR",
+            "critical": "CRITICAL",
+        },
+        env_name="LOG_LEVEL",
+    ),
+    BooleanConfigField(
+        "global.log_remote_access",
+        "LOG_REMOTE_ACCESS",
+        help_str="If true, log of HTTP connections are also sent to syslog/logd",
+    ),
+]
 PAM_AUTH_MAPPING = [
     BooleanConfigField(
         "auth.pam",
         "USE_PAM_AUTHENTICATION",
         help_str='Set to "true" if you want to activate PAM authentication',
     ),
-]  # type: List[ConfigField]
-HTTP_AUTH_MAPPING = [
+]
+RADIUS_AUTH_MAPPING = [
     CharConfigField(
-        "auth.remote_user_header",
-        "DF_REMOTE_USER_HEADER",
-        help_str='Set it if the reverse-proxy authenticates users, a common value is "HTTP_REMOTE_USER". '
-        "Note: the HTTP_ prefix is automatically added, just set REMOTE_USER in the "
-        "reverse-proxy configuration. ",
-    ),
-    ListConfigField(
-        "auth.remote_user_groups",
-        "DF_DEFAULT_GROUPS",
-        help_str="Comma-separated list of groups, for new users that are automatically created "
-        "when authenticated by remote_user_header. Ignored if groups are read from a LDAP "
-        "server. ",
-    ),
-]  # type: List[ConfigField]
-
-DJANGO_AUTH_MAPPING = [
-    BooleanConfigField(
-        "auth.local_users",
-        "DF_ALLOW_LOCAL_USERS",
-        help_str='Set to "false" to deactivate local database of users.',
-    ),
-    BooleanConfigField(
-        "auth.create_users",
-        "DF_ALLOW_USER_CREATION",
-        help_str='Set to "false" if users cannot create their account themselvers, or '
-        "only if existing users can by authenticated by the reverse-proxy.",
+        "auth.radius_server",
+        "RADIUS_SERVER",
+        help_str="IP or FQDN of the Radius server. "
+        'Python package "django-radius" is required.',
     ),
     IntegerConfigField(
-        "auth.session_duration",
-        "SESSION_COOKIE_AGE",
-        help_str="Duration of the connection sessions "
-        "(in seconds, default to 1,209,600 s / 14 days)",
+        "auth.radius_port", "RADIUS_PORT", help_str="port of the Radius server."
     ),
+    CharConfigField(
+        "auth.radius_secret",
+        "RADIUS_SECRET",
+        help_str="Shared secret if the Radius server",
+    ),
+]
+REDIS_MAPPING = [
+    CharConfigField(
+        None,
+        "COMMON_REDIS_URL",
+        help_str="Redis database URL, for all redis things.",
+        env_name="REDIS_URL",
+    ),
+    IntegerConfigField(
+        "cache.db",
+        "CACHE_DB",
+        help_str="Database number (redis only). \n"
+        'Python package "django-redis" is also required to use Redis.',
+    ),
+    CharConfigField(
+        "cache.host", "CACHE_HOST", help_str="cache server host (redis or memcache)"
+    ),
+    CharConfigField(
+        "cache.password",
+        "CACHE_PASSWORD",
+        help_str="cache server password (if required by redis)",
+    ),
+    IntegerConfigField(
+        "cache.port", "CACHE_PORT", help_str="cache server port (redis or memcache)"
+    ),
+    ChoiceConfigFile(
+        "cache.engine",
+        "CACHE_PROTOCOL",
+        choices={
+            "redis": "redis",
+            "memcache": "memcache",
+            "locmem": "locmem",
+            "file": "file",
+        },
+        help_str='cache storage engine ("locmem", "redis" or "memcache")',
+    ),
+    IntegerConfigField(
+        "sessions.db",
+        "SESSION_REDIS_DB",
+        help_str="Database number of the Redis sessions DB\n"
+        'Python package "django-redis-sessions" is required.',
+    ),
+    CharConfigField(
+        "sessions.host", "SESSION_REDIS_HOST", help_str="Redis sessions DB host"
+    ),
+    CharConfigField(
+        "sessions.password",
+        "SESSION_REDIS_PASSWORD",
+        help_str="Redis sessions DB password (if required)",
+    ),
+    IntegerConfigField(
+        "sessions.port", "SESSION_REDIS_PORT", help_str="Redis sessions DB port"
+    ),
+]
+SENDFILE_MAPPING = [
     BooleanConfigField(
-        "auth.allow_basic_auth",
-        "USE_HTTP_BASIC_AUTH",
-        help_str='Set to "true" if you want to allow HTTP basic auth, using the Django database.',
+        "global.use_apache",
+        "USE_X_SEND_FILE",
+        help_str='"true" if Apache is used as reverse-proxy with mod_xsendfile.'
+        "The X-SENDFILE header must be allowed from file directories",
     ),
-]  # type: List[ConfigField]
+    ConfigField(
+        "global.use_nginx",
+        "X_ACCEL_REDIRECT",
+        from_str=x_accel_converter,
+        to_str=lambda x: "True" if x else "False",
+        help_str='"true" is nginx is used as reverse-proxy with x-accel-redirect.'
+        "The media directory (and url) must be allowed in the Nginx configuration.",
+    ),
+]
 AUTH_MAPPING = (
     DJANGO_AUTH_MAPPING
     + RADIUS_AUTH_MAPPING
     + LDAP_AUTH_MAPPING
     + PAM_AUTH_MAPPING
     + HTTP_AUTH_MAPPING
-)  # type: List[ConfigField]
-ALLAUTH_MAPPING = []
+)
 # empty settings (please use the `social_authentications` management command instead)
 INI_MAPPING = (
-    BASE_MAPPING + REDIS_MAPPING + CELERY_MAPPING + AUTH_MAPPING + ALLAUTH_MAPPING
+    ALLAUTH_MAPPING
+    + AUTH_MAPPING
+    + BASE_MAPPING
+    + DATABASE_MAPPING
+    + LOG_MAPPING
+    + REDIS_MAPPING
+    + SENDFILE_MAPPING
 )
-ENVIRON_MAPPING = {
-    "FILE_UPLOAD_TEMP_DIR": "TEMP_DIRECTORY",
-    "MEDIA_ROOT": "UPLOAD_DIRECTORY",
-    "LOG_DIRECTORY": "LOG_DIRECTORY",
-    "LOG_LEVEL": "LOG_LEVEL",
-    "DATABASE_URL": "DATABASE_URL",
-    "SERVER_BASE_URL": "SERVER_URL",
-    "HEROKU_APP_NAME": "HEROKU_APP_NAME",
-    "LISTEN_PORT": "PORT",
-    "COMMON_REDIS_URL": "REDIS_URL",
-    "SECRET_KEY": "SECRET_KEY",
-    "ADMIN_EMAIL": "ADMIN_EMAIL",
-    "LANGUAGE_CODE": "LANGUAGE_CODE",
-    "TIME_ZONE": "TIME_ZONE",
-}
+DEFAULT_INI_MAPPING = (
+    BASE_MAPPING + DATABASE_MAPPING + LOG_MAPPING + REDIS_MAPPING + SENDFILE_MAPPING
+)
 EMPTY_INI_MAPPING = []
-EMPTY_ENV_MAPPING = {}

@@ -25,10 +25,9 @@ from django.conf import settings
 if settings.USE_PIPELINE:
 
     # noinspection PyPackageRequirements,PyUnresolvedReferences
-    from pipeline.compressors import CompressorBase, SubProcessCompressor
-
     # noinspection PyPackageRequirements,PyUnresolvedReferences
     from pipeline.compilers import CompilerBase
+    from pipeline.compressors import CompressorBase, SubProcessCompressor
 
     # noinspection PyPackageRequirements,PyUnresolvedReferences
     from pipeline.storage import PipelineManifestStorage, PipelineMixin
@@ -95,7 +94,7 @@ class TerserCompressor(SubProcessCompressor):
 
 # noinspection PyClassHasNoInit
 class PyScssCompiler(CompilerBase):
-    """ SASS (.scss) compiler based on the Python library pyScss.
+    """SASS (.scss) compiler based on the Python library pyScss.
     (http://pyscss.readthedocs.io/en/latest/ ).
     However, this compiler is limited to SASS 3.2 and cannot compile modern projets like Bootstrap 4.
     Please use :class:`pipeline.compilers.sass.SASSCompiler` if you use modern SCSS files.
@@ -125,7 +124,7 @@ class PyScssCompiler(CompilerBase):
 
 # noinspection PyClassHasNoInit
 class TypescriptCompiler(CompilerBase):
-    """ TypeScript (.ts) compiler using "tsc".
+    """TypeScript (.ts) compiler using "tsc".
     (https://www.typescriptlang.org ).
 
     """
@@ -167,7 +166,7 @@ class TypescriptCompiler(CompilerBase):
 if PipelineManifestStorage:
 
     class NicerPipelineCachedStorage(PipelineManifestStorage):
-        """ display a better exception"""
+        """display a better exception"""
 
         def hashed_name(self, name, content=None, filename=None):
             try:
@@ -176,7 +175,6 @@ if PipelineManifestStorage:
                 raise ValueError(
                     "%s. Did you run the command 'collectstatic'?" % e.args[0]
                 )
-
 
 else:
     NicerPipelineCachedStorage = None
@@ -189,7 +187,6 @@ if PipelineMixin and CompressedManifestStaticFilesStorage:
         """mix django-pipeline and whitenoise"""
 
         pass
-
 
 else:
     PipelineCompressedManifestStaticFilesStorage = None

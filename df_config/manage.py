@@ -78,7 +78,6 @@ def get_merger_from_env() -> SettingMerger:
     if prefix == "/usr":
         prefix = ""
     ini_mapping = f"{module_name}.iniconf:INI_MAPPING"
-    environ_mapping = f"{module_name}.iniconf:ENVIRON_MAPPING"
     config_providers = [
         DictProvider({"DF_MODULE_NAME": module_name}, name="default values"),
         PythonModuleProvider("df_config.config.defaults"),
@@ -99,9 +98,11 @@ def get_merger_from_env() -> SettingMerger:
         ),
         IniConfigProvider(os.path.abspath("local_settings.ini")),
         PythonFileProvider(os.path.abspath("local_settings.py")),
-        EnvironmentConfigProvider("%s_" % module_name.upper(), environ_mapping),
+        EnvironmentConfigProvider("%s_" % module_name.upper()),
     ]
-    fields_provider = PythonConfigFieldsProvider(ini_mapping)
+    fields_provider = PythonConfigFieldsProvider(
+        ini_mapping, fallback="df_config.iniconf:DEFAULT_INI_MAPPING"
+    )
     return SettingMerger(fields_provider, config_providers)
 
 

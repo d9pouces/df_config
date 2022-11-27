@@ -28,11 +28,15 @@ from df_config.config.values_providers import ConfigProvider
 
 
 class SettingMerger:
-    """Load different settings modules and config files and merge them.
-    """
+    """Load different settings modules and config files and merge them."""
 
     def __init__(
-        self, fields_provider, providers, stdout=None, stderr=None, no_color=False,
+        self,
+        fields_provider,
+        providers,
+        stdout=None,
+        stderr=None,
+        no_color=False,
     ):
         self.fields_provider = fields_provider or PythonConfigFieldsProvider(None)
         self.providers = providers or []
@@ -206,7 +210,7 @@ class SettingMerger:
     def post_process(self):
         """Perform some cleaning on settings:
 
-            * remove duplicates in `INSTALLED_APPS` (keeps only the first occurrence)
+        * remove duplicates in `INSTALLED_APPS` (keeps only the first occurrence)
         """
         # remove duplicates in INSTALLED_APPS
         key = "INSTALLED_APPS"
@@ -214,9 +218,8 @@ class SettingMerger:
             self.settings[key] = list(OrderedDict.fromkeys(self.settings[key]))
 
     def write_provider(self, provider, include_doc=False):
-        for config_field in sorted(
-            self.fields_provider.get_config_fields(), key=lambda x: x.name
-        ):
+        config_fields = self.fields_provider.get_config_fields()
+        for config_field in sorted(config_fields, key=lambda x: str(x.name)):
             assert isinstance(config_field, ConfigField)
             if config_field.setting_name not in self.settings:
                 continue

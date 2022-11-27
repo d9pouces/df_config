@@ -84,8 +84,8 @@ class Command(BaseCommand):
 
         if filename and action in {"python", "env"}:
             content = fd.getvalue()
-            # noinspection PyBroadException
             if action == "python":
+                # noinspection PyBroadException
                 try:
                     # noinspection PyPackageRequirements,PyUnresolvedReferences
                     import black
@@ -104,6 +104,10 @@ class Command(BaseCommand):
 
     def show_ini_config(self, verbosity):
         if verbosity >= 2:
+            p = merger.fields_provider
+            self.stdout.write(
+                self.style.SUCCESS(f"# configuration fields read from {p}")
+            )
             self.stdout.write(self.style.SUCCESS("# read configuration files:"))
         for provider in merger.providers:
             if not isinstance(provider, IniConfigProvider):
@@ -128,13 +132,16 @@ class Command(BaseCommand):
             if not isinstance(provider, EnvironmentConfigProvider):
                 continue
             prefix = provider.prefix
-            mapping_attribute = provider.mapping_attribute
         if not prefix:
             self.stderr.write("Environment variables are not used•")
             return
         if verbosity >= 2:
+            p = merger.fields_provider
+            self.stdout.write(
+                self.style.SUCCESS(f"# configuration fields read from {p}")
+            )
             self.stdout.write(self.style.SUCCESS("# read environment variables:"))
-        provider = EnvironmentConfigProvider(prefix, mapping_attribute)
+        provider = EnvironmentConfigProvider(prefix)
         merger.write_provider(provider, include_doc=verbosity >= 2)
         self.stdout.write(provider.to_str())
 

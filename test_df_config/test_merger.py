@@ -67,11 +67,18 @@ class TestSettingMerger(TestCase):
             ],
         )
         merger.process()
-        self.assertEqual({"X": 2, "Y": "x2",}, merger.settings)
+        self.assertEqual(
+            {
+                "X": 2,
+                "Y": "x2",
+            },
+            merger.settings,
+        )
 
     def test_loop(self):
         merger = SettingMerger(
-            None, [DictProvider({"X": "{Y}", "Y": "{Z}", "Z": "{X}"}, name="1")],
+            None,
+            [DictProvider({"X": "{Y}", "Y": "{Z}", "Z": "{X}"}, name="1")],
         )
         self.assertRaises(ValueError, merger.process)
 

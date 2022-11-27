@@ -64,16 +64,10 @@ class ConfigProvider:
 
 class EnvironmentConfigProvider(ConfigProvider):
     name = "Environment"
-    default_mapping = "df_config.iniconf:EMPTY_ENV_MAPPING"
 
     def __init__(self, prefix, mapping: str = None):
-        from df_config.iniconf import ENVIRON_MAPPING
 
         self.prefix = prefix
-        self.mapping_attribute = mapping
-        self.mapping, __ = import_attribute(
-            mapping or self.default_mapping, ENVIRON_MAPPING
-        )
         self.exports = ""
         self.exported_values = set()
 
@@ -85,16 +79,22 @@ class EnvironmentConfigProvider(ConfigProvider):
 
     def has_value(self, config_field: ConfigField):
         key = self.get_key(config_field)
+        if key is None:
+            return False
         return key in os.environ
 
     def get_key(self, config_field):
-        key = f"{self.prefix}{config_field.setting_name}"
-        key = self.mapping.get(config_field.setting_name, key)
+        if config_field.environ_name is config_field.AUTO:
+            key = f"{self.prefix}{config_field.setting_name}"
+        else:
+            key = config_field.environ_name
         return key
 
     def set_value(self, config_field, include_doc=False):
-        value = config_field.to_str(config_field.value)
         key = self.get_key(config_field)
+        if key is None:
+            return
+        value = config_field.to_str(config_field.value)
         self.exports += "%s=%s\n" % (shlex.quote(key), shlex.quote(value))
 
     def get_value(self, config_field):
@@ -130,12 +130,16 @@ class IniConfigProvider(ConfigProvider):
 
     @staticmethod
     def __get_info(config_field: ConfigField):
+        if config_field.name is None:
+            return None, None
         section, sep, option = config_field.name.partition(".")
         return section, option
 
     def set_value(self, config_field: ConfigField, include_doc: bool = False):
         """update the internal config file"""
         section, option = self.__get_info(config_field)
+        if section is None:
+            return
         if not self.parser.has_section(section):
             self.parser.add_section(section)
         to_str = config_field.to_str(config_field.value)
@@ -147,6 +151,8 @@ class IniConfigProvider(ConfigProvider):
     def get_value(self, config_field: ConfigField):
         """get option from the config file"""
         section, option = self.__get_info(config_field)
+        if section is None:
+            return None
         if self.parser.has_option(section=section, option=option):
             str_value = self.parser.get(section=section, option=option)
             return config_field.from_str(str_value)
@@ -155,6 +161,8 @@ class IniConfigProvider(ConfigProvider):
     def has_value(self, config_field: ConfigField):
         """return `True` if the option is defined in the config file"""
         section, option = self.__get_info(config_field)
+        if section is None:
+            return False
         return self.parser.has_option(section=section, option=option)
 
     def get_extra_settings(self):
@@ -184,6 +192,8 @@ class PythonModuleProvider(ConfigProvider):
         if module_name is not None:
             try:
                 self.module = import_module(module_name, package=None)
+            except AttributeError:
+                pass
             except ImportError:
                 pass
 

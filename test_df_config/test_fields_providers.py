@@ -32,3 +32,11 @@ class TestPythonConfigFieldsProvider(TestCase):
         )
         self.assertFalse(provider.is_valid())
         self.assertEqual([], provider.get_config_fields())
+
+    def test_python_config_fields_provider_fallback(self):
+        provider = PythonConfigFieldsProvider(
+            "test_df_config.data.sample_iniconf2:MAPPING",
+            fallback="test_df_config.data.sample_iniconf:MAPPING",
+        )
+        self.assertTrue(provider.is_valid())
+        self.assertEqual(2, len(provider.get_config_fields()))

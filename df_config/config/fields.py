@@ -22,7 +22,7 @@ Check :mod:`df_config.iniconf` for examples.
 """
 
 import os
-from typing import Any
+from typing import Any, Optional, Union
 
 from django.core.checks import Error
 
@@ -82,24 +82,32 @@ def strip_split(value):
 class ConfigField:
     """Class that maps an option in a .ini file to a setting.
 
-    :param name: the section and the option in a .ini file (like "database.engine")
+    :param name: the section and the option in a .ini file (like "database.engine").
+        this setting is not retrieved from config field if set to `None`.
     :param setting_name: the name of the setting (like "DATABASE_ENGINE")
     :param from_str: any callable that takes a text value and returns an object. Default to `str_or_none`
     :type from_str: `callable`
     :param to_str: any callable that takes the Python value and that converts it to str. Default to `str`
     :type to_str: `callable`
     :param help_str: any text that can serve has help in documentation.
-    :param default: the value that will be used in documentation. The current setting value is used if equal to `None`.
+    :param default: the value that will be used when generating documentation.
+        The current setting value is used if equal to `None`.
+    :param env_name: name of the environment variable to get the setting value.
+        By default, the environment variable name is guessed from the setting name.
+        If set to `None`, do not get the value from the environment.
     """
+
+    AUTO = frozenset()
 
     def __init__(
         self,
-        name: str,
+        name: Optional[str],
         setting_name: str,
         from_str=str,
         to_str=str_or_blank,
         help_str: str = None,
         default: Any = None,
+        env_name: Optional[Union[set, str]] = AUTO,
     ):
         self.name = name
         self.setting_name = setting_name
@@ -107,6 +115,7 @@ class ConfigField:
         self.to_str = to_str
         self.__doc__ = help_str
         self.value = default
+        self.environ_name = env_name
 
     def __str__(self):
         return self.name

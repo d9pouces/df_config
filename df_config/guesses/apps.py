@@ -51,7 +51,7 @@ allauth_provider_apps.required_settings = ["ALLAUTH_APPLICATIONS_CONFIG"]
 
 class InstalledApps:
     """Provide a complete `INSTALLED_APPS` list, transparently adding common third-party packages.
-     Specifically handle apps required by django-allauth (one by allowed method).
+    Specifically handle apps required by django-allauth (one by allowed method).
 
     """
 

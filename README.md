@@ -9,21 +9,22 @@ However, these settings could be organized into three categories:
   * settings that are installation-dependent (`DATABASE_PASSWORD`, …)
 
 
-Moreover, there are dependencies between settings. For example, `ADMIN_EMAIL`, `ALLOWED_HOSTS` or `CSRF_COOKIE_DOMAIN` depend
- on the domain name of your site,  and `SESSION_COOKIE_SECURE` and `CSRF_COOKIE_SECURE` can be set when you use TLS.
-df_config allows to use functions to dynamically define settings using some other settings as parameters.
+Moreover, there are dependencies between settings. For example, `ADMIN_EMAIL`, `ALLOWED_HOSTS` and `CSRF_COOKIE_DOMAIN` depend
+ on the same domain name of your site,  and `SESSION_COOKIE_SECURE` and `CSRF_COOKIE_SECURE` can be set only when you use TLS.
+df_config allows to use functions to dynamically define these settings using some other settings as parameters.
 
 
-On the contrary, df_config dynamically merges several files to define your settings:
+Finally, df_config dynamically merges several sources to define the final settings:
 
   * :mod:`df_config.config.defaults` that aims at providing good default values,
   * `yourproject.defaults` for your project-specific settings,
-  * `/etc/yourproject/settings(.py|.ini)` for installation-dependent settings.
+  * `/etc/yourproject/settings(.py|.ini)` for installation-dependent settings,
+  * environment variables are also read if you prefer to use them.
 
-df_config also defines settings that should be valid for most sites, based on installed Django apps.
+df_config also defines settings that should be valid for most sites, based on common installed Django apps.
 
 You can define a list of settings that are read from a traditionnal text configuration file (`.ini format <https://docs.python.org/3/library/configparser.html>`_).
-Finally, df_config also searches for `local_settings.py` and `local_settings.ini` setting files in the working directory.
+Finally, df_config also searches for environment variables, or `local_settings.py` and `local_settings.ini` setting files in the working directory.
 
 
 Requirements and installation
@@ -59,9 +60,9 @@ if __name__ == "__main__":
 - copy your current settings (as-is) into `yourproject/defaults.py`,
 
 
-You can take a look to the resulting settings and the searched files:
+You can take a look to the resulting settings and from which source they are read:
 ```bash
-python3 manage.py config python -v 2 | less
+python3 manage.py config python -v 2
 ```
 
 If you want a single settings file, you can also create it:
@@ -82,8 +83,8 @@ entry_points = {"console_scripts": ["yourproject-ctl = df_config.manage:manage"]
 Once installed, the command `yourproject-ctl` (in fact, you can change `ctl` by anything without hyphen) executes the standard `maanage` command. 
 
 
-dynamize your settings
-----------------------
+dynamize your settings!
+-----------------------
 
 First, you can provide sensible defaults settings in `yourproject.py` and overwrite the dev settings in `local_settings.py`.
 Then real things can begin:
@@ -146,15 +147,15 @@ ALLOWED_HOSTS = CallableSetting(lambda x: [urlparse(x['SERVER_BASE_URL']).hostna
 CSRF_COOKIE_DOMAIN = CallableSetting(lambda x: urlparse(x['SERVER_BASE_URL']).hostname, 'SERVER_BASE_URL')
 ```
 
-List of user settings
----------------------
+Configuration files and environment variables
+---------------------------------------------
 
 Your user probably prefer use .ini files instead of Python ones.
-df_config searches for a list `INI_MAPPING` into the module `yourproject.iniconf`.
+By default, df_config searches for a list `INI_MAPPING` into the module `yourproject.iniconf` or uses `df_config.iniconf.INI_MAPPING`.
 
 ```python
 from df_config.config.fields import ConfigField
-INI_MAPPING = [ConfigField("global.server_url", "SERVER_BASE_URL", help_str="Public URL of your website.",)]
+INI_MAPPING = [ConfigField("global.server_url", "SERVER_BASE_URL", help_str="Public URL of your website.", env_name="SERVER_BASE_URL")]
 ```
 
 Some specialized classes are available in `df_config.config.fields`: `CharConfigField`, `IntegerConfigField`, `FloatConfigField`, `ListConfigField`, `BooleanConfigField`, `ChoiceConfigFile`.
@@ -162,13 +163,13 @@ You can also pickup some predefined list in `df_config.iniconf`.
 
 You can also use environment variables instead of an .ini file (only for values in the INI_MAPPING list):
 ```bash
-YOURPROJECT_SERVER_BASE_URL=http://www.example-2.com
+export SERVER_URL=http://www.example-2.com
 python3 manage.py config python -v 2 | grep SERVER_BASE_URL
 ```
 
 You can check the current config as a .ini file or as environment variables: 
 ```bash
-YOURPROJECT_SERVER_BASE_URL=http://www.example-2.com
+export SERVER_URL=http://www.example-2.com
 python3 manage.py config env
 python3 manage.py config ini
 ```
@@ -220,10 +221,10 @@ A new Django command `server` is available and launches `gunicorn` or `daphne`. 
 Heroku
 ------
 
-Some special environment variables are read: 
+Environment variable names have been chosen to be compatible with the Heroku default environment: 
 
-  * `SECRET_KEY`: you should set it in your `app.json` file
-  * `DATABASE_URL`: set if you use the "heroku-postgresql" addon
+  * `SECRET_KEY`: should set it in your `app.json` file
+  * `DATABASE_URL`: automatically set by the "heroku-postgresql" addon
   * `PORT`: set by default
   * `HEROKU_APP_NAME`: you should set it in your `app.json` file
   

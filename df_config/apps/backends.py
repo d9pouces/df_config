@@ -30,7 +30,7 @@ class DefaultGroupsRemoteUserBackend(RemoteUserBackend):
     Based on :class:`django.contrib.auth.backends.RemoteUserBackend`.
     Only overrides the `configure_user` method to add the required groups.
 
-     """
+    """
 
     @property
     def create_unknown_user(self):
@@ -55,9 +55,9 @@ class DefaultGroupsRemoteUserBackend(RemoteUserBackend):
                 return user
         return super().authenticate(*args, remote_user)
 
-    def configure_user(self, request, user=None):
+    def configure_user(self, request, user=None, created=True):
         """
-        Configures a user after creation and returns the updated user.
+        Configure a user after creation and returns the updated user.
 
         By default, returns the user unmodified; only add it to the default group.
         """

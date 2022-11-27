@@ -30,7 +30,6 @@ from django.utils.functional import cached_property
 logger = logging.getLogger("django.request")
 
 
-
 class DFConfigMiddleware(BaseRemoteUserMiddleware):
     """Like :class:`django.contrib.auth.middleware.RemoteUserMiddleware` but:
 

@@ -25,7 +25,9 @@ def import_attribute(value: str, default=None) -> Tuple[Optional[Any], bool]:
     module_name, sep, attribute_name = value.partition(":")
     try:
         module = import_module(module_name, package=None)
-        return getattr(module, attribute_name, default), True
+        return getattr(module, attribute_name), True
+    except AttributeError:
+        return default, False
     except ImportError:
         return default, False
 
@@ -51,9 +53,12 @@ class PythonConfigFieldsProvider(ConfigFieldsProvider):
 
     name = "Python attribute"
 
-    def __init__(self, value=None):
+    def __init__(self, value=None, fallback=None):
         self.attribute_name = value or "df_config.iniconf:EMPTY_INI_MAPPING"
         self.mapping, self.valid = import_attribute(self.attribute_name, [])
+        if not self.valid and fallback:
+            self.attribute_name = fallback
+            self.mapping, self.valid = import_attribute(self.attribute_name, [])
 
     def is_valid(self) -> bool:
         return self.valid

@@ -20,6 +20,14 @@ from test_df_config.test_dynamic_settings import TestDynamicSetting
 
 
 class TestDynamicSettingURL(TestDynamicSetting):
+    def test_repr(self):
+        DATABASE_URL = URLSetting("DATABASE_URL")
+        s = DATABASE_URL.database("db_name")
+        self.assertEqual(f"{DATABASE_URL!r}", "")
+        self.assertEqual(
+            f"{s!r}", "URLSetting('DATABASE_URL').database(default='db_name')"
+        )
+
     def test_url(self):
         values = {"DATABASE_URL": "psql://user:password@localhost:5432/database"}
         self.check_alls(
@@ -32,7 +40,7 @@ class TestDynamicSettingURL(TestDynamicSetting):
                 "path": "/database",
                 "port": 5432,
                 "query": "",
-                "scheme": "psql",
+                "scheme": "postgres",
                 "username": "user",
                 "database": "database",
                 "port_int": 5432,
@@ -53,7 +61,7 @@ class TestDynamicSettingURL(TestDynamicSetting):
                 "path": "",
                 "port": None,
                 "query": "",
-                "scheme": "psql",
+                "scheme": "postgres",
                 "username": None,
                 "database": None,
                 "port_int": 5432,

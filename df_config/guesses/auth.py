@@ -28,6 +28,8 @@ from df_config.checks import missing_package, settings_check_results
 
 
 class CookieName:
+    """Provide cookie names that are different when SSL is used."""
+
     required_settings = ["USE_SSL"]
 
     def __init__(self, cookie_name: str):
@@ -37,6 +39,9 @@ class CookieName:
         if settings_dict["USE_SSL"]:
             return "__Secure-%s" % self.cookie_name
         return self.cookie_name
+
+    def __repr__(self):
+        return f"{self.__class__.__name__}({self.cookie_name!r})"
 
 
 # noinspection PyMethodMayBeStatic

@@ -21,6 +21,14 @@ class Attribute(DynamicSettting):
             value = self.default
         return merger.analyze_raw_value(value, provider_name, setting_name)
 
+    def __repr__(self):
+        method = self.value.__name__[:-1]
+        default = self.default
+        setting = (
+            f"{self.url_setting.__class__.__name__}({self.url_setting.setting_name!r})"
+        )
+        return f"{setting}.{method}(default={default!r})"
+
 
 class URLSetting:
     ENGINES = {}
@@ -65,6 +73,9 @@ class URLSetting:
             self._loaded = True
         self.setting_name = setting_name
         self.required = required or []
+
+    def __repr__(self):
+        return ""
 
     def load(self, merger):
         if self._loaded or not self.setting_name:
@@ -211,10 +222,7 @@ class DatabaseURL(URLSetting):
         "mysql": "django.db.backends.mysql",
         "mariadb": "django.db.backends.mysql",
         "oracle": "django.db.backends.oracle",
-        "psql": "django.db.backends.postgresql",
         "postgres": "django.db.backends.postgresql",
-        "postgresql": "django.db.backends.postgresql",
-        "sqlite": "django.db.backends.sqlite3",
         "sqlite3": "django.db.backends.sqlite3",
     }
     REQUIREMENTS = {
