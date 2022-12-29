@@ -448,6 +448,7 @@ NPM_FILE_PATTERNS = {
 }
 # used by the "npm" command: downloads these packages and copies the files matching any pattern in the list
 LOG_REMOTE_ACCESS = True
+LOG_SLOW_QUERY_DURATION_IN_S = 10.0
 LOG_DIRECTORY = Directory("{LOCAL_PATH}/log")
 LOG_EXCLUDED_COMMANDS = {
     "clearsessions",

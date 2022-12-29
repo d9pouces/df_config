@@ -157,6 +157,24 @@ class RemoveDuplicateWarnings(logging.Filter):
         return result
 
 
+class SlowQueriesFilter(logging.Filter):
+    """Filter slow queries and attach stack_info."""
+
+    def __init__(self, name="", slow_query_duration_in_s=1.0):
+        super().__init__(name=name)
+        self.slow_query_duration_in_s = slow_query_duration_in_s
+
+    def filter(self, record):
+        duration = getattr(record, "duration", 0)
+        if duration > self.slow_query_duration_in_s:
+            # Same as in _log for when stack_info=True is used.
+            # noinspection PyTypeChecker
+            fn, lno, func, sinfo = logging.Logger.findCaller(None, True)
+            record.stack_info = sinfo
+            return True
+        return False
+
+
 # noinspection PyMethodMayBeStatic
 class LogConfiguration:
     """Generate a log configuration depending on a few parameters:
@@ -171,10 +189,11 @@ class LogConfiguration:
     * `DEBUG`: `True` or `False`
     * `DF_MODULE_NAME`: your project name, used to determine log filenames,
     * `LOG_DIRECTORY`: dirname where log files are written (!),
-    * `LOG_LEVEL`: one of "debug", "info", "warn", "error", "critical"
+    * `LOG_LEVEL`: one of "debug", "info", "warning", "error", "critical"
     * `LOG_REMOTE_URL`: examples: "syslog+tcp://localhost:514/user", "syslog:///local7"
          "syslog:///dev/log/daemon", "logd:///project_name"
     * `LOG_REMOTE_ACCESS`: also send HTTP requests to syslog/journald
+    * `LOG_SLOW_QUERY_DURATION_IN_S`: log requests that takes more than this time
     * `SERVER_NAME`: the public name of the server (like "www.example.com")
     * `SERVER_PORT`: the public port (probably 80 or 443)
     * `LOG_EXCLUDED_COMMANDS`: Django commands that do not write logs
@@ -185,18 +204,24 @@ class LogConfiguration:
         "DF_MODULE_NAME",
         "LOG_DIRECTORY",
         "LOG_REMOTE_URL",
+        "LOG_SLOW_QUERY_DURATION_IN_S",
         "LOG_REMOTE_ACCESS",
         "SERVER_NAME",
         "SERVER_PORT",
         "LOG_EXCLUDED_COMMANDS",
         "LOG_LEVEL",
     ]
-    # for loggers that only show INFO in debug mode, or WARN in INFO, and so on:
-    _level_up = {"DEBUG": "INFO", "INFO": "WARN", "WARN": "ERROR", "ERROR": "CRITICAL"}
+    # for loggers that only show INFO in debug mode, or WARNING in INFO, and so on:
+    _level_up = {
+        "DEBUG": "INFO",
+        "INFO": "WARNING",
+        "WARNING": "ERROR",
+        "ERROR": "CRITICAL",
+    }
     # set of always INFO loggers that are not propagated to root
     _level_access = {
         "DEBUG": "INFO",
-        "WARN": "INFO",
+        "WARNING": "INFO",
         "ERROR": "INFO",
         "CRITICAL": "INFO",
     }
@@ -211,13 +236,26 @@ class LogConfiguration:
     problem_loggers = {
         "django": _level_up,
         "django.db": _level_up,
-        "django.db.backends": _level_up,
+        "django.db.backends": {
+            "DEBUG": "DEBUG",
+            "INFO": "DEBUG",
+            "WARNING": "DEBUG",
+            "ERROR": "ERROR",
+            "CRITICAL": "CRITICAL",
+        },
         "django.request": {},
-        "django.security": _level_up,
+        "django.security": {},
         "df_websockets.signals": {},
         "gunicorn.error": {},
         "pip.vcs": _level_up,
         "py.warnings": _level_up,
+    }
+    compat_log_levels = {
+        "WARN": "WARNING",
+        "CRIT": "CRITICAL",
+        "EMERGENCY": "CRITICAL",
+        "ALERT": "CRITICAL",
+        "NOTICE": "INFO",
     }
 
     # all loggers that will be defined
@@ -235,6 +273,7 @@ class LogConfiguration:
         self.server_name = None
         self.log_level = None
         self.server_port = None
+        self.slow_query_duration_in_s = None
         self.excluded_commands = {}
         self.stdout = stdout or sys.stdout
         self.stderr = stderr or sys.stderr
@@ -246,13 +285,15 @@ class LogConfiguration:
         self.module_name = settings_dict["DF_MODULE_NAME"]
         self.server_name = settings_dict["SERVER_NAME"]
         self.server_port = settings_dict["SERVER_PORT"]
+        self.slow_query_duration_in_s = settings_dict["LOG_SLOW_QUERY_DURATION_IN_S"]
         self.excluded_commands = settings_dict["LOG_EXCLUDED_COMMANDS"]
         if settings_dict["LOG_LEVEL"]:
             log_level = settings_dict["LOG_LEVEL"].upper()
         elif settings_dict["DEBUG"]:
             log_level = "DEBUG"
         else:
-            log_level = "WARN"
+            log_level = "WARNING"
+        log_level = self.compat_log_levels.get(log_level, log_level)
         self.formatters = self.get_default_formatters()
         self.filters = self.get_default_filters()
         self.loggers = self.get_default_loggers()
@@ -278,7 +319,6 @@ class LogConfiguration:
             self.loggers[logger]["level"] = levels.get(log_level, log_level)
         for logger, levels in self.access_loggers.items():
             self.loggers[logger]["level"] = levels.get(log_level, log_level)
-
         if settings_dict["DEBUG"]:
             warnings.simplefilter("always", DeprecationWarning)
             logging.captureWarnings(True)
@@ -318,7 +358,7 @@ class LogConfiguration:
     def __repr__(self):
         return "%s.%s" % (self.__module__, "log_configuration")
 
-    def add_remote_collector(self, log_remote_url, log_remote_access, level="WARN"):
+    def add_remote_collector(self, log_remote_url, log_remote_access, level="WARNING"):
         has_handler = False
         if not log_remote_url:
             return has_handler
@@ -350,6 +390,13 @@ class LogConfiguration:
                         formatter="nocolor",
                     )
             has_handler = True
+        else:
+            warning = Warning(
+                "The only known schemes for remote logging are syslog or syslog+tcp.",
+                hint=None,
+                obj="configuration",
+            )
+            settings_check_results.append(warning)
         return has_handler
 
     def parse_syslog_url(self, parsed_log_url, scheme, device, facility_name):
@@ -411,26 +458,40 @@ class LogConfiguration:
         }
 
     def get_default_filters(self):
-        return {
+        filters = {
             "remove_duplicate_warnings": {
                 "()": "df_config.guesses.log.RemoveDuplicateWarnings"
-            }
+            },
         }
+        if self.slow_query_duration_in_s:
+            filters["slow_queries"] = {
+                "()": "df_config.guesses.log.SlowQueriesFilter",
+                "slow_query_duration_in_s": self.slow_query_duration_in_s,
+            }
+
+        return filters
 
     def get_default_root(self):
-        return {"handlers": [], "level": "WARN"}
+        return {"handlers": [], "level": "WARNING"}
 
     def get_default_loggers(self):
         loggers = {}
         for logger in self.problem_loggers:
             loggers[logger] = {"handlers": [], "level": "DEBUG", "propagate": True}
+        if self.slow_query_duration_in_s:
+            loggers["django.db.backends"]["filters"] = ["slow_queries"]
         loggers["py.warnings"]["filters"] = ["remove_duplicate_warnings"]
         for logger in self.access_loggers:
             loggers[logger] = {"handlers": [], "level": "DEBUG", "propagate": False}
         return loggers
 
     def add_handler(
-        self, logger: str, filename: str, level: str = "WARN", formatter=None, **kwargs
+        self,
+        logger: str,
+        filename: str,
+        level: str = "WARNING",
+        formatter=None,
+        **kwargs,
     ):
         """Add a handler to a logger.
         The name of the added handler is unique, so the definition of the handler is also add if required.
@@ -439,11 +500,11 @@ class LogConfiguration:
         filename: can be a filename or one of the following special values: "stderr", "stdout", "logd", "syslog"
         """
         if filename == "stderr":
-            handler_name = "%s.%s" % (filename, level.lower())
+            handler_name = f"{filename}.{level.lower()}"
             if formatter in ("django.server", "colorized") and not self.stderr.isatty():
                 formatter = None
             elif formatter:
-                handler_name += ".%s" % formatter
+                handler_name += f".{formatter}"
             handler = {
                 "class": "logging.StreamHandler",
                 "level": level,
@@ -451,11 +512,11 @@ class LogConfiguration:
                 "formatter": formatter,
             }
         elif filename == "stdout":
-            handler_name = "%s.%s" % (filename, level.lower())
+            handler_name = f"{filename}.{level.lower()}"
             if formatter in ("django.server", "colorized") and not self.stdout.isatty():
                 formatter = None
             elif formatter:
-                handler_name += ".%s" % formatter
+                handler_name += f".{formatter}"
             handler = {
                 "class": "logging.StreamHandler",
                 "level": level,
@@ -463,7 +524,7 @@ class LogConfiguration:
                 "formatter": formatter,
             }
         elif filename == "syslog":
-            handler_name = "%s.%s" % (filename, level.lower())
+            handler_name = f"{filename}.{level.lower()}"
             handler = {"class": "logging.handlers.SysLogHandler", "level": level}
             handler.update(kwargs)
         elif filename == "logd":
@@ -480,15 +541,15 @@ class LogConfiguration:
                 # replace logd by writing to a plain-text log
                 self.add_handler(logger, level.lower(), level=level)
                 return
-            handler_name = "%s.%s" % (filename, level.lower())
+            handler_name = f"{filename}.{level.lower()}"
             handler = {"class": "systemd.journal.JournalHandler", "level": level}
             handler.update(kwargs)
-        else:  # basename of a plain-text log
+        elif self.log_directory:  # basename of a plain-text log
             log_directory = os.path.normpath(self.log_directory)
             if not os.path.isdir(log_directory):
                 if not self.log_directory_warning:
                     warning = Warning(
-                        'Missing directory "%s"' % log_directory,
+                        f'Missing directory "{log_directory}"',
                         hint=None,
                         obj=log_directory,
                     )
@@ -496,7 +557,7 @@ class LogConfiguration:
                     self.log_directory_warning = True
                 self.add_handler(logger, "stdout", level=level, **kwargs)
                 return
-            basename = "%s-%s.log" % (self.log_suffix, filename)
+            basename = f"{self.log_suffix}-{filename}.log"
             log_filename = os.path.join(log_directory, basename)
             try:
                 remove = not os.path.exists(log_filename)
@@ -507,8 +568,7 @@ class LogConfiguration:
                     os.remove(log_filename)
             except PermissionError:
                 warning_ = Warning(
-                    'Unable to write logs in "%s". Unsufficient rights?'
-                    % log_directory,
+                    f'Unable to write logs in "{log_directory}". Unsufficient rights?',
                     hint=None,
                     obj=log_directory,
                 )
@@ -525,7 +585,8 @@ class LogConfiguration:
                 "level": level,
                 "delay": True,
             }
-
+        else:
+            handler, handler_name = None, None
         if not handler_name:
             return
         if handler_name not in self.handlers:

@@ -20,6 +20,7 @@ from df_config.config.fields import (
     CharConfigField,
     ChoiceConfigFile,
     ConfigField,
+    FloatConfigField,
     IntegerConfigField,
     ListConfigField,
     bool_setting,
@@ -366,7 +367,13 @@ LOG_MAPPING = [
     BooleanConfigField(
         "global.log_remote_access",
         "LOG_REMOTE_ACCESS",
-        help_str="If true, log of HTTP connections are also sent to syslog/logd",
+        help_str="If true, log of HTTP connections are also sent to syslog/logd.",
+    ),
+    FloatConfigField(
+        "global.log_slow_query_duration_in_s",
+        "LOG_SLOW_QUERY_DURATION_IN_S",
+        help_str="Log slow queries that take more than this time (in seconds).",
+        env_name="LOG_SLOW_QUERY_DURATION_IN_S",
     ),
 ]
 PAM_AUTH_MAPPING = [
