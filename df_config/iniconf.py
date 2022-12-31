@@ -338,6 +338,7 @@ LOG_MAPPING = [
         help_str="Send logs to a syslog service. \n"
         "Examples: syslog+tcp://localhost:514/user, syslog:///local7 "
         "or syslog:///dev/log/daemon.",
+        env_name="LOG_REMOTE_URL",
     ),
     CharConfigField(
         "global.log_sentry_dsn",
