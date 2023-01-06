@@ -118,7 +118,7 @@ class ConfigField:
         self.environ_name = env_name
 
     def __str__(self):
-        return self.name
+        return self.name or self.setting_name
 
 
 class CharConfigField(ConfigField):
