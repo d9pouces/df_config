@@ -74,8 +74,8 @@ class EnvironmentConfigProvider(ConfigProvider):
     def __str__(self):
         count = len(self.exported_values)
         if count <= 1:
-            return f"({count} variable)"
-        return f"({count} variables)"
+            return f"Shell environment ({count} variable)"
+        return f"Shell environment ({count} variables)"
 
     def has_value(self, config_field: ConfigField):
         key = self.get_key(config_field)

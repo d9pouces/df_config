@@ -33,11 +33,7 @@ class Attribute(DynamicSettting):
 class URLSetting:
     ENGINES = {}
     REQUIREMENTS = {}
-    SCHEME_ALIASES = {
-        "psql": "postgres",
-        "postgresql": "postgres",
-        "sqlite": "sqlite3",
-    }
+    SCHEME_ALIASES = {}
     SCHEMES = {
         "amqp": (5672, False, False),
         "file": (None, False, False),
@@ -75,7 +71,7 @@ class URLSetting:
         self.required = required or []
 
     def __repr__(self):
-        return ""
+        return f"{self.__class__.__name__}('{self.setting_name}')"
 
     def load(self, merger):
         if self._loaded or not self.setting_name:
@@ -224,6 +220,11 @@ class DatabaseURL(URLSetting):
         "oracle": "django.db.backends.oracle",
         "postgres": "django.db.backends.postgresql",
         "sqlite3": "django.db.backends.sqlite3",
+    }
+    SCHEME_ALIASES = {
+        "psql": "postgres",
+        "postgresql": "postgres",
+        "sqlite": "sqlite3",
     }
     REQUIREMENTS = {
         "django.db.backends.postgresql": ["psycopg2-binary", "psycopg2"],
