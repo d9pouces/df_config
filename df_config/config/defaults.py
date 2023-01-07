@@ -37,6 +37,7 @@ written in .ini files. The mapping between the Python setting and the [section/o
 """
 import os
 
+from django import VERSION as django_version
 from django.utils.translation import gettext_lazy as _
 
 # ######################################################################################################################
@@ -195,7 +196,8 @@ TEMPLATE_CONTEXT_PROCESSORS = [
 TEST_RUNNER = "django.test.runner.DiscoverRunner"
 
 USE_I18N = True
-USE_L10N = True
+if django_version[0] < 4:
+    USE_L10N = True
 USE_THOUSAND_SEPARATOR = True
 USE_TZ = True
 USE_X_FORWARDED_HOST = True  # X-Forwarded-Host
