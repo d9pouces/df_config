@@ -14,6 +14,7 @@
 #                                                                              #
 # ##############################################################################
 import re
+import sys
 from typing import Dict, Iterable, List
 from urllib.parse import urlparse
 
@@ -27,6 +28,14 @@ from pkg_resources import DistributionNotFound, VersionConflict, get_distributio
 from df_config.checks import missing_package, settings_check_results
 from df_config.config.dynamic_settings import AutocreateFileContent
 from df_config.utils import is_package_present
+
+
+# noinspection PyUnusedLocal
+def get_command_name(settings_dict) -> str:
+    """Get the current name."""
+    if len(sys.argv) >= 2:
+        return sys.argv[1]
+    return sys.argv[0] if len(sys.argv) >= 1 else "undefined"
 
 
 def smart_base_url(settings_dict) -> str:

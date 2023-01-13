@@ -369,30 +369,39 @@ class LogConfiguration:
             address, facility, socktype = self.parse_syslog_url(
                 parsed_log_url, scheme, device, facility_name
             )
-            self.add_handler(
-                "ROOT",
-                "syslog",
-                level=level,
-                address=address,
-                facility=facility,
-                socktype=socktype,
-                formatter="nocolor",
-            )
+            kwargs = {
+                "address": address,
+                "facility": facility,
+                "socktype": socktype,
+                "formatter": "nocolor",
+            }
+            self.add_handler("ROOT", "syslog", level=level, **kwargs)
             if log_remote_access:
                 for logger in self.access_loggers:
-                    self.add_handler(
-                        logger,
-                        "syslog",
-                        level="DEBUG",
-                        address=address,
-                        facility=facility,
-                        socktype=socktype,
-                        formatter="nocolor",
-                    )
+                    self.add_handler(logger, "syslog", level="DEBUG", **kwargs)
+            has_handler = True
+        elif scheme == "loki" or scheme == "lokis":
+            url = f"http://{parsed_log_url.hostname}"
+            if scheme == "lokis":
+                url = f"https://{parsed_log_url.hostname}"
+            if parsed_log_url.port:
+                url += f":{parsed_log_url.port}"
+            if parsed_log_url.path:
+                url += parsed_log_url.path
+            if parsed_log_url.query:
+                url += f"?{parsed_log_url}"
+            auth = None
+            if parsed_log_url.username and parsed_log_url.password:
+                auth = (parsed_log_url.username, parsed_log_url.password)
+            kwargs = {"url": url, "auth": auth}
+            self.add_handler("ROOT", "loki", level=level, **kwargs)
+            if log_remote_access:
+                for logger in self.access_loggers:
+                    self.add_handler(logger, "loki", level="DEBUG", **kwargs)
             has_handler = True
         else:
             warning = Warning(
-                "The only known schemes for remote logging are syslog or syslog+tcp.",
+                "The only known schemes for remote logging are syslog, syslog+tcp, loki or lokis.",
                 hint=None,
                 obj="configuration",
             )
@@ -500,91 +509,25 @@ class LogConfiguration:
         filename: can be a filename or one of the following special values: "stderr", "stdout", "logd", "syslog"
         """
         if filename == "stderr":
-            handler_name = f"{filename}.{level.lower()}"
-            if formatter in ("django.server", "colorized") and not self.stderr.isatty():
-                formatter = None
-            elif formatter:
-                handler_name += f".{formatter}"
-            handler = {
-                "class": "logging.StreamHandler",
-                "level": level,
-                "stream": "ext://sys.stderr",
-                "formatter": formatter,
-            }
+            handler, handler_name = self.add_handler_stderr(filename, formatter, level)
         elif filename == "stdout":
-            handler_name = f"{filename}.{level.lower()}"
-            if formatter in ("django.server", "colorized") and not self.stdout.isatty():
-                formatter = None
-            elif formatter:
-                handler_name += f".{formatter}"
-            handler = {
-                "class": "logging.StreamHandler",
-                "level": level,
-                "stream": "ext://sys.stdout",
-                "formatter": formatter,
-            }
+            handler, handler_name = self.add_handler_stdout(filename, formatter, level)
+        elif filename == "loki":
+            handler, handler_name = self.add_handler_loki(
+                logger, filename, level, kwargs
+            )
         elif filename == "syslog":
             handler_name = f"{filename}.{level.lower()}"
             handler = {"class": "logging.handlers.SysLogHandler", "level": level}
             handler.update(kwargs)
         elif filename == "logd":
-            try:
-                # noinspection PyUnresolvedReferences,PyPackageRequirements
-                import systemd.journal
-            except ImportError:
-                warning = Warning(
-                    "Unable to import systemd.journal (required to log with journlad)",
-                    hint=None,
-                    obj="configuration",
-                )
-                settings_check_results.append(warning)
-                # replace logd by writing to a plain-text log
-                self.add_handler(logger, level.lower(), level=level)
-                return
-            handler_name = f"{filename}.{level.lower()}"
-            handler = {"class": "systemd.journal.JournalHandler", "level": level}
-            handler.update(kwargs)
+            handler, handler_name = self.add_handler_logd(
+                logger, filename, level, kwargs
+            )
         elif self.log_directory:  # basename of a plain-text log
-            log_directory = os.path.normpath(self.log_directory)
-            if not os.path.isdir(log_directory):
-                if not self.log_directory_warning:
-                    warning = Warning(
-                        f'Missing directory "{log_directory}"',
-                        hint=None,
-                        obj=log_directory,
-                    )
-                    settings_check_results.append(warning)
-                    self.log_directory_warning = True
-                self.add_handler(logger, "stdout", level=level, **kwargs)
-                return
-            basename = f"{self.log_suffix}-{filename}.log"
-            log_filename = os.path.join(log_directory, basename)
-            try:
-                remove = not os.path.exists(log_filename)
-                open(log_filename, "a").close()  # ok, we can write
-                if (
-                    remove
-                ):  # but if this file did not exist, we remove it to avoid lot of empty log files...
-                    os.remove(log_filename)
-            except PermissionError:
-                warning_ = Warning(
-                    f'Unable to write logs in "{log_directory}". Unsufficient rights?',
-                    hint=None,
-                    obj=log_directory,
-                )
-                settings_check_results.append(warning_)
-                self.add_handler(logger, "stdout", level=level, **kwargs)
-                return
-            handler_name = "%s.%s" % (self.log_suffix, filename)
-            handler = {
-                "class": "logging.handlers.RotatingFileHandler",
-                "maxBytes": 1000000,
-                "backupCount": 3,
-                "formatter": "nocolor",
-                "filename": log_filename,
-                "level": level,
-                "delay": True,
-            }
+            handler, handler_name = self.add_handler_directory(
+                logger, filename, level, kwargs
+            )
         else:
             handler, handler_name = None, None
         if not handler_name:
@@ -597,6 +540,115 @@ class LogConfiguration:
             target = self.loggers[logger]
         if handler_name not in target["handlers"]:
             target["handlers"].append(handler_name)
+
+    def add_handler_loki(self, logger, filename, level, kwargs):
+        try:
+            # noinspection PyUnresolvedReferences,PyPackageRequirements
+            import logging_loki
+        except ImportError:
+            warning = Warning(
+                "Unable to import logging_loki (required to log to Loki)",
+                hint=None,
+                obj="configuration",
+            )
+            settings_check_results.append(warning)
+            # replace loki by writing to a plain-text log
+            self.add_handler(logger, level.lower(), level=level)
+            return None, None
+        handler_name = f"{filename}.{level.lower()}"
+        handler = {"class": "df_config.extra.loki.LokiHandler", "level": level}
+        handler.update(kwargs)
+        return handler, handler_name
+
+    def add_handler_logd(self, logger, filename, level, kwargs):
+        try:
+            # noinspection PyUnresolvedReferences,PyPackageRequirements
+            import systemd.journal
+        except ImportError:
+            warning = Warning(
+                "Unable to import systemd.journal (required to log with journlad)",
+                hint=None,
+                obj="configuration",
+            )
+            settings_check_results.append(warning)
+            # replace logd by writing to a plain-text log
+            self.add_handler(logger, level.lower(), level=level)
+            return None, None
+        handler_name = f"{filename}.{level.lower()}"
+        handler = {"class": "systemd.journal.JournalHandler", "level": level}
+        handler.update(kwargs)
+        return handler, handler_name
+
+    def add_handler_directory(self, logger, filename, level, kwargs):
+        log_directory = os.path.normpath(self.log_directory)
+        if not os.path.isdir(log_directory):
+            if not self.log_directory_warning:
+                warning = Warning(
+                    f'Missing directory "{log_directory}"',
+                    hint=None,
+                    obj=log_directory,
+                )
+                settings_check_results.append(warning)
+                self.log_directory_warning = True
+            self.add_handler(logger, "stdout", level=level, **kwargs)
+            return None, None
+        basename = f"{self.log_suffix}-{filename}.log"
+        log_filename = os.path.join(log_directory, basename)
+        try:
+            remove = not os.path.exists(log_filename)
+            open(log_filename, "a").close()  # ok, we can write
+            if (
+                remove
+            ):  # but if this file did not exist, we remove it to avoid lot of empty log files...
+                os.remove(log_filename)
+        except PermissionError:
+            warning_ = Warning(
+                f'Unable to write logs in "{log_directory}". Unsufficient rights?',
+                hint=None,
+                obj=log_directory,
+            )
+            settings_check_results.append(warning_)
+            self.add_handler(logger, "stdout", level=level, **kwargs)
+            return None, None
+        handler_name = "%s.%s" % (self.log_suffix, filename)
+        handler = {
+            "class": "logging.handlers.RotatingFileHandler",
+            "maxBytes": 1000000,
+            "backupCount": 3,
+            "formatter": "nocolor",
+            "filename": log_filename,
+            "level": level,
+            "delay": True,
+        }
+        return handler, handler_name
+
+    def add_handler_stdout(self, filename, formatter, level):
+        handler_name = f"{filename}.{level.lower()}"
+        if formatter in ("django.server", "colorized") and not self.stdout.isatty():
+            formatter = None
+        elif formatter:
+            handler_name += f".{formatter}"
+        handler = {
+            "class": "logging.StreamHandler",
+            "level": level,
+            "stream": "ext://sys.stdout",
+            "formatter": formatter,
+        }
+        return handler, handler_name
+
+    def add_handler_stderr(self, filename, formatter, level):
+        handler_name = f"{filename}.{level.lower()}"
+        if formatter in ("django.server", "colorized") and not self.stderr.isatty():
+            formatter = None
+        elif formatter:
+            handler_name += f".{formatter}"
+        handler = {
+            "class": "logging.StreamHandler",
+            "level": level,
+            "stream": "ext://sys.stderr",
+            "formatter": formatter,
+        }
+        return handler, handler_name
 
     @staticmethod
     def get_smart_command_name(module_name, argv, excluded_commands=None):

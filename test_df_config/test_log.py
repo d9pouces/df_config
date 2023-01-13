@@ -171,6 +171,295 @@ class LogConfigurationTest(TestCase):
             },
         )
 
+    def test_log_loki_url(self):
+        with tempfile.TemporaryDirectory() as dirname:
+            config = self.get_config(
+                LOG_LEVEL="WARNING",
+                LOG_DIRECTORY=dirname,
+                LOG_REMOTE_URL="loki://mondomaine:3100/loki/api/v1/push",
+            )
+        self.assertEqual(
+            config,
+            {
+                "version": 1,
+                "disable_existing_loggers": True,
+                "formatters": {
+                    "django.server": {
+                        "()": "df_config.guesses.log.ServerFormatter",
+                        "format": "%(asctime)s [test.example.com:9000] %(message)s",
+                    },
+                    "nocolor": {
+                        "()": "logging.Formatter",
+                        "fmt": "%(asctime)s [test.example.com:9000] [%(levelname)s] %(message)s",
+                        "datefmt": "%Y-%m-%d %H:%M:%S",
+                    },
+                    "colorized": {"()": "df_config.guesses.log.ColorizedFormatter"},
+                },
+                "filters": {
+                    "remove_duplicate_warnings": {
+                        "()": "df_config.guesses.log.RemoveDuplicateWarnings"
+                    },
+                    "slow_queries": {
+                        "()": "df_config.guesses.log.SlowQueriesFilter",
+                        "slow_query_duration_in_s": 1.0,
+                    },
+                },
+                "handlers": {
+                    "mail_admins": {
+                        "class": "df_config.guesses.log.AdminEmailHandler",
+                        "level": "ERROR",
+                        "include_html": True,
+                    },
+                    "logging-server.root": {
+                        "class": "logging.handlers.RotatingFileHandler",
+                        "maxBytes": 1000000,
+                        "backupCount": 3,
+                        "formatter": "nocolor",
+                        "filename": f"{dirname}/logging-server-root.log",
+                        "level": "WARNING",
+                        "delay": True,
+                    },
+                    "logging-server.access": {
+                        "class": "logging.handlers.RotatingFileHandler",
+                        "maxBytes": 1000000,
+                        "backupCount": 3,
+                        "formatter": "nocolor",
+                        "filename": f"{dirname}/logging-server-access.log",
+                        "level": "DEBUG",
+                        "delay": True,
+                    },
+                    "loki.warning": {
+                        "auth": None,
+                        "class": "df_config.extra.loki.LokiHandler",
+                        "level": "WARNING",
+                        "url": "http://mondomaine:3100/loki/api/v1/push",
+                    },
+                },
+                "loggers": {
+                    "django": {"handlers": [], "level": "ERROR", "propagate": True},
+                    "django.db": {
+                        "handlers": [],
+                        "level": "ERROR",
+                        "propagate": True,
+                    },
+                    "django.db.backends": {
+                        "handlers": [],
+                        "level": "DEBUG",
+                        "propagate": True,
+                        "filters": ["slow_queries"],
+                    },
+                    "django.request": {
+                        "handlers": [],
+                        "level": "WARNING",
+                        "propagate": True,
+                    },
+                    "django.security": {
+                        "handlers": [],
+                        "level": "WARNING",
+                        "propagate": True,
+                    },
+                    "df_websockets.signals": {
+                        "handlers": [],
+                        "level": "WARNING",
+                        "propagate": True,
+                    },
+                    "gunicorn.error": {
+                        "handlers": [],
+                        "level": "WARNING",
+                        "propagate": True,
+                    },
+                    "pip.vcs": {"handlers": [], "level": "ERROR", "propagate": True},
+                    "py.warnings": {
+                        "handlers": [],
+                        "level": "ERROR",
+                        "propagate": True,
+                        "filters": ["remove_duplicate_warnings"],
+                    },
+                    "aiohttp.access": {
+                        "handlers": ["logging-server.access"],
+                        "level": "INFO",
+                        "propagate": False,
+                    },
+                    "django.server": {
+                        "handlers": ["logging-server.access"],
+                        "level": "INFO",
+                        "propagate": False,
+                    },
+                    "django.channels.server": {
+                        "handlers": ["logging-server.access"],
+                        "level": "INFO",
+                        "propagate": False,
+                    },
+                    "geventwebsocket.handler": {
+                        "handlers": ["logging-server.access"],
+                        "level": "INFO",
+                        "propagate": False,
+                    },
+                    "gunicorn.access": {
+                        "handlers": ["logging-server.access"],
+                        "level": "INFO",
+                        "propagate": False,
+                    },
+                },
+                "root": {
+                    "handlers": [
+                        "logging-server.root",
+                        "loki.warning",
+                        "mail_admins",
+                    ],
+                    "level": "WARNING",
+                },
+            },
+        )
+
+    def test_log_loki_url_access(self):
+        with tempfile.TemporaryDirectory() as dirname:
+            config = self.get_config(
+                LOG_LEVEL="WARNING",
+                LOG_DIRECTORY=dirname,
+                LOG_REMOTE_URL="lokis://mondomaine:3100/loki/api/v1/push",
+                LOG_REMOTE_ACCESS=True,
+            )
+        self.assertEqual(
+            config,
+            {
+                "version": 1,
+                "disable_existing_loggers": True,
+                "formatters": {
+                    "django.server": {
+                        "()": "df_config.guesses.log.ServerFormatter",
+                        "format": "%(asctime)s [test.example.com:9000] %(message)s",
+                    },
+                    "nocolor": {
+                        "()": "logging.Formatter",
+                        "fmt": "%(asctime)s [test.example.com:9000] [%(levelname)s] %(message)s",
+                        "datefmt": "%Y-%m-%d %H:%M:%S",
+                    },
+                    "colorized": {"()": "df_config.guesses.log.ColorizedFormatter"},
+                },
+                "filters": {
+                    "remove_duplicate_warnings": {
+                        "()": "df_config.guesses.log.RemoveDuplicateWarnings"
+                    },
+                    "slow_queries": {
+                        "()": "df_config.guesses.log.SlowQueriesFilter",
+                        "slow_query_duration_in_s": 1.0,
+                    },
+                },
+                "handlers": {
+                    "mail_admins": {
+                        "class": "df_config.guesses.log.AdminEmailHandler",
+                        "level": "ERROR",
+                        "include_html": True,
+                    },
+                    "logging-server.root": {
+                        "class": "logging.handlers.RotatingFileHandler",
+                        "maxBytes": 1000000,
+                        "backupCount": 3,
+                        "formatter": "nocolor",
+                        "filename": f"{dirname}/logging-server-root.log",
+                        "level": "WARNING",
+                        "delay": True,
+                    },
+                    "logging-server.access": {
+                        "class": "logging.handlers.RotatingFileHandler",
+                        "maxBytes": 1000000,
+                        "backupCount": 3,
+                        "formatter": "nocolor",
+                        "filename": f"{dirname}/logging-server-access.log",
+                        "level": "DEBUG",
+                        "delay": True,
+                    },
+                    "loki.debug": {
+                        "auth": None,
+                        "class": "df_config.extra.loki.LokiHandler",
+                        "level": "DEBUG",
+                        "url": "https://mondomaine:3100/loki/api/v1/push",
+                    },
+                    "loki.warning": {
+                        "auth": None,
+                        "class": "df_config.extra.loki.LokiHandler",
+                        "level": "WARNING",
+                        "url": "https://mondomaine:3100/loki/api/v1/push",
+                    },
+                },
+                "loggers": {
+                    "django": {"handlers": [], "level": "ERROR", "propagate": True},
+                    "django.db": {
+                        "handlers": [],
+                        "level": "ERROR",
+                        "propagate": True,
+                    },
+                    "django.db.backends": {
+                        "handlers": [],
+                        "level": "DEBUG",
+                        "propagate": True,
+                        "filters": ["slow_queries"],
+                    },
+                    "django.request": {
+                        "handlers": [],
+                        "level": "WARNING",
+                        "propagate": True,
+                    },
+                    "django.security": {
+                        "handlers": [],
+                        "level": "WARNING",
+                        "propagate": True,
+                    },
+                    "df_websockets.signals": {
+                        "handlers": [],
+                        "level": "WARNING",
+                        "propagate": True,
+                    },
+                    "gunicorn.error": {
+                        "handlers": [],
+                        "level": "WARNING",
+                        "propagate": True,
+                    },
+                    "pip.vcs": {"handlers": [], "level": "ERROR", "propagate": True},
+                    "py.warnings": {
+                        "handlers": [],
+                        "level": "ERROR",
+                        "propagate": True,
+                        "filters": ["remove_duplicate_warnings"],
+                    },
+                    "aiohttp.access": {
+                        "handlers": ["logging-server.access", "loki.debug"],
+                        "level": "INFO",
+                        "propagate": False,
+                    },
+                    "django.server": {
+                        "handlers": ["logging-server.access", "loki.debug"],
+                        "level": "INFO",
+                        "propagate": False,
+                    },
+                    "django.channels.server": {
+                        "handlers": ["logging-server.access", "loki.debug"],
+                        "level": "INFO",
+                        "propagate": False,
+                    },
+                    "geventwebsocket.handler": {
+                        "handlers": ["logging-server.access", "loki.debug"],
+                        "level": "INFO",
+                        "propagate": False,
+                    },
+                    "gunicorn.access": {
+                        "handlers": ["logging-server.access", "loki.debug"],
+                        "level": "INFO",
+                        "propagate": False,
+                    },
+                },
+                "root": {
+                    "handlers": [
+                        "logging-server.root",
+                        "loki.warning",
+                        "mail_admins",
+                    ],
+                    "level": "WARNING",
+                },
+            },
+        )
+
     def test_log_directory(self):
         with tempfile.TemporaryDirectory() as dirname:
             config = self.get_config(LOG_LEVEL="CRITICAL", LOG_DIRECTORY=dirname)

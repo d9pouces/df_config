@@ -83,6 +83,7 @@ from df_config.guesses.misc import (
     csrf_trusted_origins,
     excluded_django_commands,
     get_asgi_application,
+    get_command_name,
     get_wsgi_application,
     project_name,
     required_packages,
@@ -529,6 +530,7 @@ if "lib" in __split_path:
     LOCAL_PATH = Path("/%s/var/{DF_MODULE_NAME}" % prefix)
 
 COMMON_REDIS_URL = RedisURL("COMMON_REDIS_URL")
+CURRENT_COMMAND_NAME = CallableSetting(get_command_name)
 
 # django-redis-sessions
 SESSION_REDIS_PROTOCOL = COMMON_REDIS_URL.scheme("redis")
