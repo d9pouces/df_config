@@ -14,6 +14,7 @@
 #                                                                              #
 # ##############################################################################
 import re
+import socket
 import sys
 from typing import Dict, Iterable, List
 from urllib.parse import urlparse
@@ -36,6 +37,12 @@ def get_command_name(settings_dict) -> str:
     if len(sys.argv) >= 2:
         return sys.argv[1]
     return sys.argv[0] if len(sys.argv) >= 1 else "undefined"
+
+
+# noinspection PyUnusedLocal
+def get_hostname(settings_dict) -> str:
+    """get the current hostname."""
+    return socket.gethostname()
 
 
 def smart_base_url(settings_dict) -> str:

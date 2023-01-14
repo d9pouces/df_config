@@ -13,8 +13,8 @@ class LokiHandler(LokiQueueHandler):
         from django.conf import settings
 
         tags = {
-            "debug": f"{settings.DEBUG}".lower(),
-            "hostname": settings.SERVER_NAME,
+            "application": settings.SERVER_NAME,
             "command": settings.CURRENT_COMMAND_NAME,
+            "hostname": settings.HOSTNAME,
         }
         super().__init__(Queue(-1), url=url, tags=tags, auth=auth, version=1)
