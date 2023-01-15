@@ -14,6 +14,7 @@
 #                                                                              #
 # ##############################################################################
 import ipaddress
+import logging
 import os
 import re
 import sys
@@ -114,7 +115,10 @@ def manage(argv=None):
     from django.core.management import execute_from_command_line
 
     patch_commands()
-    execute_from_command_line(argv=argv or sys.argv)
+    argv = argv or sys.argv
+    logger = logging.getLogger("django.server")
+    logger.info("command='%s'", " ".join(argv))
+    execute_from_command_line(argv=argv)
 
 
 def patch_commands():

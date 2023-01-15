@@ -17,4 +17,4 @@ class LokiHandler(LokiQueueHandler):
             "command": settings.CURRENT_COMMAND_NAME,
             "hostname": settings.HOSTNAME,
         }
-        super().__init__(Queue(-1), url=url, tags=tags, auth=auth, version=1)
+        super().__init__(Queue(-1), url=url, tags=tags, auth=auth, version="1")
