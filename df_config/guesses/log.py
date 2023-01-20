@@ -654,7 +654,6 @@ class LogConfiguration:
     def get_smart_command_name(module_name, argv, excluded_commands=None):
         """Return a "smart" name for the current command line.
         If it's an interactive Django command (think to "migrate"), returns None
-        It it's the celery worker process, specify the running queues in the name
         Otherwise, add the Django command in the name.
 
         :param module_name:
