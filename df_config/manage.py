@@ -97,9 +97,9 @@ def get_merger_from_env() -> SettingMerger:
                 module_name,
             )
         ),
+        EnvironmentConfigProvider("%s_" % module_name.upper()),
         IniConfigProvider(os.path.abspath("local_settings.ini")),
         PythonFileProvider(os.path.abspath("local_settings.py")),
-        EnvironmentConfigProvider("%s_" % module_name.upper()),
     ]
     fields_provider = PythonConfigFieldsProvider(
         ini_mapping, fallback="df_config.iniconf:DEFAULT_INI_MAPPING"
