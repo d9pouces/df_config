@@ -14,6 +14,7 @@
 #                                                                              #
 # ##############################################################################
 import io
+import os
 from argparse import ArgumentParser
 
 from django.core.management import BaseCommand
@@ -64,6 +65,7 @@ class Command(BaseCommand):
         try:
             self.handle_head(**options)
         except BrokenPipeError:
+            # this exception is raised when `manage.py config python | head` is used
             pass
 
     def handle_head(self, **options):
@@ -95,6 +97,7 @@ class Command(BaseCommand):
                     content = black.format_file_contents(content, fast=False, mode=mode)
                 except Exception:
                     pass
+            os.makedirs(os.path.dirname(filename), exist_ok=True)
             with open(filename, "w") as dst_fd:
                 dst_fd.write(content)
 
