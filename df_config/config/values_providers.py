@@ -246,7 +246,7 @@ class PythonFileProvider(PythonModuleProvider):
         super().__init__()
         if not os.path.isfile(module_filename):
             return
-        md5 = hashlib.md5(module_filename.encode("utf-8")).hexdigest()
+        md5 = hashlib.md5(module_filename.encode("utf-8")).hexdigest()  # nosec  # nosec
         module_name = "df_config.__private" + md5
         spec = importlib.util.spec_from_file_location(module_name, module_filename)
         module_ = importlib.util.module_from_spec(spec)

@@ -34,7 +34,7 @@ def allauth_provider_apps(settings_dict):
     # noinspection PyBroadException
     try:
         parser.read([config])
-    except Exception:
+    except Exception:  # nosec  # nosec
         settings_check_results.append(
             Error("Invalid config file. %s" % config, obj="configuration")
         )

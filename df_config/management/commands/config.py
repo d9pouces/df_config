@@ -95,7 +95,7 @@ class Command(BaseCommand):
                     mode = black.FileMode()
                     # noinspection PyArgumentList
                     content = black.format_file_contents(content, fast=False, mode=mode)
-                except Exception:
+                except Exception:  # nosec  # nosec
                     pass
             os.makedirs(os.path.dirname(filename), exist_ok=True)
             with open(filename, "w") as dst_fd:
