@@ -32,10 +32,15 @@ from df_config.config.values_providers import (
 
 PYCHARM_VARIABLE_NAME = "PYCHARM_DJANGO_MANAGE_MODULE"
 SETTINGS_VARIABLE_NAME = "DJANGO_SETTINGS_MODULE"
+DEFAULT_SETTINGS_MODULE = "df_config.config.base"
 MODULE_VARIABLE_NAME = "DF_CONF_NAME"
 
 
-def set_env(module_name: str = None, argv: List[str] = None):
+def set_env(
+    module_name: str = None,
+    argv: List[str] = None,
+    settings_module=DEFAULT_SETTINGS_MODULE,
+):
     """Set the environment variable `DF_CONF_NAME` with the main Python module name
     The value looks like "project_name".
     If `module_name` is not given, tries to infer it from the running script name
@@ -57,11 +62,13 @@ def set_env(module_name: str = None, argv: List[str] = None):
         if not module_name:
             module_name = "df_config"
         os.environ[MODULE_VARIABLE_NAME] = module_name.replace("-", "_").lower()
-    os.environ.setdefault(SETTINGS_VARIABLE_NAME, "df_config.config.base")
+    os.environ.setdefault(SETTINGS_VARIABLE_NAME, settings_module)
     return os.environ[MODULE_VARIABLE_NAME]
 
 
-def get_merger_from_env(merger_class=SettingMerger) -> SettingMerger:
+def get_merger_from_env(
+    merger_class=SettingMerger, settings_module=DEFAULT_SETTINGS_MODULE
+) -> SettingMerger:
     """Return a settingmerger to determien all available settings, should be used after set_env().
     Settings are found in this order:
 
@@ -74,7 +81,7 @@ def get_merger_from_env(merger_class=SettingMerger) -> SettingMerger:
     * environment variables (overrides ./local_settings.py)
     """
     # required if set_env is not called
-    module_name = set_env()
+    module_name = set_env(settings_module=settings_module)
     prefix = os.path.abspath(sys.prefix)
     if prefix == "/usr":
         prefix = ""
@@ -107,8 +114,8 @@ def get_merger_from_env(merger_class=SettingMerger) -> SettingMerger:
     return merger_class(fields_provider, config_providers)
 
 
-def manage(argv=None):
-    set_env()
+def manage(argv=None, settings_module=DEFAULT_SETTINGS_MODULE):
+    set_env(settings_module=settings_module)
     import django
 
     django.setup()
