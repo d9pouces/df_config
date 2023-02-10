@@ -61,7 +61,7 @@ def set_env(module_name: str = None, argv: List[str] = None):
     return os.environ[MODULE_VARIABLE_NAME]
 
 
-def get_merger_from_env() -> SettingMerger:
+def get_merger_from_env(merger_class=SettingMerger) -> SettingMerger:
     """Return a settingmerger to determien all available settings, should be used after set_env().
     Settings are found in this order:
 
@@ -104,7 +104,7 @@ def get_merger_from_env() -> SettingMerger:
     fields_provider = PythonConfigFieldsProvider(
         ini_mapping, fallback="df_config.iniconf:DEFAULT_INI_MAPPING"
     )
-    return SettingMerger(fields_provider, config_providers)
+    return merger_class(fields_provider, config_providers)
 
 
 def manage(argv=None):
