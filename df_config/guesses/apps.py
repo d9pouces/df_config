@@ -87,6 +87,7 @@ class InstalledApps:
             ("USE_DEBUG_TOOLBAR", ["debug_toolbar.apps.DebugToolbarConfig"]),
             ("USE_PIPELINE", ["pipeline"]),
             ("USE_PAM_AUTHENTICATION", ["django_pam"]),
+            ("USE_CORS_HEADER", ["corsheaders"]),
         ]
     )
     required_settings = [
@@ -182,6 +183,7 @@ class Middlewares:
             ("USE_WHITENOISE", "whitenoise.middleware.WhiteNoiseMiddleware"),
             ("USE_WEBSOCKETS", "df_websockets.middleware.WebsocketMiddleware"),
             ("USE_CSP", "csp.middleware.CSPMiddleware"),
+            ("USE_CORS_HEADER", "corsheaders.middleware.CorsMiddleware"),
         ]
     )
     required_settings = ["DF_MIDDLEWARE"] + list(common_third_parties)

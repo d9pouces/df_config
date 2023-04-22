@@ -122,6 +122,7 @@ USE_WEBSOCKETS = is_package_present("df_websockets")
 USE_SITE = is_package_present("df_site")
 USE_WHITENOISE = is_package_present("whitenoise")
 USE_CSP = is_package_present("csp")
+USE_CORS_HEADER = is_package_present("corsheaders")
 
 # ######################################################################################################################
 #
