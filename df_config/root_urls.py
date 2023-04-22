@@ -98,9 +98,16 @@ if settings.DF_INDEX_VIEW:
         path("", get_view_from_string(settings.DF_INDEX_VIEW), name="index")
     ]
 if settings.USE_WEBSOCKETS:
-    from df_websockets.load import load_celery
+    try:
+        from df_websockets.load import load_celery
 
-    load_celery()
+        load_celery()
+    except ImportError:
+        # noinspection PyUnresolvedReferences
+        from df_websockets.tasks import import_signals_and_functions
+
+        import_signals_and_functions()
+        load_celery = None
 
 url_prefix = settings.URL_PREFIX[1:]
 
