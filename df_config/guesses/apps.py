@@ -88,6 +88,7 @@ class InstalledApps:
             ("USE_PIPELINE", ["pipeline"]),
             ("USE_PAM_AUTHENTICATION", ["django_pam"]),
             ("USE_CORS_HEADER", ["corsheaders"]),
+            ("USE_DAPHNE", ["daphne"]),
         ]
     )
     required_settings = [

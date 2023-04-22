@@ -99,11 +99,9 @@ class RedisSmartSetting:
                 url += "?" + urlencode(self.extra_values)
             return url
         elif self.fmt == "channels":
+            url = "%(PROTOCOL)s://%(AUTH)s%(HOST)s:%(PORT)s/%(DB)s" % values
             config = {
-                "address": (
-                    values["HOST"] or "localhost",
-                    int(values["PORT"] or 6379),
-                ),
+                "address": url,
                 "password": values["PASSWORD"] or None,
                 "db": int(values["DB"] or 0),
             }
