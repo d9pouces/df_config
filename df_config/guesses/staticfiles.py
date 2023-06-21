@@ -28,6 +28,43 @@ def static_storage(settings_dict):
 static_storage.required_settings = ["PIPELINE_ENABLED", "USE_WHITENOISE"]
 
 
+def static_storage_setting(settings_dict):
+    if settings_dict["USE_WHITENOISE"] and settings_dict["PIPELINE_ENABLED"]:
+        backend = "df_config.apps.pipeline.PipelineCompressedManifestStaticFilesStorage"
+    elif settings_dict["USE_WHITENOISE"]:
+        backend = "whitenoise.storage.CompressedManifestStaticFilesStorage"
+    elif settings_dict["PIPELINE_ENABLED"]:
+        backend = "df_config.apps.pipeline.NicerPipelineCachedStorage"
+    else:
+        backend = "django.contrib.staticfiles.storage.StaticFilesStorage"
+    options = {
+        "location": settings_dict["STATIC_ROOT"],
+        "base_url": settings_dict["STATIC_URL"],
+    }
+    return {"BACKEND": backend, "OPTIONS": options}
+
+
+static_storage_setting.required_settings = [
+    "DEBUG",
+    "PIPELINE_ENABLED",
+    "USE_WHITENOISE",
+    "STATIC_ROOT",
+    "STATIC_URL",
+]
+
+
+def media_storage_setting(settings_dict):
+    backend = "django.core.files.storage.FileSystemStorage"
+    options = {
+        "location": settings_dict["MEDIA_ROOT"],
+        "base_url": settings_dict["MEDIA_URL"],
+    }
+    return {"BACKEND": backend, "OPTIONS": options}
+
+
+media_storage_setting.required_settings = ["MEDIA_ROOT", "MEDIA_URL"]
+
+
 def pipeline_enabled(settings_dict):
     return settings_dict["USE_PIPELINE"] and not settings_dict["DEBUG"]
 

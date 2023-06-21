@@ -37,6 +37,7 @@ written in .ini files. The mapping between the Python setting and the [section/o
 """
 import os
 
+# noinspection PyPep8Naming
 from django import VERSION as django_version
 from django.utils.translation import gettext_lazy as _
 
@@ -107,9 +108,11 @@ from df_config.guesses.pipeline import (
     pipeline_js_compressor,
 )
 from df_config.guesses.staticfiles import (
+    media_storage_setting,
     pipeline_enabled,
     static_finder,
     static_storage,
+    static_storage_setting,
 )
 from df_config.utils import guess_version, is_package_present
 
@@ -227,8 +230,13 @@ SITE_ID = 1
 # django.contrib.staticfiles
 STATIC_ROOT = Directory("{LOCAL_PATH}/static", mode=0o755)
 STATIC_URL = "/static/"
-STATICFILES_STORAGE = CallableSetting(static_storage)
+if (django_version[0], django_version[1]) < (4, 2):
+    STATICFILES_STORAGE = CallableSetting(static_storage)
 STATICFILES_FINDERS = CallableSetting(static_finder)
+STORAGES = {
+    "default": CallableSetting(media_storage_setting),
+    "staticfiles": CallableSetting(static_storage_setting),
+}
 
 # celery
 BROKER_URL = CallableSetting(celery_broker_url)
