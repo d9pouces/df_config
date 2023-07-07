@@ -12,12 +12,14 @@ jobs:
       matrix:
         python-version: ['3.9', '3.10', '3.11']
         django-version: ['3.2', '4.0', '4.1', '4.2']
+    env:
+      DJANGO_SETTINGS_MODULE: df_config.config.base
     steps:
     - uses: actions/checkout@v3
     - uses: actions/setup-python@v4
       with:
         python-version: ${{ matrix.python-version }}
-    - run: python3 -m pip install --upgrade setuptools pip wheel
+    - run: python3 -m pip install --upgrade setuptools pip wheel hypothesis nose
     - run: python3 -m pip install 'django==${{ matrix.django-version }}'
     - run: python3 setup.py develop
     - run: python3 setup.py test
