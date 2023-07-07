@@ -320,6 +320,7 @@ class LogConfigurationTest(TestCase):
                 LOG_DIRECTORY=dirname,
                 LOG_REMOTE_URL="lokis://mondomaine:3100/loki/api/v1/push",
                 LOG_REMOTE_ACCESS=True,
+                DEBUG=False,
             )
         self.assertEqual(
             config,
@@ -359,15 +360,6 @@ class LogConfigurationTest(TestCase):
                         "backupCount": 3,
                         "formatter": "nocolor",
                         "filename": f"{dirname}/logging-server-root.log",
-                        "level": "WARNING",
-                        "delay": True,
-                    },
-                    "logging-server.debug": {
-                        "class": "logging.handlers.RotatingFileHandler",
-                        "maxBytes": 1000000,
-                        "backupCount": 3,
-                        "formatter": "nocolor",
-                        "filename": f"{dirname}/logging-server-debug.log",
                         "level": "WARNING",
                         "delay": True,
                     },
@@ -631,17 +623,17 @@ class LogConfigurationTest(TestCase):
                         "level": "ERROR",
                         "include_html": True,
                     },
-                    "stdout.warning": {
-                        "class": "logging.StreamHandler",
-                        "level": "WARNING",
-                        "stream": "ext://sys.stdout",
-                        "formatter": None,
-                    },
-                    "stderr.warning": {
+                    "stderr.warning.django.server": {
                         "class": "logging.StreamHandler",
                         "level": "WARNING",
                         "stream": "ext://sys.stderr",
-                        "formatter": None,
+                        "formatter": "django.server",
+                    },
+                    "stdout.warning.colorized": {
+                        "class": "logging.StreamHandler",
+                        "level": "WARNING",
+                        "stream": "ext://sys.stdout",
+                        "formatter": "colorized",
                     },
                 },
                 "loggers": {
@@ -681,33 +673,33 @@ class LogConfigurationTest(TestCase):
                         "filters": ["remove_duplicate_warnings"],
                     },
                     "aiohttp.access": {
-                        "handlers": ["stderr.warning"],
+                        "handlers": ["stderr.warning.django.server"],
                         "level": "INFO",
                         "propagate": False,
                     },
                     "django.server": {
-                        "handlers": ["stderr.warning"],
+                        "handlers": ["stderr.warning.django.server"],
                         "level": "INFO",
                         "propagate": False,
                     },
                     "django.channels.server": {
-                        "handlers": ["stderr.warning"],
+                        "handlers": ["stderr.warning.django.server"],
                         "level": "INFO",
                         "propagate": False,
                     },
                     "geventwebsocket.handler": {
-                        "handlers": ["stderr.warning"],
+                        "handlers": ["stderr.warning.django.server"],
                         "level": "INFO",
                         "propagate": False,
                     },
                     "gunicorn.access": {
-                        "handlers": ["stderr.warning"],
+                        "handlers": ["stderr.warning.django.server"],
                         "level": "INFO",
                         "propagate": False,
                     },
                 },
                 "root": {
-                    "handlers": ["stdout.warning", "mail_admins"],
+                    "handlers": ["stdout.warning.colorized", "mail_admins"],
                     "level": "WARNING",
                 },
             },
@@ -747,17 +739,17 @@ class LogConfigurationTest(TestCase):
                         "level": "ERROR",
                         "include_html": True,
                     },
-                    "stdout.info": {
+                    "stdout.info.colorized": {
                         "class": "logging.StreamHandler",
                         "level": "INFO",
                         "stream": "ext://sys.stdout",
-                        "formatter": None,
+                        "formatter": "colorized",
                     },
-                    "stderr.debug": {
+                    "stderr.debug.django.server": {
                         "class": "logging.StreamHandler",
                         "level": "DEBUG",
                         "stream": "ext://sys.stderr",
-                        "formatter": None,
+                        "formatter": "django.server",
                     },
                 },
                 "loggers": {
@@ -797,31 +789,31 @@ class LogConfigurationTest(TestCase):
                         "filters": ["remove_duplicate_warnings"],
                     },
                     "aiohttp.access": {
-                        "handlers": ["stderr.debug"],
+                        "handlers": ["stderr.debug.django.server"],
                         "level": "INFO",
                         "propagate": False,
                     },
                     "django.server": {
-                        "handlers": ["stderr.debug"],
+                        "handlers": ["stderr.debug.django.server"],
                         "level": "INFO",
                         "propagate": False,
                     },
                     "django.channels.server": {
-                        "handlers": ["stderr.debug"],
+                        "handlers": ["stderr.debug.django.server"],
                         "level": "INFO",
                         "propagate": False,
                     },
                     "geventwebsocket.handler": {
-                        "handlers": ["stderr.debug"],
+                        "handlers": ["stderr.debug.django.server"],
                         "level": "INFO",
                         "propagate": False,
                     },
                     "gunicorn.access": {
-                        "handlers": ["stderr.debug"],
+                        "handlers": ["stderr.debug.django.server"],
                         "level": "INFO",
                         "propagate": False,
                     },
                 },
-                "root": {"handlers": ["stdout.info"], "level": "DEBUG"},
+                "root": {"handlers": ["stdout.info.colorized"], "level": "DEBUG"},
             },
         )
