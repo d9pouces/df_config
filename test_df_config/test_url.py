@@ -15,17 +15,17 @@
 # ##############################################################################
 from typing import Dict, Optional
 
-from df_config.config.url import URLSetting
+from df_config.config.url import DatabaseURL, URLSetting
 from test_df_config.test_dynamic_settings import TestDynamicSetting
 
 
 class TestDynamicSettingURL(TestDynamicSetting):
     def test_repr(self):
-        DATABASE_URL = URLSetting("DATABASE_URL")
+        DATABASE_URL = DatabaseURL("DATABASE_URL")
         s = DATABASE_URL.database("db_name")
-        self.assertEqual(f"{DATABASE_URL!r}", "")
+        self.assertEqual(f"{DATABASE_URL!r}", "DatabaseURL('DATABASE_URL')")
         self.assertEqual(
-            f"{s!r}", "URLSetting('DATABASE_URL').database(default='db_name')"
+            f"{s!r}", "DatabaseURL('DATABASE_URL').database(default='db_name')"
         )
 
     def test_url(self):
@@ -92,7 +92,7 @@ class TestDynamicSettingURL(TestDynamicSetting):
         )
 
     def check_alls(self, values: Dict[str, Optional[str]], attributes: Dict[str, str]):
-        setting = URLSetting("DATABASE_URL")
+        setting = DatabaseURL("DATABASE_URL")
         for key, value in attributes.items():
             dynamic_setting = getattr(setting, key)()
             self.check(dynamic_setting, value, previous_settings=values)
