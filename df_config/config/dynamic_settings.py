@@ -221,6 +221,14 @@ class Directory(Path):
         self.pre_collectstatic(merger, provider_name, setting_name, value)
 
 
+class DirectoryOrNone(Directory):
+    def get_value(self, merger, provider_name: str, setting_name: str):
+        s = super().get_value(merger, provider_name, setting_name)
+        if not os.path.isdir(s):
+            return None
+        return s
+
+
 class File(Path):
     """Represent a file name. Its parent directory is automatically created by the "migrate" and "collectstatic"
     command.

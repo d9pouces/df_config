@@ -50,6 +50,7 @@ from df_config.config.dynamic_settings import (
     AutocreateFile,
     CallableSetting,
     Directory,
+    DirectoryOrNone,
     ExpandIterable,
     Path,
     SettingReference,
@@ -153,7 +154,7 @@ DEVELOPMENT = True
 # if False, development-specific commands are hidden
 
 DEFAULT_FROM_EMAIL = "webmaster@{SERVER_NAME}"
-FILE_UPLOAD_TEMP_DIR = Directory("{LOCAL_PATH}/tmp-uploads")
+FILE_UPLOAD_TEMP_DIR = DirectoryOrNone("{LOCAL_PATH}/tmp-uploads")
 INSTALLED_APPS = CallableSetting(installed_apps)
 LANGUAGE_COOKIE_NAME = CallableSetting(CookieName("django_language"))
 LANGUAGE_COOKIE_DOMAIN = "{SERVER_NAME}"

@@ -5,6 +5,7 @@ from df_config.guesses.log import LogConfiguration
 
 
 class LogConfigurationTest(TestCase):
+    maxDiff = None
     settings = {
         "DEBUG": False,
         "DF_MODULE_NAME": "logging",
@@ -358,6 +359,15 @@ class LogConfigurationTest(TestCase):
                         "backupCount": 3,
                         "formatter": "nocolor",
                         "filename": f"{dirname}/logging-server-root.log",
+                        "level": "WARNING",
+                        "delay": True,
+                    },
+                    "logging-server.debug": {
+                        "class": "logging.handlers.RotatingFileHandler",
+                        "maxBytes": 1000000,
+                        "backupCount": 3,
+                        "formatter": "nocolor",
+                        "filename": f"{dirname}/logging-server-debug.log",
                         "level": "WARNING",
                         "delay": True,
                     },
