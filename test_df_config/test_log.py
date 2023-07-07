@@ -4,6 +4,15 @@ from unittest import TestCase
 from df_config.guesses.log import LogConfiguration
 
 
+class Stream:
+    """Emulate a output stream."""
+
+    @classmethod
+    def isatty(cls):
+        """Return True, as we need a TTY in the LogConfiguration."""
+        return True
+
+
 class LogConfigurationTest(TestCase):
     maxDiff = None
     settings = {
@@ -24,7 +33,7 @@ class LogConfigurationTest(TestCase):
         settings = {}
         settings.update(self.settings)
         settings.update(kwargs)
-        log_configuration = LogConfiguration()
+        log_configuration = LogConfiguration(stdout=Stream(), stderr=Stream())
         config = log_configuration(settings, argv=self.argv)
         # print(config)
         return config
