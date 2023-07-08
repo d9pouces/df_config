@@ -69,8 +69,12 @@ class Command(BaseCommand):
         return "%s:%s" % (mod_name, attr_name)
 
     def run_daphne(self):
-        # noinspection PyPackageRequirements,PyUnresolvedReferences
-        from daphne.cli import CommandLineInterface
+        try:
+            # noinspection PyPackageRequirements
+            from daphne.cli import CommandLineInterface
+        except ImportError:
+            self.stderr.write("Unable to start: please install daphne first.")
+            return
 
         host, port = self.listen_address, self.listen_port
         app = self.get_asgi_application()
@@ -92,9 +96,12 @@ class Command(BaseCommand):
 
     def run_gunicorn(self):
         sys.argv.pop(0)
-        # noinspection PyPackageRequirements,PyUnresolvedReferences
-        from gunicorn.config import KNOWN_SETTINGS, Setting
-
+        try:
+            # noinspection PyPackageRequirements
+            from gunicorn.config import KNOWN_SETTINGS, Setting
+        except ImportError:
+            self.stderr.write("Unable to start: please install gunicorn first.")
+            return
         # noinspection PyPackageRequirements,PyUnresolvedReferences
         from gunicorn.app.wsgiapp import WSGIApplication
 
