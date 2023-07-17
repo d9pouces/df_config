@@ -241,7 +241,6 @@ STORAGES = {
 
 # celery
 BROKER_URL = CallableSetting(celery_broker_url)
-CELERY_DEFAULT_QUEUE = "celery"
 CELERY_TIMEZONE = "{TIME_ZONE}"
 CELERY_RESULT_EXCHANGE = "{DF_MODULE_NAME}_results"
 CELERY_RESULT_BACKEND = CallableSetting(celery_result_url)
@@ -250,6 +249,7 @@ CELERY_ACCEPT_CONTENT = ["json", "yaml", "msgpack"]
 CELERY_APP = "df_websockets"
 CELERY_CREATE_DIRS = True
 CELERY_TASK_SERIALIZER = "json"
+BROKER_CONNECTION_RETRY_ON_STARTUP = True
 
 # df_config
 DF_PROJECT_VERSION = CallableSetting(guess_version)
@@ -281,8 +281,9 @@ WEBSOCKET_REDIS_CONNECTION = CallableSetting(websocket_redis_dict)
 WEBSOCKET_SIGNAL_DECODER = "json.JSONDecoder"
 WEBSOCKET_TOPIC_SERIALIZER = "df_websockets.topics.serialize_topic"
 WEBSOCKET_SIGNAL_ENCODER = "django.core.serializers.json.DjangoJSONEncoder"
-WEBSOCKET_REDIS_PREFIX = "ws"
-WEBSOCKET_REDIS_EXPIRE = 36000
+WEBSOCKET_CACHE_PREFIX = "ws"
+WEBSOCKET_CACHE_EXPIRE = 36000
+WEBSOCKET_DEFAULT_QUEUE = "celery"
 
 WINDOW_INFO_MIDDLEWARES = [
     "df_websockets.ws_middleware.WindowKeyMiddleware",
