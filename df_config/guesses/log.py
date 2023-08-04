@@ -236,6 +236,7 @@ class LogConfiguration:
     problem_loggers = {
         "django": _level_up,
         "django.db": _level_up,
+        "django.db.backends.schema": _level_up,
         "django.db.backends": {
             "DEBUG": "DEBUG",
             "INFO": "DEBUG",
