@@ -117,6 +117,11 @@ class LogConfigurationTest(TestCase):
                         "propagate": True,
                         "filters": ["slow_queries"],
                     },
+                    "django.db.backends.schema": {
+                        "handlers": [],
+                        "level": "ERROR",
+                        "propagate": True,
+                    },
                     "django.request": {
                         "handlers": [],
                         "level": "WARNING",
@@ -257,6 +262,11 @@ class LogConfigurationTest(TestCase):
                         "level": "DEBUG",
                         "propagate": True,
                         "filters": ["slow_queries"],
+                    },
+                    "django.db.backends.schema": {
+                        "handlers": [],
+                        "level": "ERROR",
+                        "propagate": True,
                     },
                     "django.request": {
                         "handlers": [],
@@ -407,6 +417,11 @@ class LogConfigurationTest(TestCase):
                         "propagate": True,
                         "filters": ["slow_queries"],
                     },
+                    "django.db.backends.schema": {
+                        "handlers": [],
+                        "level": "ERROR",
+                        "propagate": True,
+                    },
                     "django.request": {
                         "handlers": [],
                         "level": "WARNING",
@@ -538,6 +553,11 @@ class LogConfigurationTest(TestCase):
                         "propagate": True,
                         "filters": ["slow_queries"],
                     },
+                    "django.db.backends.schema": {
+                        "handlers": [],
+                        "level": "CRITICAL",
+                        "propagate": True,
+                    },
                     "django.request": {
                         "handlers": [],
                         "level": "CRITICAL",
@@ -654,6 +674,11 @@ class LogConfigurationTest(TestCase):
                         "propagate": True,
                         "filters": ["slow_queries"],
                     },
+                    "django.db.backends.schema": {
+                        "handlers": [],
+                        "level": "ERROR",
+                        "propagate": True,
+                    },
                     "django.request": {
                         "handlers": [],
                         "level": "WARNING",
@@ -769,6 +794,11 @@ class LogConfigurationTest(TestCase):
                         "level": "DEBUG",
                         "propagate": True,
                         "filters": ["slow_queries"],
+                    },
+                    "django.db.backends.schema": {
+                        "handlers": [],
+                        "level": "INFO",
+                        "propagate": True,
                     },
                     "django.request": {
                         "handlers": [],
