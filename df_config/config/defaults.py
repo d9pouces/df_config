@@ -266,13 +266,13 @@ USE_HTTP_BASIC_AUTH = False  # HTTP-Authorization
 USE_X_FORWARDED_FOR = CallableSetting(use_x_forwarded_for)  # X-Forwarded-For
 DF_FAKE_AUTHENTICATION_USERNAME = None
 DF_ALLOW_USER_CREATION = True
-
 DF_SERVER = CallableSetting(
     web_server
 )  # must be "gunicorn" or "daphne" / used by the server command
 DF_REMOVED_DJANGO_COMMANDS = CallableSetting(excluded_django_commands)
 DF_ALLOW_LOCAL_USERS = True
 DF_CHECKED_REQUIREMENTS = CallableSetting(required_packages)
+DF_REMOTE_USER_HEADER = None  # HTTP_REMOTE_USER
 
 # df_websockets
 WEBSOCKET_URL = "/ws/"  # set to None if you do not use websockets
@@ -455,7 +455,6 @@ DF_MIDDLEWARE = []
 DF_TEMPLATE_CONTEXT_PROCESSORS = []
 DF_PIP_NAME = "{DF_MODULE_NAME}"  # anything such that "python -m pip install {DF_PIP_NAME}" installs your project
 # only used in docs
-DF_REMOTE_USER_HEADER = None  # HTTP_REMOTE_USER
 DF_DEFAULT_GROUPS = [_("Users")]
 NPM_FILE_PATTERNS = {
     "bootstrap-notify": ["*.js"],
