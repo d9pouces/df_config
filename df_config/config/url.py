@@ -1,8 +1,7 @@
 import re
 import urllib.parse
+from importlib.metadata import PackageNotFoundError, version
 from typing import List, Optional
-
-from pkg_resources import DistributionNotFound, get_distribution
 
 from df_config.config.dynamic_settings import DynamicSettting
 
@@ -200,9 +199,9 @@ class URLSetting:
         found = False
         for req in requirements:
             try:
-                get_distribution(req)
+                version(req)
                 found = True
-            except DistributionNotFound:
+            except PackageNotFoundError:
                 pass
         if not found and requirements:
             from df_config.checks import missing_package, settings_check_results

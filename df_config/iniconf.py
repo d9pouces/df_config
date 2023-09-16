@@ -203,22 +203,6 @@ DJANGO_AUTH_MAPPING = [
         help_str='Set to "true" if you want to allow HTTP basic auth, using the Django database.',
     ),
 ]  # type: List[ConfigField]
-HTTP_AUTH_MAPPING = [
-    CharConfigField(
-        "auth.remote_user_header",
-        "DF_REMOTE_USER_HEADER",
-        help_str='Set it if the reverse-proxy authenticates users, a common value is "HTTP_REMOTE_USER". '
-        "Note: the HTTP_ prefix is automatically added, just set REMOTE_USER in the "
-        "reverse-proxy configuration. ",
-    ),
-    ListConfigField(
-        "auth.remote_user_groups",
-        "DF_DEFAULT_GROUPS",
-        help_str="Comma-separated list of groups, for new users that are automatically created "
-        "when authenticated by remote_user_header. Ignored if groups are read from a LDAP "
-        "server. ",
-    ),
-]
 LDAP_AUTH_MAPPING = [
     CharConfigField(
         "auth.ldap_server_url",
@@ -329,6 +313,24 @@ LDAP_AUTH_MAPPING = [
             "NestedOrganizationalRole": "django_auth_ldap.config.NestedOrganizationalRoleGroupType",
         },
         help_str="Type of LDAP groups.",
+    ),
+]
+HTTP_AUTH_MAPPING = [
+    CharConfigField(
+        "auth.remote_user_header",
+        "DF_REMOTE_USER_HEADER",
+        help_str='Set it if the reverse-proxy authenticates users, a common value is "HTTP_REMOTE_USER". '
+        "Note: the HTTP_ prefix is automatically added, just set REMOTE_USER in the "
+        "reverse-proxy configuration. ",
+        env_name="REMOTE_USER_HEADER",
+    ),
+    ListConfigField(
+        "auth.remote_user_groups",
+        "DF_DEFAULT_GROUPS",
+        help_str="Comma-separated list of groups, for new users that are automatically created "
+        "when authenticated by remote_user_header. Ignored if groups are read from a LDAP "
+        "server. ",
+        env_name="REMOTE_USER_GROUPS_HEADER",
     ),
 ]
 LOG_MAPPING = [

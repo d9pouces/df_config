@@ -16,10 +16,9 @@
 import os
 import tempfile
 from collections import OrderedDict
+from importlib import resources
 from typing import Dict, Iterable
 from unittest import TestCase
-
-import pkg_resources
 
 from df_config.config.fields import BooleanConfigField, CharConfigField
 from df_config.config.values_providers import (
@@ -206,19 +205,19 @@ class TestPythonModuleProvider(TestCase):
         self.assertEqual(True, provider.is_valid())
         provider = PythonModuleProvider("test_df_config.data.sample_settings2")
         self.assertEqual(False, provider.is_valid())
-        provider = PythonFileProvider(
-            pkg_resources.resource_filename(
-                "test_df_config.data", "sample_settings2.py"
+        with resources.path("test_df_config.data", "sample_settings.py") as filename:
+            filename = str(filename).replace(
+                "sample_settings.py", "sample_settings2.py"
             )
-        )
+            provider = PythonFileProvider(os.path.abspath(filename))
         self.assertEqual(False, provider.is_valid())
 
 
 class TestPythonFileProvider(TestPythonModuleProvider):
     def get_provider(self):
-        return PythonFileProvider(
-            pkg_resources.resource_filename("test_df_config.data", "sample_settings.py")
-        )
+        with resources.path("test_df_config.data", "sample_settings.py") as filename:
+            filename = str(filename)
+            return PythonFileProvider(filename)
 
 
 class TestDictProvider(TestPythonFileProvider):

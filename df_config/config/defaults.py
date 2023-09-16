@@ -37,6 +37,7 @@ written in .ini files. The mapping between the Python setting and the [section/o
 """
 import os
 
+# noinspection PyPep8Naming
 from django import VERSION as django_version
 from django.utils.translation import gettext_lazy as _
 
@@ -49,6 +50,7 @@ from df_config.config.dynamic_settings import (
     AutocreateFile,
     CallableSetting,
     Directory,
+    DirectoryOrNone,
     ExpandIterable,
     Path,
     SettingReference,
@@ -107,9 +109,11 @@ from df_config.guesses.pipeline import (
     pipeline_js_compressor,
 )
 from df_config.guesses.staticfiles import (
+    media_storage_setting,
     pipeline_enabled,
     static_finder,
     static_storage,
+    static_storage_setting,
 )
 from df_config.utils import guess_version, is_package_present
 
@@ -122,6 +126,8 @@ USE_WEBSOCKETS = is_package_present("df_websockets")
 USE_SITE = is_package_present("df_site")
 USE_WHITENOISE = is_package_present("whitenoise")
 USE_CSP = is_package_present("csp")
+USE_CORS_HEADER = is_package_present("corsheaders")
+USE_DAPHNE = is_package_present("daphne")
 
 # ######################################################################################################################
 #
@@ -148,7 +154,7 @@ DEVELOPMENT = True
 # if False, development-specific commands are hidden
 
 DEFAULT_FROM_EMAIL = "webmaster@{SERVER_NAME}"
-FILE_UPLOAD_TEMP_DIR = Directory("{LOCAL_PATH}/tmp-uploads")
+FILE_UPLOAD_TEMP_DIR = DirectoryOrNone("{LOCAL_PATH}/tmp-uploads")
 INSTALLED_APPS = CallableSetting(installed_apps)
 LANGUAGE_COOKIE_NAME = CallableSetting(CookieName("django_language"))
 LANGUAGE_COOKIE_DOMAIN = "{SERVER_NAME}"
@@ -225,12 +231,16 @@ SITE_ID = 1
 # django.contrib.staticfiles
 STATIC_ROOT = Directory("{LOCAL_PATH}/static", mode=0o755)
 STATIC_URL = "/static/"
-STATICFILES_STORAGE = CallableSetting(static_storage)
+if (django_version[0], django_version[1]) < (4, 2):
+    STATICFILES_STORAGE = CallableSetting(static_storage)
 STATICFILES_FINDERS = CallableSetting(static_finder)
+STORAGES = {
+    "default": CallableSetting(media_storage_setting),
+    "staticfiles": CallableSetting(static_storage_setting),
+}
 
 # celery
 BROKER_URL = CallableSetting(celery_broker_url)
-CELERY_DEFAULT_QUEUE = "celery"
 CELERY_TIMEZONE = "{TIME_ZONE}"
 CELERY_RESULT_EXCHANGE = "{DF_MODULE_NAME}_results"
 CELERY_RESULT_BACKEND = CallableSetting(celery_result_url)
@@ -239,6 +249,7 @@ CELERY_ACCEPT_CONTENT = ["json", "yaml", "msgpack"]
 CELERY_APP = "df_websockets"
 CELERY_CREATE_DIRS = True
 CELERY_TASK_SERIALIZER = "json"
+BROKER_CONNECTION_RETRY_ON_STARTUP = True
 
 # df_config
 DF_PROJECT_VERSION = CallableSetting(guess_version)
@@ -255,13 +266,13 @@ USE_HTTP_BASIC_AUTH = False  # HTTP-Authorization
 USE_X_FORWARDED_FOR = CallableSetting(use_x_forwarded_for)  # X-Forwarded-For
 DF_FAKE_AUTHENTICATION_USERNAME = None
 DF_ALLOW_USER_CREATION = True
-
 DF_SERVER = CallableSetting(
     web_server
 )  # must be "gunicorn" or "daphne" / used by the server command
 DF_REMOVED_DJANGO_COMMANDS = CallableSetting(excluded_django_commands)
 DF_ALLOW_LOCAL_USERS = True
 DF_CHECKED_REQUIREMENTS = CallableSetting(required_packages)
+DF_REMOTE_USER_HEADER = None  # HTTP_REMOTE_USER
 
 # df_websockets
 WEBSOCKET_URL = "/ws/"  # set to None if you do not use websockets
@@ -270,8 +281,9 @@ WEBSOCKET_REDIS_CONNECTION = CallableSetting(websocket_redis_dict)
 WEBSOCKET_SIGNAL_DECODER = "json.JSONDecoder"
 WEBSOCKET_TOPIC_SERIALIZER = "df_websockets.topics.serialize_topic"
 WEBSOCKET_SIGNAL_ENCODER = "django.core.serializers.json.DjangoJSONEncoder"
-WEBSOCKET_REDIS_PREFIX = "ws"
-WEBSOCKET_REDIS_EXPIRE = 36000
+WEBSOCKET_CACHE_PREFIX = "ws"
+WEBSOCKET_CACHE_EXPIRE = 36000
+WEBSOCKET_DEFAULT_QUEUE = "celery"
 
 WINDOW_INFO_MIDDLEWARES = [
     "df_websockets.ws_middleware.WindowKeyMiddleware",
@@ -393,8 +405,11 @@ AUTH_LDAP_GROUP_SEARCH_BASE = "ou=groups,dc=example,dc=com"
 AUTH_LDAP_AUTHORIZE_ALL_USERS = True
 
 # django-cors-headers
-CORS_ORIGIN_WHITELIST = ("{SERVER_NAME}", "{SERVER_NAME}:{SERVER_PORT}")
 CORS_REPLACE_HTTPS_REFERER = False
+CORS_ALLOWED_ORIGINS = [
+    "{SERVER_PROTOCOL}://{SERVER_NAME}:{SERVER_PORT}",
+    "http://{LISTEN_ADDRESS}:{LISTEN_PORT}",
+]
 
 # django-hosts
 DEFAULT_HOST = "{SERVER_NAME}"
@@ -440,7 +455,6 @@ DF_MIDDLEWARE = []
 DF_TEMPLATE_CONTEXT_PROCESSORS = []
 DF_PIP_NAME = "{DF_MODULE_NAME}"  # anything such that "python -m pip install {DF_PIP_NAME}" installs your project
 # only used in docs
-DF_REMOTE_USER_HEADER = None  # HTTP_REMOTE_USER
 DF_DEFAULT_GROUPS = [_("Users")]
 NPM_FILE_PATTERNS = {
     "bootstrap-notify": ["*.js"],

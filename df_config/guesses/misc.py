@@ -16,6 +16,7 @@
 import re
 import socket
 import sys
+from importlib.metadata import PackageNotFoundError, distribution, version
 from typing import Dict, Iterable, List
 from urllib.parse import urlparse
 
@@ -24,7 +25,6 @@ from django.core.checks import Warning
 
 # noinspection PyPackageRequirements
 from django.utils.crypto import get_random_string
-from pkg_resources import DistributionNotFound, VersionConflict, get_distribution
 
 from df_config.checks import missing_package, settings_check_results
 from df_config.config.dynamic_settings import AutocreateFileContent
@@ -309,17 +309,20 @@ def required_packages(settings_dict) -> List[str]:
     def get_requirements(package_name, parent=None) -> Iterable[str]:
         try:
             yield str(package_name)
-            d = get_distribution(package_name)
-            for r in d.requires():
+            d = distribution(package_name)
+            for r in d.requires:
+                r, __, __ = r.partition(";")
+                r, __, __ = r.partition("(")
+                r = r.strip()
                 for required_package in get_requirements(r, parent=package_name):
                     yield str(required_package)
-        except DistributionNotFound:
+        except PackageNotFoundError:
             settings_check_results.append(
-                missing_package(str(package_name), " by %s" % parent)
+                missing_package(str(package_name), f" by {parent}")
             )
-        except VersionConflict:
+        except Exception as e:
             settings_check_results.append(
-                missing_package(str(package_name), " by %s" % parent)
+                missing_package(str(package_name), f" by {parent} ({e})")
             )
 
     return list(

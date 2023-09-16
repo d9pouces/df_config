@@ -16,9 +16,9 @@
 import os
 from collections import OrderedDict
 from configparser import RawConfigParser
+from importlib.metadata import PackageNotFoundError, version
 
 from django.core.checks import Error
-from pkg_resources import DistributionNotFound, get_distribution
 
 from df_config.checks import missing_package, settings_check_results
 from df_config.config.dynamic_settings import ExpandIterable
@@ -87,6 +87,8 @@ class InstalledApps:
             ("USE_DEBUG_TOOLBAR", ["debug_toolbar.apps.DebugToolbarConfig"]),
             ("USE_PIPELINE", ["pipeline"]),
             ("USE_PAM_AUTHENTICATION", ["django_pam"]),
+            ("USE_CORS_HEADER", ["corsheaders"]),
+            ("USE_DAPHNE", ["daphne"]),
         ]
     )
     required_settings = [
@@ -125,8 +127,8 @@ class InstalledApps:
         ):
             return []
         try:
-            get_distribution("django-allauth")
-        except DistributionNotFound:
+            version("django-allauth")
+        except PackageNotFoundError:
             settings_check_results.append(
                 missing_package(
                     "django-allauth", " to use OAuth2 or OpenID authentication"
@@ -182,6 +184,7 @@ class Middlewares:
             ("USE_WHITENOISE", "whitenoise.middleware.WhiteNoiseMiddleware"),
             ("USE_WEBSOCKETS", "df_websockets.middleware.WebsocketMiddleware"),
             ("USE_CSP", "csp.middleware.CSPMiddleware"),
+            ("USE_CORS_HEADER", "corsheaders.middleware.CorsMiddleware"),
         ]
     )
     required_settings = ["DF_MIDDLEWARE"] + list(common_third_parties)

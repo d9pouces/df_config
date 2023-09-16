@@ -71,6 +71,7 @@ If you want a single settings file, you can also create it:
 python3 manage.py config python --filename settings.py
 ```
 
+
 update your setup.py
 --------------------
 
@@ -241,3 +242,4 @@ A few well-known Django applications are automatically detected and added to the
   * `django-csp`
   
 Defaults settings are also proposed so these applications should be working out of the box.
+

@@ -15,9 +15,9 @@
 # ##############################################################################
 import os
 import tempfile
+from importlib import resources
 from unittest import TestCase
 
-import pkg_resources
 from django.http import HttpRequest
 from django.utils.http import http_date
 
@@ -25,10 +25,7 @@ from df_config.utils import RangedChunkReader, ensure_dir, is_package_present, s
 
 
 class PatchSettings:
-    """
-    Temporarily change some settings, and restore them when the context is exited.
-
-    """
+    """Temporarily change some settings, and restore them when the context is exited."""
 
     def __init__(self, **kwargs):
         self.patched_settings = kwargs
@@ -77,9 +74,8 @@ class TestSendFile(TestCase):
         os.environ.setdefault("DJANGO_SETTINGS_MODULE", "test_df_config.data.settings")
 
     def test_rangedfilereader(self):
-        filename = pkg_resources.resource_filename(
-            "test_df_config", "data/range_data.txt"
-        )
+        with resources.path("test_df_config.data", "range_data.txt") as filename:
+            filename = str(filename)
         with open(filename, "rb") as fd:
             reader = RangedChunkReader(fd, [(0, 9)], chunk_size=5)
             content = list(reader)
@@ -91,9 +87,8 @@ class TestSendFile(TestCase):
 
     def test_range(self):
         request = HttpRequest()
-        filename = pkg_resources.resource_filename(
-            "test_df_config", "data/range_data.txt"
-        )
+        with resources.path("test_df_config.data", "range_data.txt") as filename:
+            filename = str(filename)
         request.META = {"HTTP_RANGE": "bytes=20-29"}
         r = send_file(
             request,
@@ -117,9 +112,8 @@ class TestSendFile(TestCase):
 
     def test_range_multiple(self):
         request = HttpRequest()
-        filename = pkg_resources.resource_filename(
-            "test_df_config", "data/range_data.txt"
-        )
+        with resources.path("test_df_config.data", "range_data.txt") as filename:
+            filename = str(filename)
         request.META = {"HTTP_RANGE": "bytes=0-9, 20-29, 40-49"}
         r = send_file(
             request,
@@ -141,9 +135,8 @@ class TestSendFile(TestCase):
 
     def test_no_range(self):
         request = HttpRequest()
-        filename = pkg_resources.resource_filename(
-            "test_df_config", "data/range_data.txt"
-        )
+        with resources.path("test_df_config.data", "range_data.txt") as filename:
+            filename = str(filename)
         request.META = {}
         r = send_file(
             request,
