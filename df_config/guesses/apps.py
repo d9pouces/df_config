@@ -16,9 +16,9 @@
 import os
 from collections import OrderedDict
 from configparser import RawConfigParser
+from importlib.metadata import PackageNotFoundError, version
 
 from django.core.checks import Error
-from pkg_resources import DistributionNotFound, get_distribution
 
 from df_config.checks import missing_package, settings_check_results
 from df_config.config.dynamic_settings import ExpandIterable
@@ -127,8 +127,8 @@ class InstalledApps:
         ):
             return []
         try:
-            get_distribution("django-allauth")
-        except DistributionNotFound:
+            version("django-allauth")
+        except PackageNotFoundError:
             settings_check_results.append(
                 missing_package(
                     "django-allauth", " to use OAuth2 or OpenID authentication"

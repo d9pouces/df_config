@@ -19,10 +19,10 @@ import os
 import re
 from email.utils import mktime_tz, parsedate_tz
 from importlib import import_module
+from importlib.metadata import PackageNotFoundError, version
 from typing import Iterable, Set, Tuple
 from urllib.parse import quote
 
-import pkg_resources
 from django.conf import settings
 from django.core.exceptions import ImproperlyConfigured
 from django.http import (
@@ -80,11 +80,8 @@ def guess_version(defined_settings):
     :rtype: :class:`str`
     """
     try:
-        project_distribution = pkg_resources.get_distribution(
-            defined_settings["DF_MODULE_NAME"]
-        )
-        return project_distribution.version
-    except pkg_resources.DistributionNotFound:
+        return version(defined_settings["DF_MODULE_NAME"])
+    except PackageNotFoundError:
         pass
     try:
         return import_string("%s.__version__" % defined_settings["DF_MODULE_NAME"])

@@ -19,10 +19,10 @@
 import grp
 import os
 import pwd
+from importlib.metadata import PackageNotFoundError, version
 
 from django.core.checks import Error
 from django.utils.module_loading import import_string
-from pkg_resources import DistributionNotFound, get_distribution
 
 from df_config.checks import missing_package, settings_check_results
 
@@ -83,17 +83,17 @@ class AuthenticationBackends:
         ):
             return []
         try:
-            get_distribution("django-allauth")
+            version("django-allauth")
             return ["allauth.account.auth_backends.AuthenticationBackend"]
-        except DistributionNotFound:
+        except PackageNotFoundError:
             return []
 
     def process_radius(self, settings_dict):
         if not settings_dict["RADIUS_SERVER"]:
             return []
         try:
-            get_distribution("django-radius")
-        except DistributionNotFound:
+            version("django-radius")
+        except PackageNotFoundError:
             settings_check_results.append(
                 missing_package("django-radius", " to use RADIUS authentication")
             )
@@ -104,8 +104,8 @@ class AuthenticationBackends:
         if not settings_dict["AUTH_LDAP_SERVER_URI"]:
             return []
         try:
-            get_distribution("django-auth-ldap")
-        except DistributionNotFound:
+            version("django-auth-ldap")
+        except PackageNotFoundError:
             settings_check_results.append(
                 missing_package("django-auth-ldap", " to use LDAP authentication")
             )
@@ -116,8 +116,8 @@ class AuthenticationBackends:
         if not settings_dict["USE_PAM_AUTHENTICATION"]:
             return []
         try:
-            get_distribution("django_pam")
-        except DistributionNotFound:
+            version("django_pam")
+        except PackageNotFoundError:
             settings_check_results.append(
                 missing_package("django-pam", " to use PAM authentication")
             )
