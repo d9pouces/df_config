@@ -6,7 +6,7 @@
   "repository": "https://github.com/d9pouces/df_config",
   "devDependencies": {
     "ts-loader": "^9.4.2",
-    "typescript": "^3.9.7",
+    "typescript": "^5.2.0",
     "webpack": "^5.75.0",
     "webpack-cli": "^5.0.1"
   },
