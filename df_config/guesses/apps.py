@@ -185,6 +185,7 @@ class Middlewares:
             ("USE_WEBSOCKETS", "df_websockets.middleware.WebsocketMiddleware"),
             ("USE_CSP", "csp.middleware.CSPMiddleware"),
             ("USE_CORS_HEADER", "corsheaders.middleware.CorsMiddleware"),
+            ("USE_ALL_AUTH", "allauth.account.middleware.AccountMiddleware"),
         ]
     )
     required_settings = ["DF_MIDDLEWARE"] + list(common_third_parties)
