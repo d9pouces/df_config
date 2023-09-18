@@ -16,5 +16,6 @@ class LokiHandler(LokiQueueHandler):
             "application": settings.SERVER_NAME,
             "command": settings.CURRENT_COMMAND_NAME,
             "hostname": settings.HOSTNAME,
+            "log_source": "django",
         }
         super().__init__(Queue(-1), url=url, tags=tags, auth=auth, version="1")
