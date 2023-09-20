@@ -34,7 +34,6 @@ classifiers = [
     'Operating System :: POSIX :: Linux',
     'Operating System :: Unix',
     'Programming Language :: Python :: 3 :: Only',
-    'Programming Language :: Python :: 3.8',
     'Programming Language :: Python :: 3.9',
     'Programming Language :: Python :: 3.10',
     'Programming Language :: Python :: 3.11'
@@ -71,10 +70,10 @@ legacy_tox_ini = """
 
 [tox]
 [tox:tox]
-envlist = {py38,py39,py310,py311}-{django32,django40,django41,django42}
+envlist = {py39,py310,py311}-{django32,django40,django41,django42}
 
 
-[testenv:{py38,py39,py310,py311}-{django32,django40,django41,django42}]
+[testenv:{py39,py310,py311}-{django32,django40,django41,django42}]
 commands = pytest
 deps = hypothesis
     nose
