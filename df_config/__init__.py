@@ -14,3 +14,9 @@
 #                                                                             #
 # #############################################################################
 """__init__ file."""
+from importlib.metadata import PackageNotFoundError, version
+
+try:
+    __version__ = version("df_config")
+except PackageNotFoundError:
+    __version__ = "1.0.0"

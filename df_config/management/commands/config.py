@@ -13,9 +13,11 @@
 #  or https://cecill.info/licences/Licence_CeCILL-B_V1-fr.txt (French)         #
 #                                                                              #
 # ##############################################################################
+"""Display all the loaded settings and their origin. Can also produce a setting file."""
 import io
 import os
 from argparse import ArgumentParser
+from importlib.metadata import version as get_version
 
 from django.core.management import BaseCommand
 from django.core.management.base import OutputWrapper
@@ -23,19 +25,19 @@ from django.core.management.color import no_style
 from django.template.loader import render_to_string
 from django.utils.translation import gettext as _
 
-from df_config import __version__ as version
 from df_config.config.base import merger
-from df_config.utils import guess_version, remove_arguments_from_help
-
-__author__ = "Matthieu Gallet"
-
 from df_config.config.values_providers import (
     EnvironmentConfigProvider,
     IniConfigProvider,
 )
+from df_config.utils import guess_version, remove_arguments_from_help
+
+__author__ = "Matthieu Gallet"
 
 
 class Command(BaseCommand):
+    """Display all the loaded settings and their origin."""
+
     help = (
         "show the current configuration."
         'Can display as python file ("config python") or as .ini file ("config ini"). Use -v 2 to display more info.'
@@ -48,6 +50,7 @@ class Command(BaseCommand):
     }
 
     def add_arguments(self, parser: ArgumentParser):
+        """Add the arguments to the ArgumentParser."""
         parser.add_argument(
             "action",
             default="show",
@@ -62,6 +65,7 @@ class Command(BaseCommand):
         )
 
     def handle(self, *args, **options):
+        """Handle the action, without raising a BrokenPipeError when interrupted."""
         try:
             self.handle_head(**options)
         except BrokenPipeError:
@@ -69,6 +73,7 @@ class Command(BaseCommand):
             pass
 
     def handle_head(self, **options):
+        """Handle the action, raising a BrokenPipeError when interrupted."""
         action = options["action"]
         verbosity = options["verbosity"]
         filename = options["filename"]
@@ -102,10 +107,12 @@ class Command(BaseCommand):
                 dst_fd.write(content)
 
     def show_external_config(self, config):
+        """Render settings in a template file."""
         content = render_to_string(config, merger.settings)
         self.stdout.write(content)
 
     def show_ini_config(self, verbosity):
+        """Display the current config, as a .ini file."""
         if verbosity >= 2:
             p = merger.fields_provider
             self.stdout.write(
@@ -130,6 +137,7 @@ class Command(BaseCommand):
         self.stdout.write(provider.to_str())
 
     def show_env_config(self, verbosity):
+        """Display the current config, using only environment variables."""
         prefix = None
         for provider in merger.providers:
             if not isinstance(provider, EnvironmentConfigProvider):
@@ -149,6 +157,8 @@ class Command(BaseCommand):
         self.stdout.write(provider.to_str())
 
     def show_python_config(self, verbosity):
+        """Display the current config, as a Python file."""
+        version = get_version("df_config")
         self.stdout.write(self.style.SUCCESS("# " + "-" * 80))
         self.stdout.write(
             self.style.SUCCESS(
@@ -210,9 +220,9 @@ class Command(BaseCommand):
             self.stdout.write(self.style.SUCCESS("%s = %r" % (setting_name, value)))
             if verbosity <= 1:
                 continue
-            for provider_name, raw_value in merger.raw_settings[setting_name].items():
+            for p_name, r_value in merger.raw_settings[setting_name].items():
                 self.stdout.write(
                     self.style.WARNING(
-                        "    #   %s -> %r" % (provider_name or "built-in", raw_value)
+                        "    #   %s -> %r" % (p_name or "built-in", r_value)
                     )
                 )

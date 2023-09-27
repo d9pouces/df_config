@@ -13,6 +13,7 @@
 #  or https://cecill.info/licences/Licence_CeCILL-B_V1-fr.txt (French)         #
 #                                                                              #
 # ##############################################################################
+"""List of external settings (via .ini or environment variables)."""
 from typing import List
 
 from df_config.config.fields import (
@@ -28,6 +29,7 @@ from df_config.config.fields import (
 
 
 def x_accel_converter(value):
+    """Return the list of file paths that can be accelerated when the X-Accel-redirect directive of nginx is used."""
     if bool_setting(value):
         return [("{MEDIA_ROOT}/", "{MEDIA_URL}")]
     return []
@@ -489,6 +491,11 @@ INI_MAPPING = (
     + SENDFILE_MAPPING
 )
 DEFAULT_INI_MAPPING = (
-    BASE_MAPPING + DATABASE_MAPPING + LOG_MAPPING + REDIS_MAPPING + SENDFILE_MAPPING
+    BASE_MAPPING
+    + DATABASE_MAPPING
+    + LOG_MAPPING
+    + REDIS_MAPPING
+    + SENDFILE_MAPPING
+    + HTTP_AUTH_MAPPING
 )
 EMPTY_INI_MAPPING = []
