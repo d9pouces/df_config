@@ -500,6 +500,7 @@ LOG_EXCLUDED_COMMANDS = {
     "startapp",
     "test",
     "testserver",
+    "wait_for_database",
 }
 LOG_REMOTE_URL = None  # aliased in settings.ini as "[global]log_remote_url"
 LOG_LEVEL = None
