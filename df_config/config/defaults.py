@@ -14,8 +14,7 @@
 #                                                                              #
 # ##############################################################################
 
-"""Default values for all Django settings
-======================================
+"""Default values for all Django settings.
 
 Define settings for deploying most of df_config-based websites or for running them in `DEBUG` mode.
 Most of them are used by Django, some of them by common third-party packages and the other ones are
@@ -128,6 +127,7 @@ USE_WHITENOISE = is_package_present("whitenoise")
 USE_CSP = is_package_present("csp")
 USE_CORS_HEADER = is_package_present("corsheaders")
 USE_DAPHNE = is_package_present("daphne")
+USE_DJANGO_PROBES = is_package_present("django_probes")
 
 # ######################################################################################################################
 #
