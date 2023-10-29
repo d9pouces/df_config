@@ -13,8 +13,7 @@
 #  or https://cecill.info/licences/Licence_CeCILL-B_V1-fr.txt (French)         #
 #                                                                              #
 # ##############################################################################
-"""
-universal server command
+"""Universal server command.
 
 use gunicorn, uvicorn or daphne, depending on the selected options
 """
@@ -27,23 +26,26 @@ from df_config.utils import is_package_present
 
 
 class Command(BaseCommand):
+    """Launch the server command."""
+
     help = "Launch the server process"
 
     @property
     def listen_port(self):
+        """Return the listen port."""
         add, sep, port = settings.LISTEN_ADDRESS.partition(":")
         return int(port)
 
     @property
     def listen_address(self):
+        """Return the listen address."""
         add, sep, port = settings.LISTEN_ADDRESS.partition(":")
         return add
 
     def run_from_argv(self, argv):
-        """
-        Set up any environment changes requested (e.g., Python path
-        and Django settings), then run this command. If the
-        command raises a ``CommandError``, intercept it and print it sensibly
+        """Set up any environment changes requested (e.g., Python path and Django settings), then run this command.
+
+        If the command raises a ``CommandError``, intercept it and print it sensibly
         to stderr. If the ``--traceback`` option is present or the raised
         ``Exception`` is not ``CommandError``, raise it.
         """
@@ -51,26 +53,30 @@ class Command(BaseCommand):
             self.run_gunicorn()
         elif settings.DF_SERVER == "daphne":
             self.run_daphne()
+        elif settings.DF_SERVER == "uvicorn":
+            self.run_daphne()
         else:
             self.stderr.write(
-                "unknown value '%s' for setting DF_SERVER. Please choose between 'daphne' and 'gunicorn'."
-                % settings.DF_SERVER
+                f"unknown value '{settings.DF_SERVER}' for setting DF_SERVER. "
+                f"Valid choices are 'daphne', 'gunicorn' and 'uvicorn'."
             )
             return
 
     @staticmethod
     def get_wsgi_application():
+        """Return the WSGI app."""
         mod_name, sep, attr_name = settings.WSGI_APPLICATION.rpartition(".")
         return "%s:%s" % (mod_name, attr_name)
 
     @staticmethod
     def get_asgi_application():
+        """Return the ASGI app (required when using websockets)."""
         mod_name, sep, attr_name = settings.ASGI_APPLICATION.rpartition(".")
         return "%s:%s" % (mod_name, attr_name)
 
     def run_daphne(self):
+        """Run the server using Daphne."""
         try:
-            # noinspection PyPackageRequirements
             from daphne.cli import CommandLineInterface
         except ImportError:
             self.stderr.write("Unable to start: please install daphne first.")
@@ -94,7 +100,17 @@ class Command(BaseCommand):
 
         return CLI().run(sys.argv[2:])
 
+    def run_uvicorn(self):
+        """Run the server using uvicorn."""
+        import uvicorn
+
+        app = self.get_asgi_application()
+        return uvicorn.run(
+            app, host=self.listen_address, port=self.listen_port, log_level="info"
+        )
+
     def run_gunicorn(self):
+        """Run the server using gunicorn."""
         sys.argv.pop(0)
         try:
             # noinspection PyPackageRequirements
@@ -102,7 +118,6 @@ class Command(BaseCommand):
         except ImportError:
             self.stderr.write("Unable to start: please install gunicorn first.")
             return
-        # noinspection PyPackageRequirements,PyUnresolvedReferences
         from gunicorn.app.wsgiapp import WSGIApplication
 
         if settings.USE_WEBSOCKETS:
@@ -132,4 +147,5 @@ class Command(BaseCommand):
         return Application("%(prog)s [OPTIONS] [APP_MODULE]").run()
 
     def handle(self, *args, **options):
+        """Override the default function."""
         pass

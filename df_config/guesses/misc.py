@@ -307,7 +307,10 @@ def generate_secret_key(django_ready, length=60) -> str:
 
 
 def required_packages(settings_dict) -> List[str]:
-    """Return a sorted list of the Python packages required by the current project (with a warning for each missing package)."""
+    """Return a sorted list of the Python packages required by the current project.
+
+    Issue  a warning for each missing package.
+    """
     checked_packages: Set[str] = set()
 
     def get_requirements(package_name, parent=None) -> Iterable[str]:
@@ -438,14 +441,11 @@ use_sentry.required_settings = ["SENTRY_DSN", "USE_CELERY", "DEBUG"]
 
 # noinspection PyUnusedLocal
 def web_server(settings_dict) -> str:
-    """Provide a valid server (daphne if available or gunicorn)."""
-    try:
-        # noinspection PyPackageRequirements
-        import daphne
-
-        return "daphne"
-    except ImportError:
-        return "gunicorn"
+    """Provide a valid server (daphne if available, uvicorn or gunicorn)."""
+    for server_name in "daphne", "gunicorn", "uvicorn":
+        if is_package_present(server_name):
+            return server_name
+    return "gunicorn"
 
 
 web_server.required_settings = []

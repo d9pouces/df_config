@@ -58,6 +58,9 @@ pytest = "^7.2.1"
 pytest-django = "^4.5.2"
 tox = "^4.4.12"
 python-logging-loki = "^0.3.1"
+gunicorn = "^21.2.0"
+daphne = "^4.0.0"
+uvicorn = "^0.23.2"
 
 [tool.pytest.ini_options]
 DJANGO_SETTINGS_MODULE = "df_config.config.base"
