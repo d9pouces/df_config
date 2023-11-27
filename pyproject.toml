@@ -1,0 +1,90 @@
+# ##############################################################################
+#  This file is part of df_config                                              #
+#                                                                              #
+#  Copyright (C) 2020 Matthieu Gallet <df_config@19pouces.net>                    #
+#  All Rights Reserved                                                         #
+#                                                                              #
+#  You may use, distribute and modify this code under the                      #
+#  terms of the (BSD-like) CeCILL-B license.                                   #
+#                                                                              #
+#  You should have received a copy of the CeCILL-B license with                #
+#  this file. If not, please visit:                                            #
+#  https://cecill.info/licences/Licence_CeCILL-B_V1-en.txt (English)           #
+#  or https://cecill.info/licences/Licence_CeCILL-B_V1-fr.txt (French)         #
+#                                                                              #
+# ##############################################################################
+
+[build-system]
+build-backend = "poetry.core.masonry.api"
+requires = ["poetry-core"]
+
+[tool.poetry]
+authors = ["Matthieu Gallet <github@19pouces.net>"]
+classifiers = [
+    'Development Status :: 5 - Production/Stable',
+    'Framework :: Django :: 3.1',
+    'Framework :: Django :: 3.2',
+    'Framework :: Django :: 4.0',
+    'Framework :: Django :: 4.1',
+    'Framework :: Django :: 4.2',
+    'License :: OSI Approved :: CEA CNRS Inria Logiciel Libre License, version 2.1 (CeCILL-2.1)',
+    'Operating System :: MacOS :: MacOS X',
+    'Operating System :: Microsoft :: Windows',
+    'Operating System :: POSIX :: BSD',
+    'Operating System :: POSIX :: Linux',
+    'Operating System :: Unix',
+    'Programming Language :: Python :: 3 :: Only',
+    'Programming Language :: Python :: 3.9',
+    'Programming Language :: Python :: 3.10',
+    'Programming Language :: Python :: 3.11'
+]
+description = "Smart default settings for Django websites"
+documentation = 'https://github.com/d9pouces/df_config'
+license = "CECILL-B"
+maintainers = ["Matthieu Gallet <github@19pouces.net>"]
+name = "df_config"
+packages = [{ include = "df_config" }]
+readme = "README.md"
+repository = 'https://github.com/d9pouces/df_config'
+version = "1.1.27"
+
+[tool.poetry.dependencies]
+django = ">=2.1"
+python = "^3.9"
+
+[tool.poetry.group.dev.dependencies]
+hypothesis = "^6.72.0"
+pytest = "^7.2.1"
+pytest-django = "^4.5.2"
+tox = "^4.4.12"
+python-logging-loki = "^0.3.1"
+gunicorn = "^21.2.0"
+daphne = "^4.0.0"
+uvicorn = "^0.23.2"
+
+[tool.pytest.ini_options]
+DJANGO_SETTINGS_MODULE = "df_config.config.base"
+minversion = "6.0"
+required_plugins = "pytest-django"
+testpaths = ["test_df_config"]
+
+[tool.tox]
+legacy_tox_ini = """
+
+[tox]
+[tox:tox]
+envlist = {py39,py310,py311}-{django32,django40,django41,django42}
+
+
+[testenv:{py39,py310,py311}-{django32,django40,django41,django42}]
+commands = pytest
+deps = hypothesis
+    nose
+    pytest
+    tox
+    python-logging-loki
+    django32: Django>=3.2,<3.3
+    django40: Django>=4.0,<4.1
+    django41: Django>=4.1,<4.2
+    django42: Django>=4.2,<4.3
+"""

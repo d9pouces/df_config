@@ -142,6 +142,11 @@ class LogConfigurationTest(TestCase):
                         "level": "WARNING",
                         "propagate": True,
                     },
+                    "uvicorn.error": {
+                        "handlers": [],
+                        "level": "WARNING",
+                        "propagate": True,
+                    },
                     "pip.vcs": {"handlers": [], "level": "ERROR", "propagate": True},
                     "py.warnings": {
                         "handlers": [],
@@ -170,6 +175,11 @@ class LogConfigurationTest(TestCase):
                         "propagate": False,
                     },
                     "gunicorn.access": {
+                        "handlers": ["logging-server.access"],
+                        "level": "INFO",
+                        "propagate": False,
+                    },
+                    "uvicorn.access": {
                         "handlers": ["logging-server.access"],
                         "level": "INFO",
                         "propagate": False,
@@ -288,6 +298,11 @@ class LogConfigurationTest(TestCase):
                         "level": "WARNING",
                         "propagate": True,
                     },
+                    "uvicorn.error": {
+                        "handlers": [],
+                        "level": "WARNING",
+                        "propagate": True,
+                    },
                     "pip.vcs": {"handlers": [], "level": "ERROR", "propagate": True},
                     "py.warnings": {
                         "handlers": [],
@@ -316,6 +331,11 @@ class LogConfigurationTest(TestCase):
                         "propagate": False,
                     },
                     "gunicorn.access": {
+                        "handlers": ["logging-server.access"],
+                        "level": "INFO",
+                        "propagate": False,
+                    },
+                    "uvicorn.access": {
                         "handlers": ["logging-server.access"],
                         "level": "INFO",
                         "propagate": False,
@@ -442,6 +462,11 @@ class LogConfigurationTest(TestCase):
                         "level": "WARNING",
                         "propagate": True,
                     },
+                    "uvicorn.error": {
+                        "handlers": [],
+                        "level": "WARNING",
+                        "propagate": True,
+                    },
                     "pip.vcs": {"handlers": [], "level": "ERROR", "propagate": True},
                     "py.warnings": {
                         "handlers": [],
@@ -470,6 +495,11 @@ class LogConfigurationTest(TestCase):
                         "propagate": False,
                     },
                     "gunicorn.access": {
+                        "handlers": ["logging-server.access", "loki.debug"],
+                        "level": "INFO",
+                        "propagate": False,
+                    },
+                    "uvicorn.access": {
                         "handlers": ["logging-server.access", "loki.debug"],
                         "level": "INFO",
                         "propagate": False,
@@ -578,6 +608,11 @@ class LogConfigurationTest(TestCase):
                         "level": "CRITICAL",
                         "propagate": True,
                     },
+                    "uvicorn.error": {
+                        "handlers": [],
+                        "level": "CRITICAL",
+                        "propagate": True,
+                    },
                     "pip.vcs": {"handlers": [], "level": "CRITICAL", "propagate": True},
                     "py.warnings": {
                         "handlers": [],
@@ -606,6 +641,11 @@ class LogConfigurationTest(TestCase):
                         "propagate": False,
                     },
                     "gunicorn.access": {
+                        "handlers": ["logging-server.access"],
+                        "level": "INFO",
+                        "propagate": False,
+                    },
+                    "uvicorn.access": {
                         "handlers": ["logging-server.access"],
                         "level": "INFO",
                         "propagate": False,
@@ -699,6 +739,11 @@ class LogConfigurationTest(TestCase):
                         "level": "WARNING",
                         "propagate": True,
                     },
+                    "uvicorn.error": {
+                        "handlers": [],
+                        "level": "WARNING",
+                        "propagate": True,
+                    },
                     "pip.vcs": {"handlers": [], "level": "ERROR", "propagate": True},
                     "py.warnings": {
                         "handlers": [],
@@ -727,6 +772,11 @@ class LogConfigurationTest(TestCase):
                         "propagate": False,
                     },
                     "gunicorn.access": {
+                        "handlers": ["stderr.warning.django.server"],
+                        "level": "INFO",
+                        "propagate": False,
+                    },
+                    "uvicorn.access": {
                         "handlers": ["stderr.warning.django.server"],
                         "level": "INFO",
                         "propagate": False,
@@ -820,6 +870,11 @@ class LogConfigurationTest(TestCase):
                         "level": "DEBUG",
                         "propagate": True,
                     },
+                    "uvicorn.error": {
+                        "handlers": [],
+                        "level": "DEBUG",
+                        "propagate": True,
+                    },
                     "pip.vcs": {"handlers": [], "level": "INFO", "propagate": True},
                     "py.warnings": {
                         "handlers": [],
@@ -848,6 +903,11 @@ class LogConfigurationTest(TestCase):
                         "propagate": False,
                     },
                     "gunicorn.access": {
+                        "handlers": ["stderr.debug.django.server"],
+                        "level": "INFO",
+                        "propagate": False,
+                    },
+                    "uvicorn.access": {
                         "handlers": ["stderr.debug.django.server"],
                         "level": "INFO",
                         "propagate": False,

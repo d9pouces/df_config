@@ -13,6 +13,7 @@
 #  or https://cecill.info/licences/Licence_CeCILL-B_V1-fr.txt (French)         #
 #                                                                              #
 # ##############################################################################
+"""Check installed modules and settings to provide lists of middlewares/installed apps."""
 import os
 from collections import OrderedDict
 from configparser import RawConfigParser
@@ -27,6 +28,7 @@ from df_config.utils import is_package_present
 
 
 def allauth_provider_apps(settings_dict):
+    """Provide configured authentications for django_allauth."""
     parser = RawConfigParser()
     config = settings_dict["ALLAUTH_APPLICATIONS_CONFIG"]
     if not os.path.isfile(config):
@@ -51,8 +53,8 @@ allauth_provider_apps.required_settings = ["ALLAUTH_APPLICATIONS_CONFIG"]
 
 class InstalledApps:
     """Provide a complete `INSTALLED_APPS` list, transparently adding common third-party packages.
-    Specifically handle apps required by django-allauth (one by allowed method).
 
+    Specifically handle apps required by django-allauth (one by allowed method).
     """
 
     default_apps = [
@@ -89,6 +91,7 @@ class InstalledApps:
             ("USE_PAM_AUTHENTICATION", ["django_pam"]),
             ("USE_CORS_HEADER", ["corsheaders"]),
             ("USE_DAPHNE", ["daphne"]),
+            ("USE_DJANGO_PROBES", ["django_probes"]),
         ]
     )
     required_settings = [
@@ -100,6 +103,7 @@ class InstalledApps:
     social_apps = SOCIAL_PROVIDER_APPS
 
     def __call__(self, settings_dict):
+        """Check available packages and return the list of installed apps."""
         apps = self.default_apps
         if settings_dict["SESSION_ENGINE"] == "django.contrib.sessions.backends.db":
             apps += ["django.contrib.sessions"]
@@ -109,6 +113,7 @@ class InstalledApps:
         return apps
 
     def process_third_parties(self, settings_dict):
+        """Process third-party applications."""
         result = []
         for k, v in self.common_third_parties.items():
             package_name = v[0].partition(".")[0]
@@ -121,6 +126,7 @@ class InstalledApps:
         return result
 
     def process_django_allauth(self, settings_dict):
+        """Detect django-allauth applications."""
         if (
             not settings_dict["USE_ALL_AUTH"]
             and not settings_dict["ALLAUTH_PROVIDER_APPS"]
@@ -160,6 +166,7 @@ class InstalledApps:
         return result
 
     def __repr__(self):
+        """Represent the list of installed apps."""
         return "%s.%s" % (self.__module__, "installed_apps")
 
 
@@ -167,6 +174,8 @@ installed_apps = InstalledApps()
 
 
 class Middlewares:
+    """Detect common available middlewares."""
+
     use_cache_middleware = True
     base_django_middlewares = [
         "django.contrib.sessions.middleware.SessionMiddleware",
@@ -185,12 +194,14 @@ class Middlewares:
             ("USE_WEBSOCKETS", "df_websockets.middleware.WebsocketMiddleware"),
             ("USE_CSP", "csp.middleware.CSPMiddleware"),
             ("USE_CORS_HEADER", "corsheaders.middleware.CorsMiddleware"),
+            ("USE_ALL_AUTH", "allauth.account.middleware.AccountMiddleware"),
         ]
     )
     required_settings = ["DF_MIDDLEWARE"] + list(common_third_parties)
     social_apps = SOCIAL_PROVIDER_APPS
 
     def __call__(self, settings_dict):
+        """Return the list of required middlewares."""
         mw_list = []
         mw_list += self.base_django_middlewares
         mw_list.append(ExpandIterable("DF_MIDDLEWARE"))
@@ -203,6 +214,7 @@ class Middlewares:
         return mw_list
 
     def process_third_parties(self, settings_dict):
+        """Process third-party middlewares."""
         result = []
         for k, v in self.common_third_parties.items():
             package_name = v.partition(".")[0]
@@ -215,6 +227,7 @@ class Middlewares:
         return result
 
     def __repr__(self):
+        """Represent the Middleware magic setting."""
         return "%s.%s" % (self.__module__, "middlewares")
 
 

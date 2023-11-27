@@ -13,7 +13,7 @@
 #  or https://cecill.info/licences/Licence_CeCILL-B_V1-fr.txt (French)         #
 #                                                                              #
 # ##############################################################################
-
+"""Provide a meaningful log configuration, depending on several options."""
 import logging
 import logging.handlers
 import os
@@ -35,13 +35,14 @@ class ColorizedFormatter(logging.Formatter):
     """Used in console for applying colors to log lines, corresponding to the log level."""
 
     def __init__(self, *args, **kwargs):
+        """Initialize the formatter."""
         self.style = color_style()
         kwargs.setdefault("fmt", "%(asctime)s [%(name)s] [%(levelname)s] %(message)s")
         kwargs.setdefault("datefmt", "%Y-%m-%d %H:%M:%S")
         super().__init__(*args, **kwargs)
 
     def format(self, record):
-        """apply a log color, corresponding to the log level"""
+        """Apply a log color, corresponding to the log level."""
         msg = record.msg
         level = record.levelno
         if level <= logging.DEBUG:
@@ -56,15 +57,20 @@ class ColorizedFormatter(logging.Formatter):
         return super().format(record)
 
     def formatStack(self, stack_info):
+        """Colorize errors in red."""
         return self.style.ERROR(stack_info)
 
 
 class ServerFormatter(logging.Formatter):
+    """Formatter for the access logs."""
+
     def __init__(self, *args, **kwargs):
+        """Initialize the object."""
         self.style = color_style()
         super().__init__(*args, **kwargs)
 
     def format(self, record):
+        """Format an access, colorizing it depending on the status code."""
         msg = record.msg
         status_code = getattr(record, "status_code", None)
         level = record.levelno
@@ -101,13 +107,15 @@ class ServerFormatter(logging.Formatter):
         return super().format(record)
 
     def uses_server_time(self):
+        """Return true if the log format requires the response time."""
         return self._fmt.find("%(server_time)") >= 0
 
 
 # noinspection PyClassHasNoInit
 class AdminEmailHandler(BaseAdminEmailHandler):
-    """Enhance the AdminEmailHandler provided by Django:
-    Does not try to send email if `settings.EMAIL_HOST` is not set.
+    """Enhance the AdminEmailHandler provided by Django.
+
+    Does not try to send emails if `settings.EMAIL_HOST` is not set.
     Also limits the mail rates to avoid to spam the poor admins.
     """
 
@@ -116,7 +124,7 @@ class AdminEmailHandler(BaseAdminEmailHandler):
     """min time (in seconds) between two successive sends"""
 
     def send_mail(self, subject, message, *args, **kwargs):
-        """just check if email can be sent before applying the original method."""
+        """Check if email can be sent before applying the original method."""
         # noinspection PyPackageRequirements
         from django.conf import settings
 
@@ -132,7 +140,7 @@ class AdminEmailHandler(BaseAdminEmailHandler):
                     print("Check logs in %s" % settings.LOG_DIRECTORY)
 
     def can_send_email(self):
-        """Check the time of the previous email to allow the new one"""
+        """Check the time of the previous email to allow the new one."""
         now = time.time()
         previous = AdminEmailHandler._previous_email_time
         AdminEmailHandler._previous_email_time = now
@@ -146,11 +154,12 @@ class RemoveDuplicateWarnings(logging.Filter):
     """Displays py.warnings messages unless the same warning was already sent."""
 
     def __init__(self, name=""):
+        """Init function."""
         super().__init__(name=name)
         self.previous_records = set()
 
     def filter(self, record):
-        """check if the message has already been sent from the same Python file."""
+        """Check if the message has already been sent from the same Python file."""
         record_value = hash("%r %r" % (record.pathname, record.args))
         result = record_value not in self.previous_records
         self.previous_records.add(record_value)
@@ -161,10 +170,12 @@ class SlowQueriesFilter(logging.Filter):
     """Filter slow queries and attach stack_info."""
 
     def __init__(self, name="", slow_query_duration_in_s=1.0):
+        """Init function."""
         super().__init__(name=name)
         self.slow_query_duration_in_s = slow_query_duration_in_s
 
     def filter(self, record):
+        """Filter SQL queries depending on their duration."""
         duration = getattr(record, "duration", 0)
         if duration > self.slow_query_duration_in_s:
             # Same as in _log for when stack_info=True is used.
@@ -177,7 +188,7 @@ class SlowQueriesFilter(logging.Filter):
 
 # noinspection PyMethodMayBeStatic
 class LogConfiguration:
-    """Generate a log configuration depending on a few parameters:
+    """Generate a log configuration depending on a few parameters.
 
     * the debug mode (if `DEBUG == True`, everything is printed to the console and lower log level are applied),
     * the log directory (if set, everything is output to several rotated log files),
@@ -231,6 +242,7 @@ class LogConfiguration:
         "django.channels.server": _level_access,
         "geventwebsocket.handler": _level_access,
         "gunicorn.access": _level_access,
+        "uvicorn.access": _level_access,
     }
 
     problem_loggers = {
@@ -248,6 +260,7 @@ class LogConfiguration:
         "django.security": {},
         "df_websockets.signals": {},
         "gunicorn.error": {},
+        "uvicorn.error": {},
         "pip.vcs": _level_up,
         "py.warnings": _level_up,
     }
@@ -263,6 +276,7 @@ class LogConfiguration:
     # values are dict to map chosen log level (by the admin) to the log level
 
     def __init__(self, stdout=None, stderr=None):
+        """Init function."""
         self.formatters = {}
         self.filters = {}
         self.loggers = {}
@@ -281,6 +295,7 @@ class LogConfiguration:
         self.log_directory_warning = False  # True when a warning has been emitted
 
     def __call__(self, settings_dict, argv=None):
+        """Create the log configuration during the setting computation."""
         if argv is None:
             argv = sys.argv
         self.module_name = settings_dict["DF_MODULE_NAME"]
@@ -357,9 +372,11 @@ class LogConfiguration:
         return config
 
     def __repr__(self):
+        """Return a valid representation."""
         return "%s.%s" % (self.__module__, "log_configuration")
 
     def add_remote_collector(self, log_remote_url, log_remote_access, level="WARNING"):
+        """Add a remote collector, like syslog or loki."""
         has_handler = False
         if not log_remote_url:
             return has_handler
@@ -410,6 +427,7 @@ class LogConfiguration:
         return has_handler
 
     def parse_syslog_url(self, parsed_log_url, scheme, device, facility_name):
+        """Parse a syslog URL and return valid parameters."""
         import platform
         import socket
         import syslog
@@ -437,13 +455,16 @@ class LogConfiguration:
 
     @property
     def fmt_stderr(self):
+        """Return the valid formatter for stderr (if it's a TTY)."""
         return "colorized" if self.stderr.isatty() else None
 
     @property
     def fmt_stdout(self):
+        """Return the valid formatter for stderr (if it's a TTY)."""
         return "colorized" if self.stdout.isatty() else None
 
     def get_default_formatters(self):
+        """Return some default formatters."""
         name = "%s:%s" % (self.server_name, self.server_port)
         return {
             "django.server": {
@@ -459,6 +480,7 @@ class LogConfiguration:
         }
 
     def get_default_handlers(self):
+        """Return default handlers."""
         return {
             "mail_admins": {
                 "class": "df_config.guesses.log.AdminEmailHandler",
@@ -468,6 +490,7 @@ class LogConfiguration:
         }
 
     def get_default_filters(self):
+        """Return default filters."""
         filters = {
             "remove_duplicate_warnings": {
                 "()": "df_config.guesses.log.RemoveDuplicateWarnings"
@@ -482,9 +505,11 @@ class LogConfiguration:
         return filters
 
     def get_default_root(self):
+        """Return the default log root."""
         return {"handlers": [], "level": "WARNING"}
 
     def get_default_loggers(self):
+        """Return the default loggers."""
         loggers = {}
         for logger in self.problem_loggers:
             loggers[logger] = {"handlers": [], "level": "DEBUG", "propagate": True}
@@ -504,6 +529,7 @@ class LogConfiguration:
         **kwargs,
     ):
         """Add a handler to a logger.
+
         The name of the added handler is unique, so the definition of the handler is also add if required.
         You can use "ROOT" as logger name to target the root logger.
 
@@ -543,6 +569,7 @@ class LogConfiguration:
             target["handlers"].append(handler_name)
 
     def add_handler_loki(self, logger, filename, level, kwargs):
+        """Add a loki handler when required and possible."""
         try:
             # noinspection PyUnresolvedReferences,PyPackageRequirements
             import logging_loki
@@ -562,6 +589,7 @@ class LogConfiguration:
         return handler, handler_name
 
     def add_handler_logd(self, logger, filename, level, kwargs):
+        """Add a logd (systemd) handler when required and possible."""
         try:
             # noinspection PyUnresolvedReferences,PyPackageRequirements
             import systemd.journal
@@ -581,6 +609,7 @@ class LogConfiguration:
         return handler, handler_name
 
     def add_handler_directory(self, logger, filename, level, kwargs):
+        """Add a log handler when a log directory is defined and writeable."""
         log_directory = os.path.normpath(self.log_directory)
         if not os.path.isdir(log_directory):
             if not self.log_directory_warning:
@@ -624,6 +653,7 @@ class LogConfiguration:
         return handler, handler_name
 
     def add_handler_stdout(self, filename, formatter, level):
+        """Add an handler for stdout."""
         handler_name = f"{filename}.{level.lower()}"
         if formatter in ("django.server", "colorized") and not self.stdout.isatty():
             formatter = None
@@ -638,6 +668,7 @@ class LogConfiguration:
         return handler, handler_name
 
     def add_handler_stderr(self, filename, formatter, level):
+        """Add an handler for stderr."""
         handler_name = f"{filename}.{level.lower()}"
         if formatter in ("django.server", "colorized") and not self.stderr.isatty():
             formatter = None
@@ -654,6 +685,7 @@ class LogConfiguration:
     @staticmethod
     def get_smart_command_name(module_name, argv, excluded_commands=None):
         """Return a "smart" name for the current command line.
+
         If it's an interactive Django command (think to "migrate"), returns None
         Otherwise, add the Django command in the name.
 
@@ -671,8 +703,9 @@ class LogConfiguration:
 
     @staticmethod
     def resolve_command():
+        """Extract the command name in stack traces."""
         f = extract_stack()
-        for (filename, line_number, name, text) in f:
+        for filename, line_number, name, text in f:
             if filename.endswith("df_config/manage.py") and name in (
                 "celery",
                 "server",
