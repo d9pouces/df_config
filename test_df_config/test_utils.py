@@ -74,87 +74,91 @@ class TestSendFile(TestCase):
         os.environ.setdefault("DJANGO_SETTINGS_MODULE", "test_df_config.data.settings")
 
     def test_rangedfilereader(self):
-        with resources.path("test_df_config.data", "range_data.txt") as filename:
+        ref = resources.files("test_df_config.data").joinpath("range_data.txt")
+        with resources.as_file(ref) as filename:
             filename = str(filename)
-        with open(filename, "rb") as fd:
-            reader = RangedChunkReader(fd, [(0, 9)], chunk_size=5)
-            content = list(reader)
-        self.assertEqual([b"11111", b"1111\n"], content)
-        with open(filename, "rb") as fd:
-            reader = RangedChunkReader(fd, [(0, 9), (20, 29)], chunk_size=5)
-            content = list(reader)
-        self.assertEqual([b"11111", b"1111\n", b"33333", b"3333\n"], content)
+            with open(filename, "rb") as fd:
+                reader = RangedChunkReader(fd, [(0, 9)], chunk_size=5)
+                content = list(reader)
+            self.assertEqual([b"11111", b"1111\n"], content)
+            with open(filename, "rb") as fd:
+                reader = RangedChunkReader(fd, [(0, 9), (20, 29)], chunk_size=5)
+                content = list(reader)
+            self.assertEqual([b"11111", b"1111\n", b"33333", b"3333\n"], content)
 
     def test_range(self):
         request = HttpRequest()
-        with resources.path("test_df_config.data", "range_data.txt") as filename:
+        ref = resources.files("test_df_config.data").joinpath("range_data.txt")
+        with resources.as_file(ref) as filename:
             filename = str(filename)
-        request.META = {"HTTP_RANGE": "bytes=20-29"}
-        r = send_file(
-            request,
-            filename,
-            mimetype="text/plain",
-            attachment_filename="range_data.txt",
-        )
-        content = r.getvalue()
-        self.assertEqual(b"333333333\n", content)
+            request.META = {"HTTP_RANGE": "bytes=20-29"}
+            r = send_file(
+                request,
+                filename,
+                mimetype="text/plain",
+                attachment_filename="range_data.txt",
+            )
+            content = r.getvalue()
+            self.assertEqual(b"333333333\n", content)
 
-        expected_headers = {
-            "Content-Type": "text/plain",
-            "Content-Range": "bytes 20-29/90",
-            "Content-Length": "10",
-            "Last-Modified": http_date(os.stat(filename).st_mtime),
-            "Content-Disposition": 'inline; filename="range_data.txt"',
-        }
-        self.assertEqual(expected_headers, {x: y for (x, y) in r.items()})
-        self.assertEqual(206, r.status_code)
-        r.close()
+            expected_headers = {
+                "Content-Type": "text/plain",
+                "Content-Range": "bytes 20-29/90",
+                "Content-Length": "10",
+                "Last-Modified": http_date(os.stat(filename).st_mtime),
+                "Content-Disposition": 'inline; filename="range_data.txt"',
+            }
+            self.assertEqual(expected_headers, {x: y for (x, y) in r.items()})
+            self.assertEqual(206, r.status_code)
+            r.close()
 
     def test_range_multiple(self):
         request = HttpRequest()
-        with resources.path("test_df_config.data", "range_data.txt") as filename:
+        ref = resources.files("test_df_config.data").joinpath("range_data.txt")
+        with resources.as_file(ref) as filename:
             filename = str(filename)
-        request.META = {"HTTP_RANGE": "bytes=0-9, 20-29, 40-49"}
-        r = send_file(
-            request,
-            filename,
-            mimetype="text/plain",
-            attachment_filename="range_data.txt",
-        )
-        content = r.getvalue()
-        self.assertEqual(b"111111111\n333333333\n555555555\n", content)
-        expected_headers = {
-            "Content-Type": "text/plain",
-            "Content-Length": "30",
-            "Last-Modified": http_date(os.stat(filename).st_mtime),
-            "Content-Disposition": 'inline; filename="range_data.txt"',
-        }
-        self.assertEqual(expected_headers, {x: y for (x, y) in r.items()})
-        self.assertEqual(200, r.status_code)
-        r.close()
+            request.META = {"HTTP_RANGE": "bytes=0-9, 20-29, 40-49"}
+            r = send_file(
+                request,
+                filename,
+                mimetype="text/plain",
+                attachment_filename="range_data.txt",
+            )
+            content = r.getvalue()
+            self.assertEqual(b"111111111\n333333333\n555555555\n", content)
+            expected_headers = {
+                "Content-Type": "text/plain",
+                "Content-Length": "30",
+                "Last-Modified": http_date(os.stat(filename).st_mtime),
+                "Content-Disposition": 'inline; filename="range_data.txt"',
+            }
+            self.assertEqual(expected_headers, {x: y for (x, y) in r.items()})
+            self.assertEqual(200, r.status_code)
+            r.close()
 
     def test_no_range(self):
         request = HttpRequest()
-        with resources.path("test_df_config.data", "range_data.txt") as filename:
+        ref = resources.files("test_df_config.data").joinpath("range_data.txt")
+        with resources.as_file(ref) as filename:
             filename = str(filename)
-        request.META = {}
-        r = send_file(
-            request,
-            filename,
-            mimetype="text/plain",
-            attachment_filename="range_data.txt",
-        )
-        content = r.getvalue()
-        self.assertEqual(
-            b"111111111\n222222222\n333333333\n444444444\n555555555\n666666666\n777777777\n888888888\n999999999\n",
-            content,
-        )
-        expected_headers = {
-            "Content-Type": "text/plain",
-            "Content-Length": "90",
-            "Last-Modified": http_date(os.stat(filename).st_mtime),
-            "Content-Disposition": 'inline; filename="range_data.txt"',
-        }
-        self.assertEqual(expected_headers, {x: y for (x, y) in r.items()})
-        self.assertEqual(200, r.status_code)
-        r.close()
+            request.META = {}
+            r = send_file(
+                request,
+                filename,
+                mimetype="text/plain",
+                attachment_filename="range_data.txt",
+            )
+            content = r.getvalue()
+            self.assertEqual(
+                b"111111111\n222222222\n333333333\n444444444\n555555555\n666666666\n777777777\n888888888\n999999999\n",
+                content,
+            )
+            expected_headers = {
+                "Content-Type": "text/plain",
+                "Content-Length": "90",
+                "Last-Modified": http_date(os.stat(filename).st_mtime),
+                "Content-Disposition": 'inline; filename="range_data.txt"',
+            }
+            self.assertEqual(expected_headers, {x: y for (x, y) in r.items()})
+            self.assertEqual(200, r.status_code)
+            r.close()

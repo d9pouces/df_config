@@ -205,7 +205,8 @@ class TestPythonModuleProvider(TestCase):
         self.assertEqual(True, provider.is_valid())
         provider = PythonModuleProvider("test_df_config.data.sample_settings2")
         self.assertEqual(False, provider.is_valid())
-        with resources.path("test_df_config.data", "sample_settings.py") as filename:
+        ref = resources.files("test_df_config.data").joinpath("sample_settings.py")
+        with resources.as_file(ref) as filename:
             filename = str(filename).replace(
                 "sample_settings.py", "sample_settings2.py"
             )
@@ -215,7 +216,8 @@ class TestPythonModuleProvider(TestCase):
 
 class TestPythonFileProvider(TestPythonModuleProvider):
     def get_provider(self):
-        with resources.path("test_df_config.data", "sample_settings.py") as filename:
+        ref = resources.files("test_df_config.data").joinpath("sample_settings.py")
+        with resources.as_file(ref) as filename:
             filename = str(filename)
             return PythonFileProvider(filename)
 
