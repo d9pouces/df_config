@@ -84,6 +84,7 @@ deps = hypothesis
     nose
     pytest
     tox
+    pytest-django
     python-logging-loki
     django32: Django>=3.2,<3.3
     django40: Django>=4.0,<4.1
