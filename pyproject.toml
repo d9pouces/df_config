@@ -27,6 +27,7 @@ classifiers = [
     'Framework :: Django :: 4.0',
     'Framework :: Django :: 4.1',
     'Framework :: Django :: 4.2',
+    'Framework :: Django :: 5.0',
     'License :: OSI Approved :: CEA CNRS Inria Logiciel Libre License, version 2.1 (CeCILL-2.1)',
     'Operating System :: MacOS :: MacOS X',
     'Operating System :: Microsoft :: Windows',
@@ -36,7 +37,8 @@ classifiers = [
     'Programming Language :: Python :: 3 :: Only',
     'Programming Language :: Python :: 3.9',
     'Programming Language :: Python :: 3.10',
-    'Programming Language :: Python :: 3.11'
+    'Programming Language :: Python :: 3.11',
+    'Programming Language :: Python :: 3.12'
 ]
 description = "Smart default settings for Django websites"
 documentation = 'https://github.com/d9pouces/df_config'
@@ -46,21 +48,21 @@ name = "df_config"
 packages = [{ include = "df_config" }]
 readme = "README.md"
 repository = 'https://github.com/d9pouces/df_config'
-version = "1.1.27"
+version = "1.1.28"
 
 [tool.poetry.dependencies]
 django = ">=2.1"
-python = "^3.9"
+python = ">=3.9"
 
 [tool.poetry.group.dev.dependencies]
-hypothesis = "^6.72.0"
-pytest = "^7.2.1"
-pytest-django = "^4.5.2"
-tox = "^4.4.12"
-python-logging-loki = "^0.3.1"
-gunicorn = "^21.2.0"
-daphne = "^4.0.0"
-uvicorn = "^0.23.2"
+hypothesis = ">=6.72.0"
+pytest = ">=7.2.1"
+pytest-django = ">=4.5.2"
+tox = ">=4.4.12"
+python-logging-loki = ">=0.3.1"
+gunicorn = ">=21.2.0"
+daphne = ">=4.0.0"
+uvicorn = ">=0.23.2"
 
 [tool.pytest.ini_options]
 DJANGO_SETTINGS_MODULE = "df_config.config.base"
@@ -73,10 +75,10 @@ legacy_tox_ini = """
 
 [tox]
 [tox:tox]
-envlist = {py39,py310,py311}-{django32,django40,django41,django42}
+envlist = {py39,py310,py311,py312}-{django32,django40,django41,django42,django50}
 
 
-[testenv:{py39,py310,py311}-{django32,django40,django41,django42}]
+[testenv:{py39,py310,py311,py312}-{django32,django40,django41,django42,django50}]
 commands = pytest
 deps = hypothesis
     nose
@@ -87,4 +89,5 @@ deps = hypothesis
     django40: Django>=4.0,<4.1
     django41: Django>=4.1,<4.2
     django42: Django>=4.2,<4.3
+    django50: Django>=5.0,<5.1
 """

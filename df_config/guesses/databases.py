@@ -13,6 +13,7 @@
 #  or https://cecill.info/licences/Licence_CeCILL-B_V1-fr.txt (French)         #
 #                                                                              #
 # ##############################################################################
+"""Settings for database and cache backends."""
 from urllib.parse import urlencode, urlparse
 
 from django.core.exceptions import ImproperlyConfigured
@@ -53,6 +54,7 @@ databases.required_settings = [
 
 class RedisSmartSetting:
     """Handle values required for Redis configuration, as well as Heroku's standard environment variables.
+
     Can be used as :class:`df_config.config.dynamic_settings.CallableSetting`.
     """
 
@@ -66,8 +68,14 @@ class RedisSmartSetting:
         extra_values=None,
         only_redis: bool = True,
     ):
-        """Build Redis connection parameters from a set of settings:
-            %(prefix)sPROTOCOL, %(prefix)sHOST, %(prefix)sPORT, %(prefix)sDB, %(prefix)sPASSWORD.
+        """Build Redis connection parameters from a set of settings.
+
+        These settings are:
+        - %(prefix)sPROTOCOL,
+        - %(prefix)sHOST,
+        - %(prefix)sPORT,
+        - %(prefix)sDB,
+        - %(prefix)sPASSWORD.
 
         :param prefix: prefix of all settings
         :param env_variable: if this environment variable is present, override given settings
@@ -88,6 +96,7 @@ class RedisSmartSetting:
         self.extra_values = extra_values
 
     def __call__(self, settings_dict):
+        """Return the redis setting."""
         values = {x: settings_dict[self.prefix + x] for x in self.config_values}
         values.setdefault("USERNAME")
         values["AUTH"] = ""
@@ -130,6 +139,7 @@ class RedisSmartSetting:
         raise ValueError("Unknown RedisSmartSetting format '%s'" % self.fmt)
 
     def __repr__(self):
+        """Return a representation of the redis setting."""
         p = self.prefix
         if self.prefix.endswith("REDIS_"):
             p = self.prefix[:-6]
@@ -149,32 +159,33 @@ websocket_redis_channels = RedisSmartSetting(prefix="WEBSOCKET_REDIS_", fmt="cha
 
 
 def cache_setting(settings_dict):
-    """Automatically compute cache settings:
-      * if debug mode is set, then caching is disabled
-      * if django_redis is available, then Redis is used for caching
-      * else memory is used
+    """Automatically compute cache settings.
+
+    Three caches are defined:
+
+      * `locmem` (using local memory, destroyed when the process is killed)
+      * `base` (using the CACHE_URL setting, using redis, rediss or memcache protocols)
+      * `default` (`=="locmem"` when DEBUG is true,`=="base"` else)
 
     :param settings_dict:
     :return:
     """
     parsed_url = urlparse(settings_dict["CACHE_URL"])
     django_version = get_complete_version()
-    default = {
+    locmem = {
         "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
         "LOCATION": "unique-snowflake",
     }
-    if settings_dict["DEBUG"]:
-        pass
-    elif django_version >= (4, 0) and parsed_url.scheme in ("redis", "rediss"):
-        # noinspection PyUnresolvedReferences
-        default = {
+    actual = locmem
+    if django_version >= (4, 0) and parsed_url.scheme in ("redis", "rediss"):
+        actual = {
             "BACKEND": "django.core.cache.backends.redis.RedisCache",
             "LOCATION": "{CACHE_URL}",
         }
     elif parsed_url.scheme in ("redis", "rediss"):
         if is_package_present("django_redis"):
             # noinspection PyUnresolvedReferences
-            default = {
+            actual = {
                 "BACKEND": "django_redis.cache.RedisCache",
                 "LOCATION": "{CACHE_URL}",
                 "OPTIONS": {"CLIENT_CLASS": "django_redis.client.DefaultClient"},
@@ -194,11 +205,12 @@ def cache_setting(settings_dict):
             parsed_url.hostname or "localhost",
             parsed_url.port or 11211,
         )
-        default = {
+        actual = {
             "BACKEND": backend,
             "LOCATION": location,
         }
-    return {"default": default}
+    default = locmem if settings_dict["DEBUG"] else actual
+    return {"default": default, "locmem": locmem, "base": actual}
 
 
 cache_setting.required_settings = ["DEBUG", "CACHE_URL"]
