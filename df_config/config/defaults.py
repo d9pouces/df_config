@@ -109,6 +109,12 @@ from df_config.guesses.pipeline import (
 )
 from df_config.guesses.staticfiles import (
     media_storage_setting,
+    minio_storage_access_key,
+    minio_storage_endpoint,
+    minio_storage_media_bucket_name,
+    minio_storage_secret_key,
+    minio_storage_static_bucket_name,
+    minio_storage_use_https,
     pipeline_enabled,
     static_finder,
     static_storage,
@@ -415,6 +421,16 @@ CORS_ALLOWED_ORIGINS = [
 DEFAULT_HOST = "{SERVER_NAME}"
 HOST_SCHEME = "{SERVER_PROTOCOL}://"
 HOST_PORT = "{SERVER_PORT}"
+
+# django-minio-storage
+MINIO_STORAGE_ENDPOINT = CallableSetting(minio_storage_endpoint)
+MINIO_STORAGE_USE_HTTPS = CallableSetting(minio_storage_use_https)
+MINIO_STORAGE_ACCESS_KEY = CallableSetting(minio_storage_access_key)
+MINIO_STORAGE_SECRET_KEY = CallableSetting(minio_storage_secret_key)
+MINIO_STORAGE_MEDIA_BUCKET_NAME = CallableSetting(minio_storage_media_bucket_name)
+MINIO_STORAGE_MEDIA_OBJECT_METADATA = {"Cache-Control": "max-age=3600"}
+MINIO_STORAGE_STATIC_BUCKET_NAME = CallableSetting(minio_storage_static_bucket_name)
+MINIO_STORAGE_STATIC_OBJECT_METADATA = {"Cache-Control": "max-age=3600"}
 
 # django—pam
 USE_PAM_AUTHENTICATION = False

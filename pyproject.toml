@@ -63,6 +63,8 @@ python-logging-loki = ">=0.3.1"
 gunicorn = ">=21.2.0"
 daphne = ">=4.0.0"
 uvicorn = ">=0.23.2"
+django-minio-storage = "^0.5.7"
+whitenoise = "^6.6.0"
 
 [tool.pytest.ini_options]
 DJANGO_SETTINGS_MODULE = "df_config.config.base"
@@ -85,6 +87,7 @@ deps = hypothesis
     pytest
     tox
     pytest-django
+    django-minio-storage
     python-logging-loki
     django32: Django>=3.2,<3.3
     django40: Django>=4.0,<4.1
