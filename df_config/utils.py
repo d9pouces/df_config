@@ -13,13 +13,14 @@
 #  or https://cecill.info/licences/Licence_CeCILL-B_V1-fr.txt (French)         #
 #                                                                              #
 # ##############################################################################
+"""Some utility functions."""
 import argparse
 import mimetypes
 import os
 import re
 from email.utils import mktime_tz, parsedate_tz
-from importlib import import_module
 from importlib.metadata import PackageNotFoundError, version
+from importlib.util import find_spec
 from typing import Iterable, Set, Tuple
 from urllib.parse import quote
 
@@ -42,7 +43,7 @@ class RemovedInDjangoFloor200Warning(DeprecationWarning):
 
 
 def ensure_dir(path, parent=True):
-    """Ensure that the given directory exists
+    """Ensure that the given directory exists.
 
     :param path: the path to check
     :param parent: only ensure the existence of the parent directory
@@ -55,14 +56,11 @@ def ensure_dir(path, parent=True):
 
 def is_package_present(package_name):
     """Return True is the `package_name` package is present in your current Python environment."""
-    try:
-        import_module(package_name)
-        return True
-    except ImportError:
-        return False
+    return find_spec(package_name) is not None
 
 
 def remove_arguments_from_help(parser: argparse.ArgumentParser, arguments: Set):
+    """Remove the arguments from help message."""
     # noinspection PyProtectedMember
     for action in parser._actions:
         if arguments & set(action.option_strings):
@@ -71,8 +69,9 @@ def remove_arguments_from_help(parser: argparse.ArgumentParser, arguments: Set):
 
 def guess_version(defined_settings):
     """Guesss the project version.
+
     Expect an installed version (findable with pkg_resources) or __version__ in `your_project/__init__.py`.
-    If not found
+    If not found, return "1.0.0".
 
     :param defined_settings: all already defined settings (dict)
     :type defined_settings: :class:`dict`
@@ -90,6 +89,7 @@ def guess_version(defined_settings):
 
 
 def get_view_from_string(view_as_str):
+    """Return a view from the given string."""
     try:
         view = import_string(view_as_str)
     except ImportError:
@@ -104,7 +104,7 @@ def get_view_from_string(view_as_str):
 
 
 class ChunkReader:
-    """read a file object in chunks of the given size.
+    """Read a file object in chunks of the given size.
 
     Return an iterator of data
 
@@ -114,23 +114,30 @@ class ChunkReader:
     """
 
     def __init__(self, fileobj, chunk_size=32768):
+        """Initialize the ChunkReader object."""
         self.fileobj = fileobj
         self.chunk_size = chunk_size
 
     def __iter__(self):
+        """Iterate over the underlying file object."""
         for data in iter(lambda: self.fileobj.read(self.chunk_size), b""):
             yield data
 
     def close(self):
+        """Close the underlying file object."""
         self.fileobj.close()
 
 
 class RangedChunkReader(ChunkReader):
+    """Read the given chunks of the file."""
+
     def __init__(self, fd, ranges: Iterable[Tuple[int, int]], chunk_size=32768):
+        """Initialize a RangedChunkReader."""
         super().__init__(fd, chunk_size=chunk_size)
         self.ranges = ranges
 
     def __iter__(self):
+        """Read the required chunks of the file."""
         for start, end in self.ranges:
             self.fileobj.seek(start)
             while start <= end:
@@ -152,7 +159,8 @@ _if_modified_since_re = re.compile(
 
 def was_modified_since(header=None, mtime=0.0, size=None):
     """
-    Was something modified since the user last downloaded it?
+    Was something modified since the user last downloaded it.
+
     header
       This is the value of the If-Modified-Since header.  If this is None,
       I'll just return True.
