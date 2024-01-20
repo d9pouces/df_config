@@ -26,6 +26,7 @@ from django.template.loader import render_to_string
 from django.utils.translation import gettext as _
 
 from df_config.config.base import merger
+from df_config.config.merger import SettingMerger
 from df_config.config.values_providers import (
     EnvironmentConfigProvider,
     IniConfigProvider,
@@ -203,7 +204,7 @@ class Command(BaseCommand):
             if setting_name not in merger.settings:
                 continue
             value = merger.settings[setting_name]
-            add_import(value)
+            add_import(SettingMerger.unwrap_object(value))
         if imports:
             self.stdout.write("\n")
             for module_name in sorted(imports):
@@ -216,13 +217,14 @@ class Command(BaseCommand):
         for setting_name in setting_names:
             if setting_name not in merger.settings:
                 continue
-            value = merger.settings[setting_name]
+            value = SettingMerger.unwrap_object(merger.settings[setting_name])
             self.stdout.write(self.style.SUCCESS("%s = %r" % (setting_name, value)))
             if verbosity <= 1:
                 continue
             for p_name, r_value in merger.raw_settings[setting_name].items():
                 self.stdout.write(
                     self.style.WARNING(
-                        "    #   %s -> %r" % (p_name or "built-in", r_value)
+                        "    #   %s -> %r"
+                        % (p_name or "built-in", SettingMerger.unwrap_object(r_value))
                     )
                 )

@@ -235,5 +235,16 @@ class SettingMerger:
             assert isinstance(config_field, ConfigField)
             if config_field.setting_name not in self.settings:
                 continue
-            config_field.value = self.settings[config_field.setting_name]
+            config_field.value = self.unwrap_object(
+                self.settings[config_field.setting_name]
+            )
             provider.set_value(config_field, include_doc=include_doc)
+
+    @staticmethod
+    def unwrap_object(value):
+        """Return the underlying objects in LazyObjects."""
+        if hasattr(value, "_wrapped"):
+            # this is a Django LazyObject
+            str(value)  # force the call of the _setup method
+            value = getattr(value, "_wrapped")
+        return value
