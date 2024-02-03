@@ -213,7 +213,8 @@ USE_I18N = True
 if django_version[0] < 4:
     USE_L10N = True
 USE_THOUSAND_SEPARATOR = True
-USE_TZ = True
+if django_version[0] < 5:
+    USE_TZ = True  # useless in Django 5.0
 USE_X_FORWARDED_HOST = True  # X-Forwarded-Host
 X_FRAME_OPTIONS = "SAMEORIGIN"
 WSGI_APPLICATION = CallableSetting(get_wsgi_application)
