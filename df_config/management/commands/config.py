@@ -91,6 +91,7 @@ class Command(BaseCommand):
             self.show_env_config(verbosity)
 
         if filename and action in {"python", "env"}:
+            filename = os.path.abspath(filename)
             content = fd.getvalue()
             if action == "python":
                 # noinspection PyBroadException
