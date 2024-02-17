@@ -65,7 +65,7 @@ class TestStaticFiles(unittest.TestCase):
         self.assertEqual(
             {
                 "BACKEND": "minio_storage.storage.MinioStaticStorage",
-                "OPTIONS": {"base_url": "/static"},
+                "OPTIONS": {},
             },
             static_storage_setting(
                 {
@@ -82,7 +82,7 @@ class TestStaticFiles(unittest.TestCase):
         self.assertEqual(
             {
                 "BACKEND": "minio_storage.storage.MinioMediaStorage",
-                "OPTIONS": {"base_url": "/media"},
+                "OPTIONS": {},
             },
             media_storage_setting(
                 {
