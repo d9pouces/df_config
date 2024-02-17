@@ -13,9 +13,11 @@
 #  or https://cecill.info/licences/Licence_CeCILL-B_V1-fr.txt (French)         #
 #                                                                              #
 # ##############################################################################
+"""Merger object, that analyzes all Django settings and merges them."""
 import string
 import sys
 from collections import OrderedDict
+from typing import Any
 
 from django.core.management import color_style
 from django.core.management.base import OutputWrapper
@@ -38,6 +40,7 @@ class SettingMerger:
         stderr=None,
         no_color=False,
     ):
+        """Initialize the internal objects."""
         self.fields_provider = fields_provider or PythonConfigFieldsProvider(None)
         self.providers = providers or []
         self.__formatter = string.Formatter()
@@ -57,13 +60,16 @@ class SettingMerger:
             self.stderr.style_func = self.style.ERROR
 
     def add_provider(self, provider):
+        """Add a new setting provider to the list."""
         self.providers.append(provider)
 
     def process(self):
+        """Load all settings from the different providers and merge them."""
         self.load_raw_settings()
         self.load_settings()
 
     def load_raw_settings(self):
+        """Load all raw settings, without analyzing them (just fetch their names)."""
         # get all setting names and sort them
         all_settings_names_set = set()
         for field in self.fields_provider.get_config_fields():
@@ -95,9 +101,11 @@ class SettingMerger:
                 self.raw_settings[setting_name][source_name] = value
 
     def has_setting_value(self, setting_name):
+        """Return True if the setting exists."""
         return setting_name in self.raw_settings
 
     def get_setting_value(self, setting_name):
+        """Return the value of the required setting, analyzing it when required."""
         if setting_name in self.settings:
             return self.settings[setting_name]
         elif setting_name in self.__working_stack:
@@ -116,12 +124,12 @@ class SettingMerger:
         return value
 
     def load_settings(self):
+        """Load and analyze all existing settings."""
         for setting_name in self.raw_settings:
             self.get_setting_value(setting_name)
 
     def call_method_on_config_values(self, method_name: str):
-        """Scan all settings, looking for :class:`df_config.config.dynamic_settings.DynamicSetting` and calling one of their
-        methods.
+        """Scan all settings, looking for :class:`df_config.config.dynamic_settings.DynamicSetting`.
 
         :param method_name: 'pre_collectstatic', 'pre_migrate', 'post_collectstatic', or 'post_migrate'.
         """
@@ -138,7 +146,7 @@ class SettingMerger:
                     )
                 )
 
-    def analyze_raw_value(self, obj, provider_name, setting_name):
+    def analyze_raw_value(self, obj: Any, provider_name: str, setting_name: str) -> Any:
         """Parse the object for replacing variables by their values.
 
         If `obj` is a string like "THIS_IS_{TEXT}", search for a setting named "TEXT" and replace {TEXT} by its value
@@ -153,7 +161,10 @@ class SettingMerger:
             but this value can be inside a dict or a list (like `SETTING = [Directory("/tmp"), ]`)
         :return: the parsed setting
         """
-        if isinstance(obj, str):
+        if hasattr(obj, "_wrapped"):
+            # this is a Django LazyObject
+            return obj
+        elif isinstance(obj, str):
             values = {}
             for (
                 literal_text,
@@ -208,7 +219,7 @@ class SettingMerger:
         return obj
 
     def post_process(self):
-        """Perform some cleaning on settings:
+        """Perform some cleaning on settings.
 
         * remove duplicates in `INSTALLED_APPS` (keeps only the first occurrence)
         """
@@ -218,10 +229,22 @@ class SettingMerger:
             self.settings[key] = list(OrderedDict.fromkeys(self.settings[key]))
 
     def write_provider(self, provider, include_doc=False):
+        """Write settings to the given provider."""
         config_fields = self.fields_provider.get_config_fields()
         for config_field in sorted(config_fields, key=lambda x: str(x.name)):
             assert isinstance(config_field, ConfigField)
             if config_field.setting_name not in self.settings:
                 continue
-            config_field.value = self.settings[config_field.setting_name]
+            config_field.value = self.unwrap_object(
+                self.settings[config_field.setting_name]
+            )
             provider.set_value(config_field, include_doc=include_doc)
+
+    @staticmethod
+    def unwrap_object(value):
+        """Return the underlying objects in LazyObjects."""
+        if hasattr(value, "_wrapped"):
+            # this is a Django LazyObject
+            str(value)  # force the call of the _setup method
+            value = getattr(value, "_wrapped")
+        return value

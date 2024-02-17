@@ -43,6 +43,7 @@ def static_storage_setting(settings_dict):
         if find_spec("minio_storage") is None:
             raise ImproperlyConfigured("please install django-minio-storage.")
         backend = "minio_storage.storage.MinioStaticStorage"
+        options = {}
     elif settings_dict["USE_WHITENOISE"] and settings_dict["PIPELINE_ENABLED"]:
         options["location"] = static_root
         backend = "df_config.apps.pipeline.PipelineCompressedManifestStaticFilesStorage"
@@ -105,6 +106,7 @@ def media_storage_setting(settings_dict):
         if find_spec("minio_storage") is None:
             raise ImproperlyConfigured("please install django-minio-storage.")
         backend = "minio_storage.storage.MinioMediaStorage"
+        options = {}
     else:
         options["location"] = media_root
         backend = "django.core.files.storage.FileSystemStorage"

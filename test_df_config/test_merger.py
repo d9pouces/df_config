@@ -16,9 +16,22 @@
 from collections import OrderedDict, defaultdict
 from unittest import TestCase
 
+from django.utils.functional import SimpleLazyObject
+
 from df_config.config.dynamic_settings import RawValue, SettingReference
 from df_config.config.merger import SettingMerger
 from df_config.config.values_providers import DictProvider
+
+
+class MyObject:
+    instantiated = False
+
+    def __init__(self, content: str):
+        self.content = content
+        MyObject.instantiated = True
+
+    def __str__(self) -> str:
+        return self.content
 
 
 class TestSettingMerger(TestCase):
@@ -31,6 +44,23 @@ class TestSettingMerger(TestCase):
         merger.post_process()
         self.assertEqual({"X": 2}, merger.settings)
         self.assertEqual(OrderedDict([("d1", 1), ("d2", 2)]), merger.raw_settings["X"])
+
+    def test_lazy_object(self):
+        obj = SimpleLazyObject(lambda: MyObject("test"))
+        self.assertTrue(hasattr(obj, "_wrapped"))
+        self.assertFalse(MyObject.instantiated)
+        merger = SettingMerger(
+            None,
+            [DictProvider({"X": obj}, name="d1")],
+        )
+        merger.process()
+        merger.post_process()
+        obj_2 = merger.settings["X"]
+        self.assertTrue(hasattr(obj_2, "_wrapped"))
+        self.assertFalse(MyObject.instantiated)
+        content = obj.content
+        self.assertTrue(MyObject.instantiated)
+        self.assertEqual("test", content)
 
     def test_postprocess(self):
         merger = SettingMerger(
