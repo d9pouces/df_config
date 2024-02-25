@@ -161,7 +161,8 @@ class Path(DynamicSettting):
         :param setting_name: name of the setting containing this value
         """
         value = merger.analyze_raw_value(self.value, provider_name, setting_name)
-        value = os.path.normpath(value)
+        if value is not None:
+            value = os.path.normpath(value)
         return value
 
     def __str__(self):
@@ -267,6 +268,8 @@ class File(Path):
         :param setting_name: name of the setting containing this value
         """
         value = merger.analyze_raw_value(self.value, provider_name, setting_name)
+        if value is None:
+            return value
         value = os.path.normpath(value)
         if not os.path.isfile(value):
             settings_check_results.append(
