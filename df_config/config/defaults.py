@@ -412,7 +412,6 @@ AUTH_LDAP_GROUP_SEARCH_BASE = "ou=groups,dc=example,dc=com"
 AUTH_LDAP_AUTHORIZE_ALL_USERS = True
 
 # django-cors-headers
-CORS_REPLACE_HTTPS_REFERER = False
 CORS_ALLOWED_ORIGINS = [
     "{SERVER_PROTOCOL}://{SERVER_NAME}:{SERVER_PORT}",
     "http://{LISTEN_ADDRESS}",
