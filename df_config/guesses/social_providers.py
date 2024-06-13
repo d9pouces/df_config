@@ -85,7 +85,11 @@ def get_social_provider_apps() -> Set[str]:
         return set()
     providers = importlib.resources.files("allauth.socialaccount.providers")
     with importlib.resources.as_file(providers) as f:
-        return {x for x in os.listdir(f) if os.path.isdir(os.path.join(f, x))}
+        return {
+            f"allauth.socialaccount.providers.{x}"
+            for x in os.listdir(f)
+            if os.path.isdir(os.path.join(f, x))
+        }
 
 
 def get_available_configurations() -> dict:
@@ -168,7 +172,7 @@ def migrate(read_only: bool = False) -> bool:
                 SocialApp(
                     name=configuration.name,
                     provider=configuration.provider_id,
-                    **configuration.values
+                    **configuration.values,
                 )
             )
             continue
