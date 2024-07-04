@@ -62,6 +62,12 @@ BASE_MAPPING = [
         env_name="UPLOAD_DIRECTORY",
     ),
     CharConfigField(
+        "global.s3_region",
+        "MINIO_STORAGE_REGION",
+        help_str="S3 storage regions, when S3 storage is used for storing uplaoded media.",
+        env_name="S3_REGION",
+    ),
+    CharConfigField(
         "global.data",
         "FILE_UPLOAD_TEMP_DIR",
         help_str="where temporary data will be stored.",

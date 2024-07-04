@@ -13,6 +13,7 @@
 #  or https://cecill.info/licences/Licence_CeCILL-B_V1-fr.txt (French)         #
 #                                                                              #
 # ##############################################################################
+"""Initial environment values and management commands."""
 import ipaddress
 import logging
 import os
@@ -41,7 +42,8 @@ def set_env(
     argv: List[str] = None,
     settings_module=DEFAULT_SETTINGS_MODULE,
 ):
-    """Set the environment variable `DF_CONF_NAME` with the main Python module name
+    """Set the environment variable `DF_CONF_NAME` with the main Python module name.
+
     The value looks like "project_name".
     If `module_name` is not given, tries to infer it from the running script name
 
@@ -70,6 +72,7 @@ def get_merger_from_env(
     merger_class=SettingMerger, settings_module=DEFAULT_SETTINGS_MODULE
 ) -> SettingMerger:
     """Return a settingmerger to determien all available settings, should be used after set_env().
+
     Settings are found in this order:
 
     * df_config.config.defaults
@@ -114,8 +117,9 @@ def get_merger_from_env(
     return merger_class(fields_provider, config_providers)
 
 
-def manage(argv=None, settings_module=DEFAULT_SETTINGS_MODULE):
-    set_env(settings_module=settings_module)
+def manage(argv=None, module_name: str = None, settings_module=DEFAULT_SETTINGS_MODULE):
+    """Set the environment variable and run the manage command."""
+    set_env(module_name=module_name, settings_module=settings_module)
     import django
 
     django.setup()
@@ -129,7 +133,7 @@ def manage(argv=None, settings_module=DEFAULT_SETTINGS_MODULE):
 
 
 def patch_commands():
-    """patch the runserver command to use the configured LISTEN_ADDRESS"""
+    """Patch the runserver command to use the configured LISTEN_ADDRESS."""
     from django.conf import settings
     from django.core.management.commands.runserver import Command
 

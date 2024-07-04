@@ -13,83 +13,18 @@
 #  or https://cecill.info/licences/Licence_CeCILL-B_V1-fr.txt (French)         #
 #                                                                              #
 # ##############################################################################
-
+"""Ease the use of django-allauth by providing a list of available social providers."""
 import importlib
+import importlib.resources
 import os
 from collections import OrderedDict
 from configparser import RawConfigParser
-from typing import Union
-
-SOCIAL_PROVIDER_APPS = {
-    "allauth.socialaccount.providers.%s" % x
-    for x in {
-        "amazon",
-        "angellist",
-        "asana",
-        "auth0",
-        "baidu",
-        "basecamp",
-        "bitbucket",
-        "bitbucket_oauth2",
-        "bitly",
-        "coinbase",
-        "digitalocean",
-        "discord",
-        "douban",
-        "draugiem",
-        "edmodo",
-        "eveonline",
-        "evernote",
-        "facebook",
-        "feedly",
-        "flickr",
-        "foursquare",
-        "fxa",
-        "github",
-        "gitlab",
-        "google",
-        "hubic",
-        "instagram",
-        "kakao",
-        "line",
-        "linkedin",
-        "linkedin_oauth2",
-        "mailru",
-        "mailchimp",
-        "naver",
-        "odnoklassniki",
-        "openid",
-        "orcid",
-        "paypal",
-        "persona",
-        "pinterest",
-        "reddit",
-        "robinhood",
-        "shopify",
-        "slack",
-        "soundcloud",
-        "spotify",
-        "stackexchange",
-        "stripe",
-        "tumblr",
-        "twentythreeandme",
-        "twitch",
-        "twitter",
-        "untappd",
-        "vimeo",
-        "vk",
-        "weibo",
-        "weixin",
-        "windowslive",
-        "xing",
-    }
-}
-
-
-# Full set of social providers
+from typing import Set, Union
 
 
 class SocialProviderConfiguration:
+    """Generic configuration for social providers."""
+
     help = (
         "Please read https://django-allauth.readthedocs.io/en/latest/providers.html#{{ provider_id }}\n"
         "Contact {{ provider_name }} to get authentication secrets. "
@@ -109,25 +44,31 @@ class SocialProviderConfiguration:
         provider_app: str,
         values: Union[dict, None] = None,
     ):
+        """Initialize a new configuration for a social provider."""
         self.provider_id = provider_id
         self.provider_name = provider_name
         self.provider_app = provider_app
         self.values = values
 
     def __str__(self):
+        """Return the provider name."""
         return self.provider_name
 
     @property
     def name(self):
+        """Return the name of the social app."""
         return "%s%s" % (self.name_prefix, self.provider_name)
 
     def query_kwargs(self):
+        """Return the query kwargs for the social app."""
         return {"name": self.name, "provider": self.provider_id}
 
     @property
     def help_text(self):
+        """Return the help text for the social app."""
+        from django.template import Context, Template
+
         from df_config.config.base import merger
-        from django.template import Template, Context
 
         context = {}
         context.update(merger.settings)
@@ -135,8 +76,24 @@ class SocialProviderConfiguration:
         return Template(self.help).render(Context(dict_=context))
 
 
+def get_social_provider_apps() -> Set[str]:
+    """Return a set of all social account provider apps available in django-allauth."""
+    try:
+        # noinspection PyPackageRequirements
+        import allauth.socialaccount.providers
+    except ImportError:
+        return set()
+    providers = importlib.resources.files("allauth.socialaccount.providers")
+    with importlib.resources.as_file(providers) as f:
+        return {
+            f"allauth.socialaccount.providers.{x}"
+            for x in os.listdir(f)
+            if os.path.isdir(os.path.join(f, x))
+        }
+
+
 def get_available_configurations() -> dict:
-    """return a dict of all existing social account provider configurations"""
+    """Return a dict of all existing social account provider configurations."""
     existing_providers = {}
     available_configurations = {x.id: x for x in SOCIAL_PROVIDER_CONFIGURATIONS}
     for provider_app in SOCIAL_PROVIDER_APPS:
@@ -154,8 +111,9 @@ def get_available_configurations() -> dict:
 
 
 def get_loaded_configurations() -> OrderedDict:
-    """return a list of configured social authentication backends from a config file
-    given in settings.ALLAUTH_APPLICATIONS_CONFIG
+    """Return a list of configured social authentication backends from a config file.
+
+    This list is build from the settings.ALLAUTH_APPLICATIONS_CONFIG.
     """
     from django.conf import settings
 
@@ -214,7 +172,7 @@ def migrate(read_only: bool = False) -> bool:
                 SocialApp(
                     name=configuration.name,
                     provider=configuration.provider_id,
-                    **configuration.values
+                    **configuration.values,
                 )
             )
             continue
@@ -265,6 +223,8 @@ def migrate(read_only: bool = False) -> bool:
 
 
 class GithubConfiguration(SocialProviderConfiguration):
+    """Configuration for Github."""
+
     id = "github"
     help = """open https://github.com/settings/applications/new and enter:
     Application name: {{ DF_PROJECT_NAME }} ({{ SERVER_NAME }})
@@ -278,6 +238,8 @@ class GithubConfiguration(SocialProviderConfiguration):
 
 
 class FacebookConfiguration(SocialProviderConfiguration):
+    """Configuration for Facebook."""
+
     id = "facebook"
     help = """open https://developers.facebook.com/apps and create an app to obtain a key and secret key.
     After registration you will need to make it available to the public. 
@@ -291,4 +253,6 @@ class FacebookConfiguration(SocialProviderConfiguration):
     attributes = {"client_id": "Client ID", "secret": "Client Secret"}
 
 
+# Full set of social providers
+SOCIAL_PROVIDER_APPS = get_social_provider_apps()
 SOCIAL_PROVIDER_CONFIGURATIONS = [GithubConfiguration]
