@@ -176,6 +176,9 @@ def cache_setting(settings_dict):
         "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
         "LOCATION": "unique-snowflake",
     }
+    dummy = {
+        "BACKEND": "django.core.cache.backends.dummy.DummyCache",
+    }
     actual = locmem
     if django_version >= (4, 0) and parsed_url.scheme in ("redis", "rediss"):
         actual = {
@@ -209,7 +212,7 @@ def cache_setting(settings_dict):
             "BACKEND": backend,
             "LOCATION": location,
         }
-    default = locmem if settings_dict["DEBUG"] else actual
+    default = dummy if settings_dict["DEBUG"] else actual
     return {"default": default, "locmem": locmem, "base": actual}
 
 

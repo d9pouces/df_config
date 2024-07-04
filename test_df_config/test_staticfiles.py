@@ -40,6 +40,7 @@ class TestStaticFiles(unittest.TestCase):
                     "USE_WHITENOISE": True,
                     "STATIC_ROOT": "/data/static",
                     "STATIC_URL": "/static",
+                    "USE_PIPELINE": True,
                 }
             ),
         )
@@ -57,6 +58,7 @@ class TestStaticFiles(unittest.TestCase):
                     "USE_WHITENOISE": False,
                     "STATIC_ROOT": "/data/static",
                     "STATIC_URL": "/static",
+                    "USE_PIPELINE": True,
                 }
             ),
         )
@@ -74,6 +76,7 @@ class TestStaticFiles(unittest.TestCase):
                     "USE_WHITENOISE": False,
                     "STATIC_ROOT": "s3:https://access_key:secret_key@s3.rbx.io.cloud.ovh.net/bucket_name",
                     "STATIC_URL": "/static",
+                    "USE_PIPELINE": True,
                 }
             ),
         )
