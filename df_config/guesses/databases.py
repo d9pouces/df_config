@@ -213,7 +213,8 @@ def cache_setting(settings_dict):
             "LOCATION": location,
         }
     default = dummy if settings_dict["DEBUG"] else actual
-    return {"default": default, "locmem": locmem, "base": actual}
+    cached = locmem if settings_dict["DEBUG"] else actual
+    return {"default": default, "locmem": locmem, "base": actual, "cached": cached}
 
 
 cache_setting.required_settings = ["DEBUG", "CACHE_URL"]
