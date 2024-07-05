@@ -13,28 +13,20 @@
 #  or https://cecill.info/licences/Licence_CeCILL-B_V1-fr.txt (French)         #
 #                                                                              #
 # ##############################################################################
+"""Define extra compressors or compilers for django-pipeline."""
 
-
-# noinspection PyClassHasNoInit,PyAbstractClass
 import os
-import subprocess
 from pathlib import Path
 
 from django.conf import settings
 
 if settings.USE_PIPELINE:
-
-    # noinspection PyPackageRequirements,PyUnresolvedReferences
-    # noinspection PyPackageRequirements,PyUnresolvedReferences
-    from pipeline.compilers import CompilerBase
-    from pipeline.compressors import CompressorBase, SubProcessCompressor
-
-    # noinspection PyPackageRequirements,PyUnresolvedReferences
+    from pipeline.compilers import SubProcessCompiler
+    from pipeline.compressors import SubProcessCompressor
     from pipeline.storage import PipelineManifestStorage, PipelineMixin
 else:
-    CompressorBase = object
-    CompilerBase = object
     SubProcessCompressor = object
+    SubProcessCompiler = object
     PipelineManifestStorage = None
     PipelineMixin = None
 
@@ -46,20 +38,23 @@ else:
     CompressedManifestStaticFilesStorage = None
 
 
-class RcssCompressor(CompressorBase):
-    """
-    CSS compressor based on the Python library slimit
+class RcssCompressor(SubProcessCompressor):
+    """CSS compressor based on the Python library rcssmin.
+
     (https://github.com/ndparker/rcssmin).
     """
 
     def filter_css(self, css):
+        """Not implemented."""
         raise NotImplementedError
 
     def filter_js(self, js):
+        """Not implemented."""
         raise NotImplementedError
 
     # noinspection PyMethodMayBeStatic
     def compress_css(self, css):
+        """Compress a block of CSS code using the "rcssmin" module."""
         # noinspection PyUnresolvedReferences,PyPackageRequirements
         from rcssmin import cssmin
 
@@ -67,34 +62,44 @@ class RcssCompressor(CompressorBase):
 
 
 class CssNanoCompressor(SubProcessCompressor):
+    """CSS compressor based on the "cssnano" command."""
+
     def compress_css(self, css):
+        """Compress a block of CSS code using the "cssnano" command."""
         command = [settings.CSSNANO_BINARY] + settings.CSSNANO_ARGUMENTS
         return self.execute_command(command, css)
 
     def filter_css(self, css):
+        """Not implemented."""
         raise NotImplementedError
 
     def filter_js(self, js):
+        """Not implemented."""
         raise NotImplementedError
 
 
 class TerserCompressor(SubProcessCompressor):
+    """JavaScript compressor based on the "terser" command."""
+
     def compress_js(self, js):
+        """Compress a block of JavaScript code using the "terser" command."""
         command = [settings.TERSER_BINARY, settings.TERSER_ARGUMENTS, "--"]
         if self.verbose:
             command += ["--verbose"]
         return self.execute_command(command, js)
 
     def filter_css(self, css):
+        """Not implemented."""
         raise NotImplementedError
 
     def filter_js(self, js):
+        """Not implemented."""
         raise NotImplementedError
 
 
-# noinspection PyClassHasNoInit
-class PyScssCompiler(CompilerBase):
+class PyScssCompiler(SubProcessCompiler):
     """SASS (.scss) compiler based on the Python library pyScss.
+
     (http://pyscss.readthedocs.io/en/latest/ ).
     However, this compiler is limited to SASS 3.2 and cannot compile modern projets like Bootstrap 4.
     Please use :class:`pipeline.compilers.sass.SASSCompiler` if you use modern SCSS files.
@@ -105,10 +110,12 @@ class PyScssCompiler(CompilerBase):
 
     # noinspection PyMethodMayBeStatic
     def match_file(self, filename):
+        """Return True if the file is a SASS file."""
         return filename.endswith(".scss") or filename.endswith(".sass")
 
     # noinspection PyUnusedLocal
     def compile_file(self, infile, outfile, outdated=False, force=False):
+        """Compile a SASS file using the "scss" command."""
         # noinspection PyUnresolvedReferences,PyUnresolvedReferences,PyPackageRequirements
         from scss import Compiler
 
@@ -122,53 +129,34 @@ class PyScssCompiler(CompilerBase):
             print(css_content)
 
 
-# noinspection PyClassHasNoInit
-class TypescriptCompiler(CompilerBase):
-    """TypeScript (.ts) compiler using "tsc".
-    (https://www.typescriptlang.org ).
-
-    """
+class TypescriptCompiler(SubProcessCompiler):
+    """TypeScript (.ts) compiler using "tsc" (https://www.typescriptlang.org)."""
 
     output_extension = "js"
 
     # noinspection PyMethodMayBeStatic
     def match_file(self, filename):
+        """Return True if the file is a TypeScript file."""
         return filename.endswith(".ts")
 
     # noinspection PyMethodMayBeStatic,PyUnusedLocal
     def compile_file(self, infile, outfile, outdated=False, force=False):
-        # noinspection PyPackageRequirements,PyUnresolvedReferences
-        from pipeline.exceptions import CompilerError
-
+        """Compile a TypeScript file using the "tsc" command."""
         command = (
             [settings.TYPESCRIPT_BINARY]
             + settings.TYPESCRIPT_ARGUMENTS
-            + ["-out", outfile, infile]
+            + ["--outFile", outfile, infile]
         )
-        try:
-            p = subprocess.Popen(
-                command,
-                stdin=subprocess.PIPE,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
-            )
-            stdout, __ = p.communicate(b"")
-            if p.returncode != 0:
-                raise CompilerError(
-                    "Unable to execute TypeScript",
-                    command=command,
-                    error_output=stdout.decode(),
-                )
-        except Exception as e:
-            raise CompilerError(e, command=command, error_output=str(e))
+        self.execute_command(command)
 
 
 if PipelineManifestStorage:
 
     class NicerPipelineCachedStorage(PipelineManifestStorage):
-        """display a better exception"""
+        """Display a better exception."""
 
         def hashed_name(self, name, content=None, filename=None):
+            """Display a better exception if the file is not found."""
             try:
                 return super().hashed_name(name, content=content)
             except ValueError as e:
@@ -184,7 +172,7 @@ if PipelineMixin and CompressedManifestStaticFilesStorage:
     class PipelineCompressedManifestStaticFilesStorage(
         PipelineMixin, CompressedManifestStaticFilesStorage
     ):
-        """mix django-pipeline and whitenoise"""
+        """Mix django-pipeline and whitenoise."""
 
         pass
 

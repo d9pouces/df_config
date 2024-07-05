@@ -357,7 +357,7 @@ CSSTIDY_BINARY = "csstidy"
 COFFEE_SCRIPT_BINARY = "coffee"
 CSSMIN_BINARY = "cssmin"
 TYPESCRIPT_BINARY = "tsc"
-TYPESCRIPT_ARGUMENTS = []
+TYPESCRIPT_ARGUMENTS = ["--sourceMap", "true", "--target", "es6"]
 CSSNANO_BINARY = "cssnano"
 CSSNANO_ARGUMENTS = []
 TERSER_BINARY = "terser"
@@ -448,7 +448,12 @@ USE_DJANGO_JQUERY = True
 JQUERY_URL = False
 
 # django-csp
-CSP_CONNECT_SRC = CallableSetting(csp_connect)
+CSP_CONNECT_SRC = CallableSetting(csp_connect)  # django-csp <= 3.8
+CONTENT_SECURITY_POLICY = {  # django-csp >= 4.0
+    "DIRECTIVES": {
+        "connect-src": CSP_CONNECT_SRC,
+    },
+}
 CSP_BLOCK_ALL_MIXED_CONTENT = True
 
 # ######################################################################################################################
