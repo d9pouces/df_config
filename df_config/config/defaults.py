@@ -448,10 +448,66 @@ USE_DJANGO_JQUERY = True
 JQUERY_URL = False
 
 # django-csp
+CSP_DEFAULT_SRC = ["'self'"]
+CSP_SCRIPT_SRC = None
+CSP_SCRIPT_SRC_ATTR = None
+CSP_SCRIPT_SRC_ELEM = None
+CSP_IMG_SRC = None
+CSP_OBJECT_SRC = None
+CSP_MEDIA_SRC = None
+CSP_FRAME_SRC = None
+CSP_FONT_SRC = None
 CSP_CONNECT_SRC = CallableSetting(csp_connect)  # django-csp <= 3.8
+CSP_STYLE_SRC = None
+CSP_STYLE_SRC_ATTR = None
+CSP_STYLE_SRC_ELEM = None
+CSP_BASE_URI = None
+CSP_CHILD_SRC = None
+CSP_FRAME_ANCESTORS = None
+CSP_NAVIGATE_TO = None
+CSP_FORM_ACTION = None
+CSP_SANDBOX = None
+CSP_REPORT_URI = None
+CSP_REPORT_TO = None
+CSP_MANIFEST_SRC = None
+CSP_WORKER_SRC = None
+CSP_REQUIRE_SRI_FOR = None
+CSP_UPGRADE_INSECURE_REQUESTS = None
+CSP_REQUIRE_TRUSTED_TYPES_FOR = None
+CSP_TRUSTED_TYPES = None
+CSP_INCLUDE_NONCE_IN = ["default-src"]
+CSP_REPORT_ONLY = False
+CSP_EXCLUDE_URL_PREFIXES = ()
 CONTENT_SECURITY_POLICY = {  # django-csp >= 4.0
+    "EXCLUDE_URL_PREFIXES": SettingReference("CSP_EXCLUDE_URL_PREFIXES"),
     "DIRECTIVES": {
-        "connect-src": CSP_CONNECT_SRC,
+        "default-src": SettingReference("CSP_DEFAULT_SRC"),
+        "script-src": SettingReference("CSP_SCRIPT_SRC"),
+        "script-src-attr": SettingReference("CSP_SCRIPT_SRC_ATTR"),
+        "script-src-elem": SettingReference("CSP_SCRIPT_SRC_ELEM"),
+        "img-src": SettingReference("CSP_IMG_SRC"),
+        "object-src": SettingReference("CSP_OBJECT_SRC"),
+        "media-src": SettingReference("CSP_MEDIA_SRC"),
+        "frame-src": SettingReference("CSP_FRAME_SRC"),
+        "font-src": SettingReference("CSP_FONT_SRC"),
+        "connect-src": SettingReference("CSP_CONNECT_SRC"),
+        "style-src": SettingReference("CSP_STYLE_SRC"),
+        "style-src-attr": SettingReference("CSP_STYLE_SRC_ATTR"),
+        "style-src-elem": SettingReference("CSP_STYLE_SRC_ELEM"),
+        "base-uri": SettingReference("CSP_BASE_URI"),
+        "child-src": SettingReference("CSP_CHILD_SRC"),
+        "frame-ancestors": SettingReference("CSP_FRAME_ANCESTORS"),
+        "navigate-to": SettingReference("CSP_NAVIGATE_TO"),
+        "form-action": SettingReference("CSP_FORM_ACTION"),
+        "sandbox": SettingReference("CSP_SANDBOX"),
+        "report-uri": SettingReference("CSP_REPORT_URI"),
+        "report-to": SettingReference("CSP_REPORT_TO"),
+        "manifest-src": SettingReference("CSP_MANIFEST_SRC"),
+        "worker-src": SettingReference("CSP_WORKER_SRC"),
+        "require-sri-for": SettingReference("CSP_REQUIRE_SRI_FOR"),
+        "upgrade-insecure-requests": SettingReference("CSP_UPGRADE_INSECURE_REQUESTS"),
+        "require-trusted-types-for": SettingReference("CSP_REQUIRE_TRUSTED_TYPES_FOR"),
+        "trusted-types": SettingReference("CSP_TRUSTED_TYPES"),
     },
 }
 CSP_BLOCK_ALL_MIXED_CONTENT = True
