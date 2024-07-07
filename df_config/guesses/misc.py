@@ -461,7 +461,7 @@ def csp_connect(settings_dict) -> List[str]:
     return values
 
 
-web_server.required_settings = [
+csp_connect.required_settings = [
     "USE_SSL",
     "SERVER_NAME",
     "USE_WEBSOCKETS",
