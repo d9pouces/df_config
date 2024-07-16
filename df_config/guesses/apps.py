@@ -159,12 +159,11 @@ class InstalledApps:
                 )
             )
             return []
-        result = [
-            "allauth",
-            "allauth.account",
-            "allauth.socialaccount",
-        ]
+        result = ["allauth", "allauth.account"]
+        if is_package_present("pypng") and is_package_present("qrcode"):
+            result += ["allauth.mfa"]
         if settings_dict["ALLAUTH_PROVIDER_APPS"]:
+            result += ["allauth.socialaccount"]
             result += [
                 k
                 for k in settings_dict["ALLAUTH_PROVIDER_APPS"]
