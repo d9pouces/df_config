@@ -39,6 +39,7 @@ Since the second file overrides the first one, `TEMPLATE_DEBUG` always has the s
 import os
 import socket
 import sys
+from collections import OrderedDict
 from typing import Any, Set
 from urllib.parse import urlparse
 
@@ -558,6 +559,15 @@ class CallableSetting(DynamicSettting):
             fn,
             ", ".join(["%r" % x for x in self.required]),
         )
+
+
+class DeduplicatedCallableList(CallableSetting):
+    """CallableSetting that return a list of values with duplicates removed."""
+
+    def get_value(self, merger, provider_name: str, setting_name: str):
+        """Return the value, without duplicates."""
+        result = super().get_value(merger, provider_name, setting_name)
+        return list(OrderedDict.fromkeys(result))
 
 
 class ExpandIterable(SettingReference):
