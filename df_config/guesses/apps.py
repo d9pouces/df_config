@@ -92,6 +92,7 @@ class InstalledApps:
             ("USE_CORS_HEADER", ["corsheaders"]),
             ("USE_DAPHNE", ["daphne"]),
             ("USE_DJANGO_PROBES", ["django_probes"]),
+            ("USE_CSP", "csp"),
         ]
     )
     required_settings = [
@@ -122,6 +123,13 @@ class InstalledApps:
             elif not is_package_present(package_name):
                 settings_check_results.append(missing_package(package_name, ""))
                 continue
+            if package_name == "csp":
+                try:
+                    if version("django-csp")[0] <= "3":
+                        # the csp app must be added to INSTALLED_APPS for django-csp >= 4
+                        continue
+                except PackageNotFoundError:
+                    continue
             result += v
         return result
 
@@ -151,12 +159,11 @@ class InstalledApps:
                 )
             )
             return []
-        result = [
-            "allauth",
-            "allauth.account",
-            "allauth.socialaccount",
-        ]
+        result = ["allauth", "allauth.account"]
+        if is_package_present("pypng") and is_package_present("qrcode"):
+            result += ["allauth.mfa"]
         if settings_dict["ALLAUTH_PROVIDER_APPS"]:
+            result += ["allauth.socialaccount"]
             result += [
                 k
                 for k in settings_dict["ALLAUTH_PROVIDER_APPS"]

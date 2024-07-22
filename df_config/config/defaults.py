@@ -48,6 +48,7 @@ from django.utils.translation import gettext_lazy as _
 from df_config.config.dynamic_settings import (
     AutocreateFile,
     CallableSetting,
+    DeduplicatedCallableList,
     Directory,
     DirectoryOrNone,
     ExpandIterable,
@@ -142,7 +143,7 @@ USE_DJANGO_PROBES = is_package_present("django_probes")
 #
 # ######################################################################################################################
 ADMINS = (("admin", "{ADMIN_EMAIL}"),)
-ALLOWED_HOSTS = CallableSetting(allowed_hosts)
+ALLOWED_HOSTS = DeduplicatedCallableList(allowed_hosts)
 CACHE_URL = CallableSetting(cache_redis_url)
 CACHES = CallableSetting(cache_setting)
 CSRF_COOKIE_DOMAIN = "{SERVER_NAME}"
@@ -150,7 +151,7 @@ CSRF_COOKIE_HTTPONLY = False
 CSRF_COOKIE_NAME = CallableSetting(CookieName("csrftoken"))
 CSRF_COOKIE_SAMESITE = "Lax"
 CSRF_COOKIE_SECURE = SettingReference("USE_SSL")
-CSRF_TRUSTED_ORIGINS = CallableSetting(csrf_trusted_origins)
+CSRF_TRUSTED_ORIGINS = DeduplicatedCallableList(csrf_trusted_origins)
 DATABASES = CallableSetting(databases)
 
 DEBUG = False
@@ -161,7 +162,7 @@ DEVELOPMENT = True
 
 DEFAULT_FROM_EMAIL = "webmaster@{SERVER_NAME}"
 FILE_UPLOAD_TEMP_DIR = DirectoryOrNone("{LOCAL_PATH}/tmp-uploads")
-INSTALLED_APPS = CallableSetting(installed_apps)
+INSTALLED_APPS = DeduplicatedCallableList(installed_apps)
 LANGUAGE_COOKIE_NAME = CallableSetting(CookieName("django_language"))
 LANGUAGE_COOKIE_DOMAIN = "{SERVER_NAME}"
 LANGUAGE_COOKIE_SAMESITE = "Lax"
@@ -170,7 +171,7 @@ LOGGING = CallableSetting(log_configuration)
 MANAGERS = SettingReference("ADMINS")
 MEDIA_ROOT = Directory("{LOCAL_PATH}/media", mode=0o755)
 MEDIA_URL = "/media/"
-MIDDLEWARE = CallableSetting(middlewares)
+MIDDLEWARE = DeduplicatedCallableList(middlewares)
 
 ROOT_URLCONF = "df_config.root_urls"
 SECRET_KEY = AutocreateSecretKey("{LOCAL_PATH}/secret_key.txt")
@@ -220,7 +221,7 @@ X_FRAME_OPTIONS = "SAMEORIGIN"
 WSGI_APPLICATION = CallableSetting(get_wsgi_application)
 
 # django.contrib.auth
-AUTHENTICATION_BACKENDS = CallableSetting(authentication_backends)
+AUTHENTICATION_BACKENDS = DeduplicatedCallableList(authentication_backends)
 LOGIN_URL = "/admin/login/"
 LOGIN_REDIRECT_URL = "{URL_PREFIX}"
 # LOGOUT_REDIRECT_URL = '{URL_PREFIX}'
@@ -240,7 +241,7 @@ STATIC_ROOT = Directory("{LOCAL_PATH}/static", mode=0o755)
 STATIC_URL = "/static/"
 if (django_version[0], django_version[1]) < (4, 2):
     STATICFILES_STORAGE = CallableSetting(static_storage)
-STATICFILES_FINDERS = CallableSetting(static_finder)
+STATICFILES_FINDERS = DeduplicatedCallableList(static_finder)
 STORAGES = {
     "default": CallableSetting(media_storage_setting),
     "staticfiles": CallableSetting(static_storage_setting),
@@ -314,7 +315,7 @@ PIPELINE = {
     "JS_COMPRESSOR": SettingReference("PIPELINE_JS_COMPRESSOR"),
     "COMPILERS": SettingReference("PIPELINE_COMPILERS"),
 }
-PIPELINE_COMPILERS = CallableSetting(pipeline_compilers)
+PIPELINE_COMPILERS = DeduplicatedCallableList(pipeline_compilers)
 PIPELINE_CSS_COMPRESSOR = CallableSetting(pipeline_css_compressor)
 PIPELINE_JS_COMPRESSOR = CallableSetting(pipeline_js_compressor)
 PIPELINE_CSS = {
@@ -357,7 +358,7 @@ CSSTIDY_BINARY = "csstidy"
 COFFEE_SCRIPT_BINARY = "coffee"
 CSSMIN_BINARY = "cssmin"
 TYPESCRIPT_BINARY = "tsc"
-TYPESCRIPT_ARGUMENTS = []
+TYPESCRIPT_ARGUMENTS = ["--sourceMap", "true", "--target", "es6"]
 CSSNANO_BINARY = "cssnano"
 CSSNANO_ARGUMENTS = []
 TERSER_BINARY = "terser"
@@ -366,7 +367,7 @@ TERSER_ARGUMENTS = []
 # Django-All-Auth
 ACCOUNT_EMAIL_SUBJECT_PREFIX = "[{SERVER_NAME}] "
 ACCOUNT_EMAIL_VERIFICATION = None
-ALLAUTH_PROVIDER_APPS = CallableSetting(allauth_provider_apps)
+ALLAUTH_PROVIDER_APPS = DeduplicatedCallableList(allauth_provider_apps)
 ALLAUTH_APPLICATIONS_CONFIG = AutocreateFile("{LOCAL_PATH}/social_auth.ini", mode=0o600)
 ACCOUNT_EMAIL_REQUIRED = True
 ACCOUNT_AUTHENTICATION_METHOD = "username_email"
@@ -376,7 +377,7 @@ ACCOUNT_ADAPTER = "df_config.apps.allauth.AccountAdapter"
 # Django-Debug-Toolbar
 DEBUG_TOOLBAR_CONFIG = {"JQUERY_URL": "{STATIC_URL}vendor/jquery/dist/jquery.min.js"}
 DEBUG_TOOLBAR_PATCH_SETTINGS = False
-DEBUG_TOOLBAR_PANELS = CallableSetting(guess_djt_panels)
+DEBUG_TOOLBAR_PANELS = DeduplicatedCallableList(guess_djt_panels)
 INTERNAL_IPS = ("127.0.0.1", "::1", "localhost")
 
 # django-auth-ldap
@@ -448,7 +449,68 @@ USE_DJANGO_JQUERY = True
 JQUERY_URL = False
 
 # django-csp
-CSP_CONNECT_SRC = CallableSetting(csp_connect)
+CSP_DEFAULT_SRC = ["'self'"]
+CSP_SCRIPT_SRC = None
+CSP_SCRIPT_SRC_ATTR = None
+CSP_SCRIPT_SRC_ELEM = None
+CSP_IMG_SRC = None
+CSP_OBJECT_SRC = None
+CSP_MEDIA_SRC = None
+CSP_FRAME_SRC = None
+CSP_FONT_SRC = None
+CSP_CONNECT_SRC = CallableSetting(csp_connect)  # django-csp <= 3.8
+CSP_STYLE_SRC = None
+CSP_STYLE_SRC_ATTR = None
+CSP_STYLE_SRC_ELEM = None
+CSP_BASE_URI = None
+CSP_CHILD_SRC = None
+CSP_FRAME_ANCESTORS = None
+CSP_NAVIGATE_TO = None
+CSP_FORM_ACTION = None
+CSP_SANDBOX = None
+CSP_REPORT_URI = None
+CSP_REPORT_TO = None
+CSP_MANIFEST_SRC = None
+CSP_WORKER_SRC = None
+CSP_REQUIRE_SRI_FOR = None
+CSP_UPGRADE_INSECURE_REQUESTS = None
+CSP_REQUIRE_TRUSTED_TYPES_FOR = None
+CSP_TRUSTED_TYPES = None
+CSP_INCLUDE_NONCE_IN = ["default-src"]
+CSP_REPORT_ONLY = False
+CSP_EXCLUDE_URL_PREFIXES = ()
+CONTENT_SECURITY_POLICY = {  # django-csp >= 4.0
+    "EXCLUDE_URL_PREFIXES": SettingReference("CSP_EXCLUDE_URL_PREFIXES"),
+    "DIRECTIVES": {
+        "default-src": SettingReference("CSP_DEFAULT_SRC"),
+        "script-src": SettingReference("CSP_SCRIPT_SRC"),
+        "script-src-attr": SettingReference("CSP_SCRIPT_SRC_ATTR"),
+        "script-src-elem": SettingReference("CSP_SCRIPT_SRC_ELEM"),
+        "img-src": SettingReference("CSP_IMG_SRC"),
+        "object-src": SettingReference("CSP_OBJECT_SRC"),
+        "media-src": SettingReference("CSP_MEDIA_SRC"),
+        "frame-src": SettingReference("CSP_FRAME_SRC"),
+        "font-src": SettingReference("CSP_FONT_SRC"),
+        "connect-src": SettingReference("CSP_CONNECT_SRC"),
+        "style-src": SettingReference("CSP_STYLE_SRC"),
+        "style-src-attr": SettingReference("CSP_STYLE_SRC_ATTR"),
+        "style-src-elem": SettingReference("CSP_STYLE_SRC_ELEM"),
+        "base-uri": SettingReference("CSP_BASE_URI"),
+        "child-src": SettingReference("CSP_CHILD_SRC"),
+        "frame-ancestors": SettingReference("CSP_FRAME_ANCESTORS"),
+        "navigate-to": SettingReference("CSP_NAVIGATE_TO"),
+        "form-action": SettingReference("CSP_FORM_ACTION"),
+        "sandbox": SettingReference("CSP_SANDBOX"),
+        "report-uri": SettingReference("CSP_REPORT_URI"),
+        "report-to": SettingReference("CSP_REPORT_TO"),
+        "manifest-src": SettingReference("CSP_MANIFEST_SRC"),
+        "worker-src": SettingReference("CSP_WORKER_SRC"),
+        "require-sri-for": SettingReference("CSP_REQUIRE_SRI_FOR"),
+        "upgrade-insecure-requests": SettingReference("CSP_UPGRADE_INSECURE_REQUESTS"),
+        "require-trusted-types-for": SettingReference("CSP_REQUIRE_TRUSTED_TYPES_FOR"),
+        "trusted-types": SettingReference("CSP_TRUSTED_TYPES"),
+    },
+}
 CSP_BLOCK_ALL_MIXED_CONTENT = True
 
 # ######################################################################################################################

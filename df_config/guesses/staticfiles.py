@@ -23,34 +23,40 @@ from django.core.exceptions import ImproperlyConfigured
 
 def static_storage(settings_dict):
     """Guess the best static files storage engine."""
-    if settings_dict["USE_WHITENOISE"] and settings_dict["PIPELINE_ENABLED"]:
+    use_pipeline = settings_dict["PIPELINE_ENABLED"] and settings_dict["USE_PIPELINE"]
+    if settings_dict["USE_WHITENOISE"] and use_pipeline:
         return "df_config.apps.pipeline.PipelineCompressedManifestStaticFilesStorage"
     elif settings_dict["USE_WHITENOISE"]:
         return "whitenoise.storage.CompressedManifestStaticFilesStorage"
-    elif settings_dict["PIPELINE_ENABLED"]:
+    elif use_pipeline:
         return "df_config.apps.pipeline.NicerPipelineCachedStorage"
     return "django.contrib.staticfiles.storage.StaticFilesStorage"
 
 
-static_storage.required_settings = ["PIPELINE_ENABLED", "USE_WHITENOISE"]
+static_storage.required_settings = [
+    "PIPELINE_ENABLED",
+    "USE_WHITENOISE",
+    "USE_PIPELINE",
+]
 
 
 def static_storage_setting(settings_dict):
     """Guess the right static file storage engine."""
     static_root = settings_dict["STATIC_ROOT"]
     options = {"base_url": settings_dict["STATIC_URL"]}
+    use_pipeline = settings_dict["PIPELINE_ENABLED"] and settings_dict["USE_PIPELINE"]
     if static_root.startswith("s3:"):
         if find_spec("minio_storage") is None:
             raise ImproperlyConfigured("please install django-minio-storage.")
         backend = "minio_storage.storage.MinioStaticStorage"
         options = {}
-    elif settings_dict["USE_WHITENOISE"] and settings_dict["PIPELINE_ENABLED"]:
+    elif settings_dict["USE_WHITENOISE"] and use_pipeline:
         options["location"] = static_root
         backend = "df_config.apps.pipeline.PipelineCompressedManifestStaticFilesStorage"
     elif settings_dict["USE_WHITENOISE"]:
         options["location"] = static_root
         backend = "whitenoise.storage.CompressedManifestStaticFilesStorage"
-    elif settings_dict["PIPELINE_ENABLED"]:
+    elif use_pipeline:
         options["location"] = static_root
         backend = "df_config.apps.pipeline.NicerPipelineCachedStorage"
     else:
@@ -65,6 +71,7 @@ static_storage_setting.required_settings = [
     "USE_WHITENOISE",
     "STATIC_ROOT",
     "STATIC_URL",
+    "USE_PIPELINE",
 ]
 
 
