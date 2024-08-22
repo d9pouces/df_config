@@ -74,18 +74,6 @@ class InstalledApps:
     common_third_parties = OrderedDict(
         [
             ("USE_WEBSOCKETS", ["df_websockets", "channels"]),
-            (
-                "USE_SITE",
-                [
-                    "df_site",
-                    "bootstrap4",
-                    "channels",
-                    "dal",
-                    "dal_select2",
-                    "fontawesome_5",
-                    "smart_selects",
-                ],
-            ),
             ("USE_DEBUG_TOOLBAR", ["debug_toolbar.apps.DebugToolbarConfig"]),
             ("USE_PIPELINE", ["pipeline"]),
             ("USE_PAM_AUTHENTICATION", ["django_pam"]),
