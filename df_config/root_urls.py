@@ -79,10 +79,6 @@ if settings.USE_ALL_AUTH:
     ]
 else:
     urlpatterns += [path("auth/", include("django.contrib.auth.urls"))]
-if settings.USE_SITE:
-    urlpatterns += [
-        path("df_site/", include("df_site.urls")),
-    ]
 if settings.DF_ADMIN_SITE:
     admin_site = import_string(settings.DF_ADMIN_SITE)
     autodiscover_modules("admin", register_to=admin_site)
