@@ -134,6 +134,7 @@ USE_CSP = is_package_present("csp")
 USE_CORS_HEADER = is_package_present("corsheaders")
 USE_DAPHNE = is_package_present("daphne")
 USE_DJANGO_PROBES = is_package_present("django_probes")
+USE_PROMETHEUS = is_package_present("django_prometheus")
 
 # ######################################################################################################################
 #
@@ -434,6 +435,10 @@ MINIO_STORAGE_STATIC_OBJECT_METADATA = {"Cache-Control": "max-age=3600"}
 
 # django—pam
 USE_PAM_AUTHENTICATION = False
+
+# django-prometheus
+PROMETHEUS_METRIC_NAMESPACE = "{DF_MODULE_NAME}"
+PROMETHEUS_URL_PREFIX = ""
 
 # django-radius
 RADIUS_SERVER = None

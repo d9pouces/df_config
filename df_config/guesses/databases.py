@@ -22,6 +22,17 @@ from django.utils.version import get_complete_version
 from df_config.config.url import DatabaseURL
 from df_config.utils import is_package_present
 
+prometheus_engines = {
+    "django.db.backends.sqlite3": "django_prometheus.db.backends.sqlite3",
+    "django.db.backends.postgresql": "django_prometheus.db.backends.postgresql",
+    "django.db.backends.mysql": "django_prometheus.db.backends.mysql",
+    "django.core.cache.backends.filebased.FileBasedCache": "django_prometheus.cache.backends.filebased.FileBasedCache",
+    "django.core.cache.backends.locmem.LocMemCache": "django_prometheus.cache.backends.locmem.LocMemCache",
+    "django.core.cache.backends.memcached.PyLibMCCache": "django_prometheus.cache.backends.memcached.PyLibMCCache",
+    "django.core.cache.backends.memcached.PyMemcacheCache": "django_prometheus.cache.backends.memcached.PyMemcacheCache",
+    "django.core.cache.backends.redis.RedisCache": "django_prometheus.cache.backends.redis.RedisCache",
+}
+
 
 def databases(settings_dict):
     """Build a complete DATABASES setting.
@@ -29,8 +40,10 @@ def databases(settings_dict):
     If present, Takes the `DATABASE_URL` environment variable into account
     (used on the Heroku platform).
     """
+    engine = DatabaseURL.normalize_engine(settings_dict["DATABASE_ENGINE"])
+    engine = prometheus_engines.get(engine, engine)
     default = {
-        "ENGINE": DatabaseURL.normalize_engine(settings_dict["DATABASE_ENGINE"]),
+        "ENGINE": engine,
         "NAME": settings_dict["DATABASE_NAME"],
         "USER": settings_dict["DATABASE_USER"],
         "OPTIONS": settings_dict["DATABASE_OPTIONS"],
@@ -49,6 +62,7 @@ databases.required_settings = [
     "DATABASE_PASSWORD",
     "DATABASE_HOST",
     "DATABASE_PORT",
+    "USE_PROMETHEUS",
 ]
 
 
@@ -172,17 +186,19 @@ def cache_setting(settings_dict):
     """
     parsed_url = urlparse(settings_dict["CACHE_URL"])
     django_version = get_complete_version()
+    backend = "django.core.cache.backends.locmem.LocMemCache"
     locmem = {
-        "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
+        "BACKEND": prometheus_engines.get(backend, backend),
         "LOCATION": "unique-snowflake",
     }
-    dummy = {
-        "BACKEND": "django.core.cache.backends.dummy.DummyCache",
-    }
+
+    backend = "django.core.cache.backends.dummy.DummyCache"
+    dummy = {"BACKEND": prometheus_engines.get(backend, backend)}
     actual = locmem
     if django_version >= (4, 0) and parsed_url.scheme in ("redis", "rediss"):
+        backend = "django.core.cache.backends.redis.RedisCache"
         actual = {
-            "BACKEND": "django.core.cache.backends.redis.RedisCache",
+            "BACKEND": prometheus_engines.get(backend, backend),
             "LOCATION": "{CACHE_URL}",
         }
     elif parsed_url.scheme in ("redis", "rediss"):
@@ -209,7 +225,7 @@ def cache_setting(settings_dict):
             parsed_url.port or 11211,
         )
         actual = {
-            "BACKEND": backend,
+            "BACKEND": prometheus_engines.get(backend, backend),
             "LOCATION": location,
         }
     default = dummy if settings_dict["DEBUG"] else actual
@@ -217,4 +233,8 @@ def cache_setting(settings_dict):
     return {"default": default, "locmem": locmem, "base": actual, "cached": cached}
 
 
-cache_setting.required_settings = ["DEBUG", "CACHE_URL"]
+cache_setting.required_settings = [
+    "DEBUG",
+    "CACHE_URL",
+    "USE_PROMETHEUS",
+]
