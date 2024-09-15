@@ -83,7 +83,7 @@ if settings.DF_ADMIN_SITE:
     admin_site = import_string(settings.DF_ADMIN_SITE)
     autodiscover_modules("admin", register_to=admin_site)
     urlpatterns += [path("admin/", include(admin_site.urls[:2]))]
-if settings.USE_PROMETHEUS:
+if settings.USE_PROMETHEUS and settings.PROMETHEUS_URL_PREFIX is not None:
     # noinspection PyUnresolvedReferences
     urlpatterns += [
         path(settings.PROMETHEUS_URL_PREFIX, include("django_prometheus.urls")),

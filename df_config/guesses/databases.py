@@ -41,7 +41,8 @@ def databases(settings_dict):
     (used on the Heroku platform).
     """
     engine = DatabaseURL.normalize_engine(settings_dict["DATABASE_ENGINE"])
-    engine = prometheus_engines.get(engine, engine)
+    if settings_dict["USE_PROMETHEUS"]:
+        engine = prometheus_engines.get(engine, engine)
     default = {
         "ENGINE": engine,
         "NAME": settings_dict["DATABASE_NAME"],
@@ -187,18 +188,21 @@ def cache_setting(settings_dict):
     parsed_url = urlparse(settings_dict["CACHE_URL"])
     django_version = get_complete_version()
     backend = "django.core.cache.backends.locmem.LocMemCache"
+    prometheus_engines_ = {}
+    if settings_dict["USE_PROMETHEUS"]:
+        prometheus_engines_ = prometheus_engines
     locmem = {
-        "BACKEND": prometheus_engines.get(backend, backend),
+        "BACKEND": prometheus_engines_.get(backend, backend),
         "LOCATION": "unique-snowflake",
     }
 
     backend = "django.core.cache.backends.dummy.DummyCache"
-    dummy = {"BACKEND": prometheus_engines.get(backend, backend)}
+    dummy = {"BACKEND": prometheus_engines_.get(backend, backend)}
     actual = locmem
     if django_version >= (4, 0) and parsed_url.scheme in ("redis", "rediss"):
         backend = "django.core.cache.backends.redis.RedisCache"
         actual = {
-            "BACKEND": prometheus_engines.get(backend, backend),
+            "BACKEND": prometheus_engines_.get(backend, backend),
             "LOCATION": "{CACHE_URL}",
         }
     elif parsed_url.scheme in ("redis", "rediss"):
@@ -225,7 +229,7 @@ def cache_setting(settings_dict):
             parsed_url.port or 11211,
         )
         actual = {
-            "BACKEND": prometheus_engines.get(backend, backend),
+            "BACKEND": prometheus_engines_.get(backend, backend),
             "LOCATION": location,
         }
     default = dummy if settings_dict["DEBUG"] else actual
