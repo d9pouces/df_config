@@ -5,10 +5,10 @@
   "description": "Javascript component of df_config",
   "repository": "https://github.com/d9pouces/df_config",
   "devDependencies": {
-    "ts-loader": "^9.4.2",
-    "typescript": "^5.2.0",
-    "webpack": "^5.75.0",
-    "webpack-cli": "^5.0.1"
+    "ts-loader": "^9.5.1",
+    "typescript": "^5.6.2",
+    "webpack": "^5.94.0",
+    "webpack-cli": "^5.1.4"
   },
   "scripts": {
     "build-dev": "./node_modules/.bin/webpack --mode development",

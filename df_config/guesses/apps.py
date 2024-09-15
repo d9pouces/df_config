@@ -74,18 +74,6 @@ class InstalledApps:
     common_third_parties = OrderedDict(
         [
             ("USE_WEBSOCKETS", ["df_websockets", "channels"]),
-            (
-                "USE_SITE",
-                [
-                    "df_site",
-                    "bootstrap4",
-                    "channels",
-                    "dal",
-                    "dal_select2",
-                    "fontawesome_5",
-                    "smart_selects",
-                ],
-            ),
             ("USE_DEBUG_TOOLBAR", ["debug_toolbar.apps.DebugToolbarConfig"]),
             ("USE_PIPELINE", ["pipeline"]),
             ("USE_PAM_AUTHENTICATION", ["django_pam"]),
@@ -93,6 +81,7 @@ class InstalledApps:
             ("USE_DAPHNE", ["daphne"]),
             ("USE_DJANGO_PROBES", ["django_probes"]),
             ("USE_CSP", "csp"),
+            ("USE_PROMETHEUS", "django_prometheus"),
         ]
     )
     required_settings = [
@@ -203,7 +192,7 @@ class Middlewares:
             ("USE_ALL_AUTH", "allauth.account.middleware.AccountMiddleware"),
         ]
     )
-    required_settings = ["DF_MIDDLEWARE"] + list(common_third_parties)
+    required_settings = ["DF_MIDDLEWARE", "USE_PROMETHEUS"] + list(common_third_parties)
     social_apps = SOCIAL_PROVIDER_APPS
 
     def __call__(self, settings_dict):
@@ -217,6 +206,12 @@ class Middlewares:
         if self.use_cache_middleware:
             mw_list.insert(0, "django.middleware.cache.UpdateCacheMiddleware")
             mw_list.append("django.middleware.cache.FetchFromCacheMiddleware")
+        if self.use_cache_middleware:
+            mw_list.insert(0, "django.middleware.cache.UpdateCacheMiddleware")
+            mw_list.append("django.middleware.cache.FetchFromCacheMiddleware")
+        if settings_dict["USE_PROMETHEUS"]:
+            mw_list.insert(0, "django_prometheus.middleware.PrometheusBeforeMiddleware")
+            mw_list.append("django_prometheus.middleware.PrometheusAfterMiddleware")
         return mw_list
 
     def process_third_parties(self, settings_dict):

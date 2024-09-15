@@ -5,8 +5,7 @@
 #  All Rights Reserved                                                         #
 #                                                                              #
 # ##############################################################################
-"""Root URLs provided by DjangoFloor
-=================================
+"""Root URLs provided by df_config.
 
 By default, register URLs for the admin site, `jsi18n`, static and media files, favicon and robots.txt.
 If DjangoDebugToolbar is present, then its URL is also registered.
@@ -24,6 +23,7 @@ from df_config.utils import get_view_from_string
 
 
 def common_static_urls():
+    """Provide standard static URLs that should be exposed by every site."""
     values = (
         "robots.txt",
         "apple-touch-icon.png",
@@ -79,15 +79,15 @@ if settings.USE_ALL_AUTH:
     ]
 else:
     urlpatterns += [path("auth/", include("django.contrib.auth.urls"))]
-if settings.USE_SITE:
-    urlpatterns += [
-        path("chaining/", include("smart_selects.urls")),
-        path("df_site/", include("df_site.urls")),
-    ]
 if settings.DF_ADMIN_SITE:
     admin_site = import_string(settings.DF_ADMIN_SITE)
     autodiscover_modules("admin", register_to=admin_site)
     urlpatterns += [path("admin/", include(admin_site.urls[:2]))]
+if settings.USE_PROMETHEUS and settings.PROMETHEUS_URL_PREFIX is not None:
+    # noinspection PyUnresolvedReferences
+    urlpatterns += [
+        path(settings.PROMETHEUS_URL_PREFIX, include("django_prometheus.urls")),
+    ]
 if settings.DEBUG and settings.USE_DEBUG_TOOLBAR:
     # noinspection PyPackageRequirements,PyUnresolvedReferences
     import debug_toolbar

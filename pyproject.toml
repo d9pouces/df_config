@@ -49,7 +49,7 @@ name = "df_config"
 packages = [{ include = "df_config" }]
 readme = "README.md"
 repository = 'https://github.com/d9pouces/df_config'
-version = "1.2.48"
+version = "1.2.53"
 
 [tool.poetry.dependencies]
 django = ">=2.1"
@@ -57,7 +57,7 @@ python = ">=3.9"
 
 [tool.poetry.group.dev.dependencies]
 hypothesis = ">=6.72.0"
-pytest = ">=7.2.1"
+pytest = "^8.3.2"
 pytest-django = ">=4.5.2"
 tox = ">=4.4.12"
 python-logging-loki = ">=0.3.1"
@@ -78,10 +78,10 @@ legacy_tox_ini = """
 
 [tox]
 [tox:tox]
-envlist = {py39,py310,py311,py312}-{django32,django40,django41,django42,django50}
+envlist = {py39,py310,py311,py312}-{django32,django40,django41,django42,django50,django51}
 
 
-[testenv:{py39,py310,py311,py312}-{django32,django40,django41,django42,django50}]
+[testenv:{py39,py310,py311,py312}-{django32,django40,django41,django42,django50,django51}]
 commands = pytest
 deps = hypothesis
     nose
@@ -95,4 +95,5 @@ deps = hypothesis
     django41: Django>=4.1,<4.2
     django42: Django>=4.2,<4.3
     django50: Django>=5.0,<5.1
+    django51: Django>=5.1,<5.2
 """
