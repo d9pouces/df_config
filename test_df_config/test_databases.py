@@ -1,4 +1,5 @@
 from django.core.exceptions import ImproperlyConfigured
+from django.utils.version import get_complete_version
 
 from df_config.config.dynamic_settings import CallableSetting
 from df_config.guesses.databases import cache_setting, databases
@@ -169,24 +170,48 @@ class TestCacheSetting(TestDynamicSetting):
         )
 
     def test_cache_setting_no_debug_redis(self):
-        expected = {
-            "base": {
-                "BACKEND": "django.core.cache.backends.redis.RedisCache",
-                "LOCATION": "redis://:password@localhost:6379/1",
-            },
-            "cached": {
-                "BACKEND": "django.core.cache.backends.redis.RedisCache",
-                "LOCATION": "redis://:password@localhost:6379/1",
-            },
-            "default": {
-                "BACKEND": "django.core.cache.backends.redis.RedisCache",
-                "LOCATION": "redis://:password@localhost:6379/1",
-            },
-            "locmem": {
-                "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
-                "LOCATION": "unique-snowflake",
-            },
-        }
+        django_version = get_complete_version()
+        if django_version >= (4, 0):
+            expected = {
+                "base": {
+                    "BACKEND": "django.core.cache.backends.redis.RedisCache",
+                    "LOCATION": "redis://:password@localhost:6379/1",
+                },
+                "cached": {
+                    "BACKEND": "django.core.cache.backends.redis.RedisCache",
+                    "LOCATION": "redis://:password@localhost:6379/1",
+                },
+                "default": {
+                    "BACKEND": "django.core.cache.backends.redis.RedisCache",
+                    "LOCATION": "redis://:password@localhost:6379/1",
+                },
+                "locmem": {
+                    "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
+                    "LOCATION": "unique-snowflake",
+                },
+            }
+        else:
+            expected = {
+                "base": {
+                    "BACKEND": "django_redis.cache.RedisCache",
+                    "LOCATION": "redis://:password@localhost:6379/1",
+                    "OPTIONS": {"CLIENT_CLASS": "django_redis.client.DefaultClient"},
+                },
+                "cached": {
+                    "BACKEND": "django_redis.cache.RedisCache",
+                    "LOCATION": "redis://:password@localhost:6379/1",
+                    "OPTIONS": {"CLIENT_CLASS": "django_redis.client.DefaultClient"},
+                },
+                "default": {
+                    "BACKEND": "django_redis.cache.RedisCache",
+                    "LOCATION": "redis://:password@localhost:6379/1",
+                    "OPTIONS": {"CLIENT_CLASS": "django_redis.client.DefaultClient"},
+                },
+                "locmem": {
+                    "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
+                    "LOCATION": "unique-snowflake",
+                },
+            }
         s = CallableSetting(cache_setting)
         self.check(
             s,
@@ -199,24 +224,48 @@ class TestCacheSetting(TestDynamicSetting):
         )
 
     def test_cache_setting_no_debug_redis_prometheus(self):
-        expected = {
-            "base": {
-                "BACKEND": "django_prometheus.cache.backends.redis.RedisCache",
-                "LOCATION": "redis://:password@localhost:6379/1",
-            },
-            "cached": {
-                "BACKEND": "django_prometheus.cache.backends.redis.RedisCache",
-                "LOCATION": "redis://:password@localhost:6379/1",
-            },
-            "default": {
-                "BACKEND": "django_prometheus.cache.backends.redis.RedisCache",
-                "LOCATION": "redis://:password@localhost:6379/1",
-            },
-            "locmem": {
-                "BACKEND": "django_prometheus.cache.backends.locmem.LocMemCache",
-                "LOCATION": "unique-snowflake",
-            },
-        }
+        django_version = get_complete_version()
+        if django_version >= (4, 0):
+            expected = {
+                "base": {
+                    "BACKEND": "django_prometheus.cache.backends.redis.RedisCache",
+                    "LOCATION": "redis://:password@localhost:6379/1",
+                },
+                "cached": {
+                    "BACKEND": "django_prometheus.cache.backends.redis.RedisCache",
+                    "LOCATION": "redis://:password@localhost:6379/1",
+                },
+                "default": {
+                    "BACKEND": "django_prometheus.cache.backends.redis.RedisCache",
+                    "LOCATION": "redis://:password@localhost:6379/1",
+                },
+                "locmem": {
+                    "BACKEND": "django_prometheus.cache.backends.locmem.LocMemCache",
+                    "LOCATION": "unique-snowflake",
+                },
+            }
+        else:
+            expected = {
+                "base": {
+                    "BACKEND": "django_redis.cache.RedisCache",
+                    "LOCATION": "redis://:password@localhost:6379/1",
+                    "OPTIONS": {"CLIENT_CLASS": "django_redis.client.DefaultClient"},
+                },
+                "cached": {
+                    "BACKEND": "django_redis.cache.RedisCache",
+                    "LOCATION": "redis://:password@localhost:6379/1",
+                    "OPTIONS": {"CLIENT_CLASS": "django_redis.client.DefaultClient"},
+                },
+                "default": {
+                    "BACKEND": "django_redis.cache.RedisCache",
+                    "LOCATION": "redis://:password@localhost:6379/1",
+                    "OPTIONS": {"CLIENT_CLASS": "django_redis.client.DefaultClient"},
+                },
+                "locmem": {
+                    "BACKEND": "django_prometheus.cache.backends.locmem.LocMemCache",
+                    "LOCATION": "unique-snowflake",
+                },
+            }
         s = CallableSetting(cache_setting)
         self.check(
             s,
@@ -229,21 +278,40 @@ class TestCacheSetting(TestDynamicSetting):
         )
 
     def test_cache_setting_debug_redis(self):
-        expected = {
-            "base": {
-                "BACKEND": "django.core.cache.backends.redis.RedisCache",
-                "LOCATION": "redis://:password@localhost:6379/1",
-            },
-            "cached": {
-                "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
-                "LOCATION": "unique-snowflake",
-            },
-            "default": {"BACKEND": "django.core.cache.backends.dummy.DummyCache"},
-            "locmem": {
-                "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
-                "LOCATION": "unique-snowflake",
-            },
-        }
+        django_version = get_complete_version()
+        if django_version >= (4, 0):
+            expected = {
+                "base": {
+                    "BACKEND": "django.core.cache.backends.redis.RedisCache",
+                    "LOCATION": "redis://:password@localhost:6379/1",
+                },
+                "cached": {
+                    "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
+                    "LOCATION": "unique-snowflake",
+                },
+                "default": {"BACKEND": "django.core.cache.backends.dummy.DummyCache"},
+                "locmem": {
+                    "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
+                    "LOCATION": "unique-snowflake",
+                },
+            }
+        else:
+            expected = {
+                "base": {
+                    "BACKEND": "django_redis.cache.RedisCache",
+                    "LOCATION": "redis://:password@localhost:6379/1",
+                    "OPTIONS": {"CLIENT_CLASS": "django_redis.client.DefaultClient"},
+                },
+                "cached": {
+                    "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
+                    "LOCATION": "unique-snowflake",
+                },
+                "default": {"BACKEND": "django.core.cache.backends.dummy.DummyCache"},
+                "locmem": {
+                    "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
+                    "LOCATION": "unique-snowflake",
+                },
+            }
         s = CallableSetting(cache_setting)
         self.check(
             s,
