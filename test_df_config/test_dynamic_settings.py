@@ -48,11 +48,19 @@ class TestDynamicSetting(TestCase):
         post_collectstatic=False,
         post_migrate=False,
         previous_settings=None,
+        extra_values=None,
     ):
         p_values = [x for x in settings_check_results]
         settings_check_results[:] = []
         values = previous_settings or copy.copy(self.other_values)
+        if extra_values:
+            values.update(extra_values)
         values[self.setting_name] = dynamic_setting
+
+        if hasattr(dynamic_setting, "required"):
+            values = {
+                x: y for (x, y) in values.items() if x in dynamic_setting.required
+            }
         provider = DictProvider(values, name="d1")
         merger = SettingMerger(None, [provider])
         merger.load_raw_settings()

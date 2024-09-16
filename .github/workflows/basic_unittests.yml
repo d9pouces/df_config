@@ -19,7 +19,7 @@ jobs:
     - uses: actions/setup-python@v4
       with:
         python-version: ${{ matrix.python-version }}
-    - run: python3 -m pip install --upgrade setuptools pip wheel hypothesis nose python-logging-loki django-minio-storage
+    - run: python3 -m pip install --upgrade setuptools pip wheel django-redis hypothesis nose python-logging-loki django-minio-storage
     - run: python3 -m pip install 'django==${{ matrix.django-version }}'
     - run: python3 -m pip install .
     - run: python -m df_config test

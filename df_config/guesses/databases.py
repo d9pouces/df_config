@@ -41,7 +41,7 @@ def databases(settings_dict):
     (used on the Heroku platform).
     """
     engine = DatabaseURL.normalize_engine(settings_dict["DATABASE_ENGINE"])
-    if settings_dict["USE_PROMETHEUS"]:
+    if settings_dict.get("USE_PROMETHEUS", False):
         engine = prometheus_engines.get(engine, engine)
     default = {
         "ENGINE": engine,
@@ -189,7 +189,7 @@ def cache_setting(settings_dict):
     django_version = get_complete_version()
     backend = "django.core.cache.backends.locmem.LocMemCache"
     prometheus_engines_ = {}
-    if settings_dict["USE_PROMETHEUS"]:
+    if settings_dict.get("USE_PROMETHEUS", False):
         prometheus_engines_ = prometheus_engines
     locmem = {
         "BACKEND": prometheus_engines_.get(backend, backend),
