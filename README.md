@@ -234,12 +234,24 @@ Django app detection
 
 A few well-known Django applications are automatically detected and added to the list of `INSTALLED_APPS`:
 
-  * `django-redis_sessions`
   * `django-pipeline`
   * `django-debug-toolbar`
   * `django-allauth`
   * `whitenoise`
   * `django-csp`
-  
+  * `celery`
+  * `df_websockets`
+  * `django-channels`
+  * `django-auth-ldap`
+  * `django-cors-headers`
+  * `django-hosts`
+  * `django-minio-storage`
+  * `django—pam`
+  * `django-prometheus`
+  * `django-radius`
+  * `django-redis-sessions`
+  * `django-smart-selects`
+  * `sentry.io`
+ 
 Defaults settings are also proposed so these applications should be working out of the box.
 
