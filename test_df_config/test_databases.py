@@ -1,3 +1,5 @@
+from django.core.exceptions import ImproperlyConfigured
+
 from df_config.config.dynamic_settings import CallableSetting
 from df_config.guesses.databases import cache_setting, databases
 from test_df_config.test_dynamic_settings import TestDynamicSetting
@@ -273,14 +275,17 @@ class TestCacheSetting(TestDynamicSetting):
             },
         }
         s = CallableSetting(cache_setting)
-        self.check(
-            s,
-            expected,
-            extra_values={
-                "DEBUG": False,
-                "CACHE_URL": "memcache://localhost:11211",
-                "USE_PROMETHEUS": False,
-            },
+        self.assertRaises(
+            ImproperlyConfigured,
+            lambda: self.check(
+                s,
+                expected,
+                extra_values={
+                    "DEBUG": False,
+                    "CACHE_URL": "memcache://localhost:11211",
+                    "USE_PROMETHEUS": False,
+                },
+            ),
         )
 
     def test_cache_setting_debug_memcache(self):
@@ -300,12 +305,15 @@ class TestCacheSetting(TestDynamicSetting):
             },
         }
         s = CallableSetting(cache_setting)
-        self.check(
-            s,
-            expected,
-            extra_values={
-                "DEBUG": True,
-                "CACHE_URL": "memcache://localhost:11211",
-                "USE_PROMETHEUS": False,
-            },
+        self.assertRaises(
+            ImproperlyConfigured,
+            lambda: self.check(
+                s,
+                expected,
+                extra_values={
+                    "DEBUG": True,
+                    "CACHE_URL": "memcache://localhost:11211",
+                    "USE_PROMETHEUS": False,
+                },
+            ),
         )
