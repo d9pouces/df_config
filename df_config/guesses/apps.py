@@ -193,7 +193,6 @@ class Middlewares:
         ]
     )
     required_settings = ["DF_MIDDLEWARE", "USE_PROMETHEUS"] + list(common_third_parties)
-    social_apps = SOCIAL_PROVIDER_APPS
 
     def __call__(self, settings_dict):
         """Return the list of required middlewares."""
