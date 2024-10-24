@@ -124,7 +124,12 @@ BASE_MAPPING = [
         "email.port", "EMAIL_PORT", help_str="SMTP port (often 25, 465 or 587)"
     ),
     CharConfigField("email.user", "EMAIL_HOST_USER", help_str="SMTP user"),
-    CharConfigField("email.from", "EMAIL_FROM", help_str="Displayed sender email"),
+    CharConfigField(
+        "email.from",
+        "DEFAULT_FROM_EMAIL",
+        help_str="Displayed sender email",
+        env_name="EMAIL_FROM",
+    ),
     BooleanConfigField(
         "email.use_tls",
         "EMAIL_USE_TLS",

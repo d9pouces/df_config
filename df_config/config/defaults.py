@@ -84,6 +84,7 @@ from df_config.guesses.misc import (
     csp_connect,
     csrf_trusted_origins,
     excluded_django_commands,
+    from_email,
     get_asgi_application,
     get_command_name,
     get_hostname,
@@ -160,7 +161,7 @@ DEVELOPMENT = True
 # display all commands (like "migrate" or "runserver") in manage.py
 # if False, development-specific commands are hidden
 
-DEFAULT_FROM_EMAIL = "webmaster@{SERVER_NAME}"
+DEFAULT_FROM_EMAIL = CallableSetting(from_email)
 FILE_UPLOAD_TEMP_DIR = DirectoryOrNone("{LOCAL_PATH}/tmp-uploads")
 INSTALLED_APPS = DeduplicatedCallableList(installed_apps)
 LANGUAGE_COOKIE_NAME = CallableSetting(CookieName("django_language"))
@@ -606,7 +607,8 @@ EMAIL_HOST_URL = URLSetting("EMAIL_HOST_URL")
 EMAIL_HOST = EMAIL_HOST_URL.hostname("localhost")
 EMAIL_HOST_PASSWORD = EMAIL_HOST_URL.password("")
 EMAIL_HOST_USER = EMAIL_HOST_URL.username("")
-EMAIL_FROM = "{ADMIN_EMAIL}"
+# EMAIL_FROM is now useless and will be removed in a future version
+EMAIL_FROM = "{DEFAULT_FROM_EMAIL}"
 EMAIL_PORT = EMAIL_HOST_URL.port_int(25)
 EMAIL_SUBJECT_PREFIX = "[{SERVER_NAME}] "
 EMAIL_USE_TLS = EMAIL_HOST_URL.use_tls()

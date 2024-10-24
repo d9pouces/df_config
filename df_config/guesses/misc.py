@@ -17,7 +17,7 @@
 import re
 import socket
 import sys
-from importlib.metadata import PackageNotFoundError, distribution, version
+from importlib.metadata import PackageNotFoundError, distribution
 from typing import Dict, Iterable, List, Set
 from urllib.parse import urlparse
 
@@ -449,6 +449,50 @@ def web_server(settings_dict) -> str:
 
 
 web_server.required_settings = []
+
+
+def is_valid_email(value: str) -> bool:
+    """Check if the given value is a valid email address.
+
+    >>> is_valid_email('d9pouces@github.com')
+    True
+    >>> is_valid_email('d9pouces@localhost')
+    False
+    >>> is_valid_email('d9pouces')
+    False
+    """
+    if not value or "@" not in value or len(value) > 320:
+        return False
+    user_part, domain_part = value.rsplit("@", 1)
+    user_regex = re.compile(
+        r"(^[-!#$%&'*+/=?^_`{}|~0-9A-Z]+(\.[-!#$%&'*+/=?^_`{}|~0-9A-Z]+)*\Z"
+        r'|^"([\001-\010\013\014\016-\037!#-\[\]-\177]|\\[\001-\011\013\014\016-\177])'
+        r'*"\Z)',
+        re.IGNORECASE,
+    )
+    domain_regex = re.compile(
+        # max length for domain name labels is 63 characters per RFC 1034
+        r"((?:[A-Z0-9](?:[A-Z0-9-]{0,61}[A-Z0-9])?\.)+)(?:[A-Z0-9-]{2,63}(?<!-))\Z",
+        re.IGNORECASE,
+    )
+    return bool(user_regex.match(user_part)) and bool(domain_regex.match(domain_part))
+
+
+def from_email(settings_dict) -> str:
+    """Try to guess the sender address, using the email account if possible.
+
+    >>> from_email({'EMAIL_HOST_USER': 'd9pouces', 'SERVER_NAME': 'example.org'})
+    'webmaster@example.org'
+    >>> from_email({'EMAIL_HOST_USER': 'd9pouces@github.com', 'SERVER_NAME': 'example.org'})
+    'd9pouces@github.com'
+
+    """
+    if is_valid_email(settings_dict["EMAIL_HOST_USER"]):
+        return settings_dict["EMAIL_HOST_USER"]
+    return f"webmaster@{settings_dict['SERVER_NAME']}"
+
+
+from_email.required_settings = ["SERVER_NAME", "EMAIL_HOST_USER"]
 
 
 def csp_connect(settings_dict) -> List[str]:
