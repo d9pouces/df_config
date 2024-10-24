@@ -122,12 +122,17 @@ class Command(BaseCommand):
 
         if settings.USE_WEBSOCKETS:
             application = self.get_asgi_application()
-            worker_cls = "uvicorn.workers.UvicornWorker"
-            if not is_package_present("uvicorn.workers"):
+            worker_cls = "uvicorn_worker.UvicornWorker"
+            if not is_package_present("uvicorn_worker"):
                 self.stderr.write(
-                    "you must install uvicorn to use websockets with Gunicorn."
+                    "you must install uvicorn-worker to use websockets with Gunicorn."
                 )
-                return
+                worker_cls = "uvicorn.workers.UvicornWorker"
+                if not is_package_present("uvicorn.workers"):
+                    self.stderr.write(
+                        "you must install uvicorn-worker to use websockets with Gunicorn."
+                    )
+                    return
         else:
             application = self.get_wsgi_application()
             worker_cls = "gunicorn.workers.gthread.ThreadWorker"
