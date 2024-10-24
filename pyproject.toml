@@ -39,7 +39,8 @@ classifiers = [
     'Programming Language :: Python :: 3.9',
     'Programming Language :: Python :: 3.10',
     'Programming Language :: Python :: 3.11',
-    'Programming Language :: Python :: 3.12'
+    'Programming Language :: Python :: 3.12',
+    'Programming Language :: Python :: 3.13'
 ]
 description = "Smart default settings for Django websites"
 documentation = 'https://github.com/d9pouces/df_config'
@@ -49,7 +50,7 @@ name = "df_config"
 packages = [{ include = "df_config" }]
 readme = "README.md"
 repository = 'https://github.com/d9pouces/df_config'
-version = "1.2.54"
+version = "1.2.55"
 
 [tool.poetry.dependencies]
 django = ">=2.1"
@@ -78,10 +79,10 @@ legacy_tox_ini = """
 
 [tox]
 [tox:tox]
-envlist = {py39,py310,py311,py312}-{django32,django40,django41,django42,django50,django51}
+envlist = {py39,py310,py311,py312,py313}-{django32,django40,django41,django42,django50,django51}
 
 
-[testenv:{py39,py310,py311,py312}-{django32,django40,django41,django42,django50,django51}]
+[testenv:{py39,py310,py311,py312,py313}-{django32,django40,django41,django42,django50,django51}]
 commands = pytest
 deps =
     django32: Django>=3.2,<3.3
