@@ -176,11 +176,12 @@ websocket_redis_channels = RedisSmartSetting(prefix="WEBSOCKET_REDIS_", fmt="cha
 def cache_setting(settings_dict):
     """Automatically compute cache settings.
 
-    Three caches are defined:
+    Four caches are defined:
 
       * `locmem` (using local memory, destroyed when the process is killed)
-      * `base` (using the CACHE_URL setting, using redis, rediss or memcache protocols)
-      * `default` (`=="locmem"` when DEBUG is true,`=="base"` else)
+      * `base` (using the CACHE_URL setting with redis, rediss or memcache protocols as soon as possible)
+      * `cached` (locmem when DEBUG is true, `base` else)
+      * `default` (dummy when DEBUG is true,`base` else)
 
     :param settings_dict:
     :return:
