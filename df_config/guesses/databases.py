@@ -35,22 +35,36 @@ prometheus_engines = {
 
 
 def databases(settings_dict):
-    """Build a complete DATABASES setting.
+    """Build a complete DATABASES setting for the default database.
 
-    If present, Takes the `DATABASE_URL` environment variable into account
-    (used on the Heroku platform).
+    When django-prometheus is used, the engine is replaced by the matching prometheus engine.
     """
     engine = DatabaseURL.normalize_engine(settings_dict["DATABASE_ENGINE"])
-    if settings_dict.get("USE_PROMETHEUS", False):
+    if settings_dict["USE_PROMETHEUS"]:
         engine = prometheus_engines.get(engine, engine)
+    hosts, ports = None, None
+    host = settings_dict["DATABASE_HOST"]
+    if isinstance(host, str):
+        hosts = host.split(",")
+    port = settings_dict["DATABASE_PORT"]
+    if isinstance(port, int):
+        port = str(port)
+    if isinstance(port, str):
+        ports = port.split(",")
+    if hosts and ports and len(ports) != len(hosts):
+        raise ImproperlyConfigured(
+            "DATABASE_HOST and DATABASE_PORT must have the same number of elements."
+        )
     default = {
         "ENGINE": engine,
         "NAME": settings_dict["DATABASE_NAME"],
         "USER": settings_dict["DATABASE_USER"],
         "OPTIONS": settings_dict["DATABASE_OPTIONS"],
         "PASSWORD": settings_dict["DATABASE_PASSWORD"],
-        "HOST": settings_dict["DATABASE_HOST"],
-        "PORT": settings_dict["DATABASE_PORT"],
+        "HOST": host,
+        "PORT": port,
+        "CONN_MAX_AGE": settings_dict["DATABASE_CONN_MAX_AGE"],
+        "CONN_HEALTH_CHECKS": bool(settings_dict["DATABASE_CONN_MAX_AGE"]),
     }
     return {"default": default}
 
@@ -63,6 +77,7 @@ databases.required_settings = [
     "DATABASE_PASSWORD",
     "DATABASE_HOST",
     "DATABASE_PORT",
+    "DATABASE_CONN_MAX_AGE",
     "USE_PROMETHEUS",
 ]
 
