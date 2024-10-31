@@ -23,8 +23,8 @@ jobs:
       DJANGO_SETTINGS_MODULE: test_df_config.data.settings
       POETRY_VIRTUALENVS_CREATE: false
     steps:
-    - uses: actions/checkout@v3
-    - uses: actions/setup-python@v4
+    - uses: actions/checkout@v4.2.2
+    - uses: actions/setup-python@v5.3.0
       with:
         python-version: ${{ matrix.python-version }}
     - run: python3 -m pip install --user 'django==${{ matrix.django-version }}' hypothesis pytest pytest-django tox python-logging-loki gunicorn daphne uvicorn django-minio-storage whitenoise django-redis django-prometheus django-debug-toolbar django-allauth coverage poetry
