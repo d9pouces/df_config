@@ -24,7 +24,6 @@ from django.contrib import auth
 from django.contrib.auth.middleware import RemoteUserMiddleware
 from django.core.exceptions import ImproperlyConfigured
 from django.http import HttpRequest
-from setuptools.command.bdist_wheel import get_abi_tag
 
 logger = logging.getLogger("django.request")
 
