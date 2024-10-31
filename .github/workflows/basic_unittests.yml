@@ -14,12 +14,12 @@ jobs:
         django-version: ['3.2', '4.0', '4.1', '4.2', '5.0', '5.1']
     env:
       DJANGO_SETTINGS_MODULE: test_df_config.data.settings
+      POETRY_VIRTUALENVS_CREATE: false
     steps:
     - uses: actions/checkout@v3
     - uses: actions/setup-python@v4
       with:
         python-version: ${{ matrix.python-version }}
-    - run: python3 -m pip install --upgrade setuptools pip wheel django-redis hypothesis nose python-logging-loki django-minio-storage
-    - run: python3 -m pip install 'django==${{ matrix.django-version }}'
-    - run: python3 -m pip install .
-    - run: python -m df_config test
+    - run: python3 -m pip install --user 'django==${{ matrix.django-version }}'
+    - run: python3 -m pip install --user hypothesis pytest pytest-django tox python-logging-loki gunicorn daphne uvicorn django-minio-storage whitenoise django-prometheus django-debug-toolbar django-allauth coverage poetry
+    - run: python3 -m pytest
