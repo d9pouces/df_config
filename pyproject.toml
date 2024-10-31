@@ -67,36 +67,13 @@ daphne = ">=4.0.0"
 uvicorn = ">=0.23.2"
 django-minio-storage = "^0.5.7"
 whitenoise = "^6.6.0"
+django-prometheus = "^2.3.1"
+django-debug-toolbar = "^4.4.6"
+django-allauth = "^65.1.0"
+coverage = "^7.6.4"
 
 [tool.pytest.ini_options]
-DJANGO_SETTINGS_MODULE = "df_config.config.base"
+DJANGO_SETTINGS_MODULE = "test_df_config.data.settings"
 minversion = "6.0"
 required_plugins = "pytest-django"
 testpaths = ["test_df_config"]
-
-[tool.tox]
-legacy_tox_ini = """
-
-[tox]
-[tox:tox]
-envlist = {py39,py310,py311,py312,py313}-{django32,django40,django41,django42,django50,django51}
-
-
-[testenv:{py39,py310,py311,py312,py313}-{django32,django40,django41,django42,django50,django51}]
-commands = pytest
-deps =
-    django32: Django>=3.2,<3.3
-    django40: Django>=4.0,<4.1
-    django41: Django>=4.1,<4.2
-    django42: Django>=4.2,<4.3
-    django50: Django>=5.0,<5.1
-    django51: Django>=5.1,<5.2
-    django-minio-storage
-    django-redis
-    hypothesis
-    nose
-    pytest
-    pytest-django
-    python-logging-loki
-    tox
-"""
