@@ -20,6 +20,5 @@ jobs:
     - uses: actions/setup-python@v4
       with:
         python-version: ${{ matrix.python-version }}
-    - run: python3 -m pip install --user 'django==${{ matrix.django-version }}'
-    - run: python3 -m pip install --user hypothesis pytest pytest-django tox python-logging-loki gunicorn daphne uvicorn django-minio-storage whitenoise django-redis django-prometheus django-debug-toolbar django-allauth coverage poetry
+    - run: python3 -m pip install --user 'django==${{ matrix.django-version }}' hypothesis pytest pytest-django tox python-logging-loki gunicorn daphne uvicorn django-minio-storage whitenoise django-redis django-prometheus django-debug-toolbar django-allauth coverage poetry
     - run: python3 -m pytest
