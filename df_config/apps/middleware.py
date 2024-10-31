@@ -13,6 +13,7 @@
 #  or https://cecill.info/licences/Licence_CeCILL-B_V1-fr.txt (French)         #
 #                                                                              #
 # ##############################################################################
+"""Define a new authentication middleware that also complete the remote address of the request."""
 import base64
 import binascii
 import logging
@@ -20,19 +21,17 @@ from functools import lru_cache
 
 from django.conf import settings
 from django.contrib import auth
-from django.contrib.auth.middleware import (
-    RemoteUserMiddleware as BaseRemoteUserMiddleware,
-)
+from django.contrib.auth.middleware import RemoteUserMiddleware
 from django.core.exceptions import ImproperlyConfigured
 from django.http import HttpRequest
-from django.utils.functional import cached_property
 
 logger = logging.getLogger("django.request")
 
 
-class DFConfigMiddleware(BaseRemoteUserMiddleware):
-    """Like :class:`django.contrib.auth.middleware.RemoteUserMiddleware` but:
+class DFConfigMiddleware(RemoteUserMiddleware):
+    """Like :class:`django.contrib.auth.middleware.RemoteUserMiddleware`.
 
+    Differences:
     * can use any header defined by the setting `DF_REMOTE_USER_HEADER`,
     * handle the HTTP_X_FORWARDED_FOR HTTP header (set the right client IP)
     * handle HTTP basic authentication
@@ -41,6 +40,7 @@ class DFConfigMiddleware(BaseRemoteUserMiddleware):
 
     @lru_cache()
     def get_remoteuser_header(self):
+        """Return the header to use for the remote user."""
         # avoid cached_property to ease unittests
         header = settings.DF_REMOTE_USER_HEADER
         if header:
@@ -48,6 +48,7 @@ class DFConfigMiddleware(BaseRemoteUserMiddleware):
         return header
 
     def process_request(self, request: HttpRequest):
+        """Set request.user using the REMOTE_USER header and the remote address."""
         request.remote_username = None
 
         if settings.USE_X_FORWARDED_FOR and "HTTP_X_FORWARDED_FOR" in request.META:
@@ -97,10 +98,12 @@ class DFConfigMiddleware(BaseRemoteUserMiddleware):
 
     # noinspection PyUnusedLocal,PyMethodMayBeStatic
     def process_response(self, request, response):
+        """Set the X-UA-Compatible header for Internet Explorer."""
         response["X-UA-Compatible"] = "IE=edge,chrome=1"
         return response
 
     def remote_user_authentication(self, request, username):
+        """Set request.user using the REMOTE_USER header."""
         # AuthenticationMiddleware is required so that request.user exists.
         # noinspection PyTypeChecker
         if not hasattr(request, "user"):
@@ -133,4 +136,5 @@ class DFConfigMiddleware(BaseRemoteUserMiddleware):
 
     # noinspection PyMethodMayBeStatic
     def format_remote_username(self, remote_username):
+        """Format the username by removing the realm."""
         return remote_username.partition("@")[0]

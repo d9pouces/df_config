@@ -13,12 +13,14 @@ class TestDatabaseSetting(TestDynamicSetting):
     def test_postgresql(self):
         expected = {
             "default": {
+                "CONN_HEALTH_CHECKS": False,
+                "CONN_MAX_AGE": 0,
                 "ENGINE": "django.db.backends.postgresql",
                 "HOST": "localhost",
                 "NAME": "database",
                 "OPTIONS": None,
                 "PASSWORD": "password",
-                "PORT": 5432,
+                "PORT": "5432",
                 "USER": "user",
             }
         }
@@ -35,18 +37,83 @@ class TestDatabaseSetting(TestDynamicSetting):
                 "DATABASE_HOST": "localhost",
                 "DATABASE_PORT": 5432,
                 "USE_PROMETHEUS": False,
+                "DATABASE_CONN_MAX_AGE": 0,
+            },
+        )
+
+    def test_postgresql_empty_port(self):
+        expected = {
+            "default": {
+                "CONN_HEALTH_CHECKS": False,
+                "CONN_MAX_AGE": 0,
+                "ENGINE": "django.db.backends.postgresql",
+                "HOST": "localhost",
+                "NAME": "database",
+                "OPTIONS": None,
+                "PASSWORD": "password",
+                "PORT": None,
+                "USER": "user",
+            }
+        }
+        s = CallableSetting(databases)
+        self.check(
+            s,
+            expected,
+            extra_values={
+                "DATABASE_ENGINE": "postgres",
+                "DATABASE_NAME": "database",
+                "DATABASE_USER": "user",
+                "DATABASE_OPTIONS": None,
+                "DATABASE_PASSWORD": "password",
+                "DATABASE_HOST": "localhost",
+                "DATABASE_PORT": None,
+                "USE_PROMETHEUS": False,
+                "DATABASE_CONN_MAX_AGE": 0,
+            },
+        )
+
+    def test_postgresql_cluster(self):
+        expected = {
+            "default": {
+                "CONN_HEALTH_CHECKS": False,
+                "CONN_MAX_AGE": 0,
+                "ENGINE": "django.db.backends.postgresql",
+                "HOST": "dbserver1.example.com,dbserver2.example.com",
+                "NAME": "database",
+                "OPTIONS": None,
+                "PASSWORD": "password",
+                "PORT": "5432,5432",
+                "USER": "user",
+            }
+        }
+        s = CallableSetting(databases)
+        self.check(
+            s,
+            expected,
+            extra_values={
+                "DATABASE_ENGINE": "postgres",
+                "DATABASE_NAME": "database",
+                "DATABASE_USER": "user",
+                "DATABASE_OPTIONS": None,
+                "DATABASE_PASSWORD": "password",
+                "DATABASE_HOST": "dbserver1.example.com,dbserver2.example.com",
+                "DATABASE_PORT": "5432,5432",
+                "USE_PROMETHEUS": False,
+                "DATABASE_CONN_MAX_AGE": 0,
             },
         )
 
     def test_postgresql_prometheus(self):
         expected = {
             "default": {
+                "CONN_HEALTH_CHECKS": False,
+                "CONN_MAX_AGE": 0,
                 "ENGINE": "django_prometheus.db.backends.postgresql",
                 "HOST": "localhost",
                 "NAME": "database",
                 "OPTIONS": None,
                 "PASSWORD": "password",
-                "PORT": 5432,
+                "PORT": "5432",
                 "USER": "user",
             }
         }
@@ -63,6 +130,7 @@ class TestDatabaseSetting(TestDynamicSetting):
                 "DATABASE_HOST": "localhost",
                 "DATABASE_PORT": 5432,
                 "USE_PROMETHEUS": True,
+                "DATABASE_CONN_MAX_AGE": 0,
             },
         )
 
@@ -98,6 +166,7 @@ class TestCacheSetting(TestDynamicSetting):
         )
 
     def test_cache_setting_no_debug_prometheus(self):
+        # noinspection PyUnresolvedReferences
         expected = {
             "base": {
                 "BACKEND": "django_prometheus.cache.backends.locmem.LocMemCache",
@@ -147,6 +216,7 @@ class TestCacheSetting(TestDynamicSetting):
         )
 
     def test_cache_setting_debug_prometheus(self):
+        # noinspection PyUnresolvedReferences
         expected = {
             "base": {
                 "BACKEND": "django_prometheus.cache.backends.locmem.LocMemCache",
@@ -191,6 +261,7 @@ class TestCacheSetting(TestDynamicSetting):
                 },
             }
         else:
+            # noinspection PyUnresolvedReferences
             expected = {
                 "base": {
                     "BACKEND": "django_redis.cache.RedisCache",
@@ -226,6 +297,7 @@ class TestCacheSetting(TestDynamicSetting):
     def test_cache_setting_no_debug_redis_prometheus(self):
         django_version = get_complete_version()
         if django_version >= (4, 0):
+            # noinspection PyUnresolvedReferences
             expected = {
                 "base": {
                     "BACKEND": "django_prometheus.cache.backends.redis.RedisCache",
@@ -245,6 +317,7 @@ class TestCacheSetting(TestDynamicSetting):
                 },
             }
         else:
+            # noinspection PyUnresolvedReferences
             expected = {
                 "base": {
                     "BACKEND": "django_redis.cache.RedisCache",
@@ -296,6 +369,7 @@ class TestCacheSetting(TestDynamicSetting):
                 },
             }
         else:
+            # noinspection PyUnresolvedReferences
             expected = {
                 "base": {
                     "BACKEND": "django_redis.cache.RedisCache",
