@@ -42,9 +42,14 @@ MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
     "allauth.account.middleware.AccountMiddleware",
 ]
+AUTHENTICATION_BACKENDS = [
+    "django.contrib.auth.backends.ModelBackend",
+    "df_config.apps.backends.DefaultGroupsRemoteUserBackend",
+]
 ALLOWED_HOSTS = ["localhost"]
 USE_HTTP_BASIC_AUTH = True
 DF_REMOTE_USER_HEADER = "HTTP_X_REMOTE_USER"
+DF_DEFAULT_GROUPS = ["Group1", "Group2"]
 STATIC_URL = "/static/"
 MEDIA_URL = "/media/"
 TEMPLATES = [
