@@ -173,11 +173,12 @@ class TestSendFile(DjangoTestCase):
             content = r.getvalue()
             self.assertEqual(b"333333333\n", content)
 
+            last_modified = http_date(os.stat(filename).st_mtime)
             expected_headers = {
                 "Content-Type": "text/plain",
                 "Content-Range": "bytes 20-29/90",
                 "Content-Length": "10",
-                "Last-Modified": http_date(os.stat(filename).st_mtime),
+                "Last-Modified": last_modified,
                 "Content-Disposition": 'inline; filename="range_data.txt"',
                 "ETag": "123456",
             }
@@ -197,7 +198,7 @@ class TestSendFile(DjangoTestCase):
 
             expected_headers = {
                 "ETag": "123456",
-                "Last-Modified": "Sun, 19 Jul 2020 13:16:34 GMT",
+                "Last-Modified": last_modified,
             }
             self.assertEqual(expected_headers, {x: y for (x, y) in r.items()})
             self.assertEqual(304, r.status_code)
@@ -220,10 +221,11 @@ class TestSendFile(DjangoTestCase):
             content = r.getvalue()
             self.assertEqual(b"", content)
 
+            last_modified = http_date(os.stat(filename).st_mtime)
             expected_headers = {
                 "Content-Type": "text/plain",
                 "Content-Range": "bytes */90",
-                "Last-Modified": http_date(os.stat(filename).st_mtime),
+                "Last-Modified": last_modified,
                 "ETag": "123456",
             }
             self.assertEqual(expected_headers, {x: y for (x, y) in r.items()})
@@ -242,7 +244,7 @@ class TestSendFile(DjangoTestCase):
 
             expected_headers = {
                 "ETag": "123456",
-                "Last-Modified": "Sun, 19 Jul 2020 13:16:34 GMT",
+                "Last-Modified": last_modified,
             }
             self.assertEqual(expected_headers, {x: y for (x, y) in r.items()})
             self.assertEqual(304, r.status_code)
