@@ -591,13 +591,27 @@ class TestCacheSetting(TestDynamicSetting):
             },
         }
         s = CallableSetting(cache_setting)
-        with mock.patch("df_config.utils.is_package_present", new=lambda x: False):
-            self.check(
+        self.check(
+            s,
+            expected,
+            extra_values={
+                "DEBUG": False,
+                "CACHE_URL": "file:///var/tmp/django_cache",
+                "USE_PROMETHEUS": True,
+            },
+        )
+
+    def test_cache_setting_no_debug_file_invalid(self):
+        s = CallableSetting(cache_setting)
+        self.assertRaises(
+            ImproperlyConfigured,
+            lambda: self.check(
                 s,
-                expected,
+                {},
                 extra_values={
                     "DEBUG": False,
-                    "CACHE_URL": "file:///var/tmp/django_cache",
+                    "CACHE_URL": "file:///var/tmp/django_cache,file:///var/tmp/django_cache2",
                     "USE_PROMETHEUS": True,
                 },
-            )
+            ),
+        )
