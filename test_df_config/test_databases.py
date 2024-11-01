@@ -1,3 +1,5 @@
+from unittest import mock
+
 from django.core.exceptions import ImproperlyConfigured
 from django.utils.version import get_complete_version
 
@@ -245,15 +247,15 @@ class TestCacheSetting(TestDynamicSetting):
             expected = {
                 "base": {
                     "BACKEND": "django.core.cache.backends.redis.RedisCache",
-                    "LOCATION": "redis://:password@localhost:6379/1",
+                    "LOCATION": ["redis://:password@localhost:6379/1"],
                 },
                 "cached": {
                     "BACKEND": "django.core.cache.backends.redis.RedisCache",
-                    "LOCATION": "redis://:password@localhost:6379/1",
+                    "LOCATION": ["redis://:password@localhost:6379/1"],
                 },
                 "default": {
                     "BACKEND": "django.core.cache.backends.redis.RedisCache",
-                    "LOCATION": "redis://:password@localhost:6379/1",
+                    "LOCATION": ["redis://:password@localhost:6379/1"],
                 },
                 "locmem": {
                     "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
@@ -294,6 +296,70 @@ class TestCacheSetting(TestDynamicSetting):
             },
         )
 
+    def test_cache_setting_no_debug_redis_cluster(self):
+        django_version = get_complete_version()
+        if django_version >= (4, 0):
+            expected = {
+                "base": {
+                    "BACKEND": "django.core.cache.backends.redis.RedisCache",
+                    "LOCATION": [
+                        "redis://:password@hostname1:6379/1",
+                        "redis://:password@hostname2:6379/1",
+                    ],
+                },
+                "cached": {
+                    "BACKEND": "django.core.cache.backends.redis.RedisCache",
+                    "LOCATION": [
+                        "redis://:password@hostname1:6379/1",
+                        "redis://:password@hostname2:6379/1",
+                    ],
+                },
+                "default": {
+                    "BACKEND": "django.core.cache.backends.redis.RedisCache",
+                    "LOCATION": [
+                        "redis://:password@hostname1:6379/1",
+                        "redis://:password@hostname2:6379/1",
+                    ],
+                },
+                "locmem": {
+                    "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
+                    "LOCATION": "unique-snowflake",
+                },
+            }
+        else:
+            # noinspection PyUnresolvedReferences
+            expected = {
+                "base": {
+                    "BACKEND": "django_redis.cache.RedisCache",
+                    "LOCATION": "redis://:password@localhost:6379/1",
+                    "OPTIONS": {"CLIENT_CLASS": "django_redis.client.DefaultClient"},
+                },
+                "cached": {
+                    "BACKEND": "django_redis.cache.RedisCache",
+                    "LOCATION": "redis://:password@localhost:6379/1",
+                    "OPTIONS": {"CLIENT_CLASS": "django_redis.client.DefaultClient"},
+                },
+                "default": {
+                    "BACKEND": "django_redis.cache.RedisCache",
+                    "LOCATION": "redis://:password@localhost:6379/1",
+                    "OPTIONS": {"CLIENT_CLASS": "django_redis.client.DefaultClient"},
+                },
+                "locmem": {
+                    "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
+                    "LOCATION": "unique-snowflake",
+                },
+            }
+        s = CallableSetting(cache_setting)
+        self.check(
+            s,
+            expected,
+            extra_values={
+                "DEBUG": False,
+                "CACHE_URL": "redis://:password@hostname1:6379/1,redis://:password@hostname2:6379/1",
+                "USE_PROMETHEUS": False,
+            },
+        )
+
     def test_cache_setting_no_debug_redis_prometheus(self):
         django_version = get_complete_version()
         if django_version >= (4, 0):
@@ -301,15 +367,15 @@ class TestCacheSetting(TestDynamicSetting):
             expected = {
                 "base": {
                     "BACKEND": "django_prometheus.cache.backends.redis.RedisCache",
-                    "LOCATION": "redis://:password@localhost:6379/1",
+                    "LOCATION": ["redis://:password@localhost:6379/1"],
                 },
                 "cached": {
                     "BACKEND": "django_prometheus.cache.backends.redis.RedisCache",
-                    "LOCATION": "redis://:password@localhost:6379/1",
+                    "LOCATION": ["redis://:password@localhost:6379/1"],
                 },
                 "default": {
                     "BACKEND": "django_prometheus.cache.backends.redis.RedisCache",
-                    "LOCATION": "redis://:password@localhost:6379/1",
+                    "LOCATION": ["redis://:password@localhost:6379/1"],
                 },
                 "locmem": {
                     "BACKEND": "django_prometheus.cache.backends.locmem.LocMemCache",
@@ -356,7 +422,7 @@ class TestCacheSetting(TestDynamicSetting):
             expected = {
                 "base": {
                     "BACKEND": "django.core.cache.backends.redis.RedisCache",
-                    "LOCATION": "redis://:password@localhost:6379/1",
+                    "LOCATION": ["redis://:password@localhost:6379/1"],
                 },
                 "cached": {
                     "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
@@ -373,7 +439,7 @@ class TestCacheSetting(TestDynamicSetting):
             expected = {
                 "base": {
                     "BACKEND": "django_redis.cache.RedisCache",
-                    "LOCATION": "redis://:password@localhost:6379/1",
+                    "LOCATION": ["redis://:password@localhost:6379/1"],
                     "OPTIONS": {"CLIENT_CLASS": "django_redis.client.DefaultClient"},
                 },
                 "cached": {
@@ -401,15 +467,15 @@ class TestCacheSetting(TestDynamicSetting):
         expected = {
             "base": {
                 "BACKEND": "django.core.cache.backends.memcached.PyMemcacheCache",
-                "LOCATION": "localhost:11211",
+                "LOCATION": ["localhost:11211"],
             },
             "cached": {
                 "BACKEND": "django.core.cache.backends.memcached.PyMemcacheCache",
-                "LOCATION": "localhost:11211",
+                "LOCATION": ["localhost:11211"],
             },
             "default": {
                 "BACKEND": "django.core.cache.backends.memcached.PyMemcacheCache",
-                "LOCATION": "localhost:11211",
+                "LOCATION": ["localhost:11211"],
             },
             "locmem": {
                 "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
@@ -417,9 +483,10 @@ class TestCacheSetting(TestDynamicSetting):
             },
         }
         s = CallableSetting(cache_setting)
-        self.assertRaises(
-            ImproperlyConfigured,
-            lambda: self.check(
+        with mock.patch(
+            "df_config.utils.is_package_present", new=lambda x: x == "pymemcache"
+        ):
+            self.check(
                 s,
                 expected,
                 extra_values={
@@ -428,7 +495,50 @@ class TestCacheSetting(TestDynamicSetting):
                     "USE_PROMETHEUS": False,
                 },
             ),
-        )
+        expected = {
+            "base": {
+                "BACKEND": "django.core.cache.backends.memcached.PyLibMCCache",
+                "LOCATION": ["hostname1:11211", "hostname2:11211"],
+            },
+            "cached": {
+                "BACKEND": "django.core.cache.backends.memcached.PyLibMCCache",
+                "LOCATION": ["hostname1:11211", "hostname2:11211"],
+            },
+            "default": {
+                "BACKEND": "django.core.cache.backends.memcached.PyLibMCCache",
+                "LOCATION": ["hostname1:11211", "hostname2:11211"],
+            },
+            "locmem": {
+                "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
+                "LOCATION": "unique-snowflake",
+            },
+        }
+        s = CallableSetting(cache_setting)
+        with mock.patch(
+            "df_config.utils.is_package_present", new=lambda x: x == "pylibmc"
+        ):
+            self.check(
+                s,
+                expected,
+                extra_values={
+                    "DEBUG": False,
+                    "CACHE_URL": "memcache://hostname1:11211,memcache://hostname2:11211",
+                    "USE_PROMETHEUS": False,
+                },
+            ),
+        with mock.patch("df_config.utils.is_package_present", new=lambda x: False):
+            self.assertRaises(
+                ImproperlyConfigured,
+                lambda: self.check(
+                    s,
+                    expected,
+                    extra_values={
+                        "DEBUG": False,
+                        "CACHE_URL": "memcache://localhost:11211",
+                        "USE_PROMETHEUS": False,
+                    },
+                ),
+            )
 
     def test_cache_setting_debug_memcache(self):
         expected = {
@@ -447,15 +557,47 @@ class TestCacheSetting(TestDynamicSetting):
             },
         }
         s = CallableSetting(cache_setting)
-        self.assertRaises(
-            ImproperlyConfigured,
-            lambda: self.check(
+        with mock.patch("df_config.utils.is_package_present", new=lambda x: False):
+            self.assertRaises(
+                ImproperlyConfigured,
+                lambda: self.check(
+                    s,
+                    expected,
+                    extra_values={
+                        "DEBUG": True,
+                        "CACHE_URL": "memcache://localhost:11211",
+                        "USE_PROMETHEUS": False,
+                    },
+                ),
+            )
+
+    def test_cache_setting_no_debug_file(self):
+        expected = {
+            "base": {
+                "BACKEND": "django_prometheus.cache.backends.filebased.FileBasedCache",
+                "LOCATION": "/var/tmp/django_cache/",
+            },
+            "cached": {
+                "BACKEND": "django_prometheus.cache.backends.filebased.FileBasedCache",
+                "LOCATION": "/var/tmp/django_cache/",
+            },
+            "default": {
+                "BACKEND": "django_prometheus.cache.backends.filebased.FileBasedCache",
+                "LOCATION": "/var/tmp/django_cache/",
+            },
+            "locmem": {
+                "BACKEND": "django_prometheus.cache.backends.locmem.LocMemCache",
+                "LOCATION": "unique-snowflake",
+            },
+        }
+        s = CallableSetting(cache_setting)
+        with mock.patch("df_config.utils.is_package_present", new=lambda x: False):
+            self.check(
                 s,
                 expected,
                 extra_values={
-                    "DEBUG": True,
-                    "CACHE_URL": "memcache://localhost:11211",
-                    "USE_PROMETHEUS": False,
+                    "DEBUG": False,
+                    "CACHE_URL": "file:///var/tmp/django_cache",
+                    "USE_PROMETHEUS": True,
                 },
-            ),
-        )
+            )

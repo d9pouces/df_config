@@ -14,13 +14,15 @@
 #                                                                              #
 # ##############################################################################
 """Settings for database and cache backends."""
-from urllib.parse import urlencode, urlparse
+from typing import List, Set
+from urllib.parse import ParseResult, urlencode, urlparse
 
 from django.core.exceptions import ImproperlyConfigured
-from django.utils.version import get_complete_version
+from django.utils import version
 
+from df_config import utils
+from df_config.config.dynamic_settings import Directory
 from df_config.config.url import DatabaseURL
-from df_config.utils import is_package_present
 
 prometheus_engines = {
     "django.db.backends.sqlite3": "django_prometheus.db.backends.sqlite3",
@@ -193,16 +195,21 @@ def cache_setting(settings_dict):
 
     Four caches are defined:
 
-      * `locmem` (using local memory, destroyed when the process is killed)
-      * `base` (using the CACHE_URL setting with redis, rediss or memcache protocols as soon as possible)
-      * `cached` (locmem when DEBUG is true, `base` else)
-      * `default` (dummy when DEBUG is true,`base` else)
+      * `base` that uses the CACHE_URL setting with redis, rediss or memcache protocols as soon as possible,
+      * `locmem`: always uses the local memory, hence destroyed when the process is killed,
+      * `cached`: "locmem" when DEBUG is true, `base` else,
+      * `default`: "dummy" when DEBUG is true,`base` else.
+
+    The rational is that developping (DEBUG=True) requires sometimes actually no cache at all
+    (we do not want HTML caching) and sometimes a cache (the authentication cannot work with no cache at all).
 
     :param settings_dict:
     :return:
     """
-    parsed_url = urlparse(settings_dict["CACHE_URL"])
-    django_version = get_complete_version()
+    cache_url: str = settings_dict["CACHE_URL"]
+    parsed_urls: List[ParseResult] = [urlparse(x) for x in cache_url.split(",")]
+    schemes: Set[str] = {x.scheme.lower() for x in parsed_urls}
+    django_version = version.get_complete_version()
     backend = "django.core.cache.backends.locmem.LocMemCache"
     prometheus_engines_ = {}
     if settings_dict.get("USE_PROMETHEUS", False):
@@ -215,39 +222,52 @@ def cache_setting(settings_dict):
     backend = "django.core.cache.backends.dummy.DummyCache"
     dummy = {"BACKEND": prometheus_engines_.get(backend, backend)}
     actual = locmem
-    if django_version >= (4, 0) and parsed_url.scheme in ("redis", "rediss"):
+    if django_version >= (4, 0) and schemes.issubset({"redis", "rediss"}):
         backend = "django.core.cache.backends.redis.RedisCache"
         actual = {
             "BACKEND": prometheus_engines_.get(backend, backend),
-            "LOCATION": "{CACHE_URL}",
+            "LOCATION": [x.geturl() for x in parsed_urls],
         }
-    elif parsed_url.scheme in ("redis", "rediss"):
-        if is_package_present("django_redis"):
+    elif schemes.issubset({"redis", "rediss"}):
+        if utils.is_package_present("django_redis"):
             # noinspection PyUnresolvedReferences
             actual = {
                 "BACKEND": "django_redis.cache.RedisCache",
-                "LOCATION": "{CACHE_URL}",
+                "LOCATION": [x.geturl() for x in parsed_urls],
                 "OPTIONS": {"CLIENT_CLASS": "django_redis.client.DefaultClient"},
             }
-    elif parsed_url.scheme == "memcache":
-        if django_version >= (3, 2) and is_package_present("pymemcache"):
+        else:
+            raise ImproperlyConfigured(
+                "Please install 'django-redis' package to use Redis cache."
+            )
+    elif schemes == {"memcache"}:
+        if django_version >= (3, 2) and utils.is_package_present("pymemcache"):
             backend = "django.core.cache.backends.memcached.PyMemcacheCache"
-        elif django_version >= (3, 2) and is_package_present("pylibmc"):
+        elif django_version >= (3, 2) and utils.is_package_present("pylibmc"):
             backend = "django.core.cache.backends.memcached.PyLibMCCache"
-        elif is_package_present("memcache"):
-            backend = "django.core.cache.backends.memcached.MemcachedCache"
         else:
             raise ImproperlyConfigured(
                 "Please install 'pylibmc' package before using memcache engine."
             )
-        location = "%s:%s" % (
-            parsed_url.hostname or "localhost",
-            parsed_url.port or 11211,
-        )
+        info = [(x.hostname or "localhost", x.port or 11211) for x in parsed_urls]
         actual = {
             "BACKEND": prometheus_engines_.get(backend, backend),
-            "LOCATION": location,
+            "LOCATION": [f"{x[0]}:{x[1]}" for x in info],
         }
+    elif schemes == {"file"}:
+        backend = "django.core.cache.backends.filebased.FileBasedCache"
+        if len(parsed_urls) > 1:
+            raise ImproperlyConfigured(
+                "CACHE_URL with 'file' scheme must contain only one URL."
+            )
+        actual = {
+            "BACKEND": prometheus_engines_.get(backend, backend),
+            "LOCATION": Directory(parsed_urls[0].path),
+        }
+    elif cache_url:
+        raise ImproperlyConfigured(
+            "CACHE_URL must be a list of URLs with the 'file', 'redis', 'rediss' or 'memcache' scheme."
+        )
     default = dummy if settings_dict["DEBUG"] else actual
     cached = locmem if settings_dict["DEBUG"] else actual
     return {"default": default, "locmem": locmem, "base": actual, "cached": cached}

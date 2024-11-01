@@ -44,31 +44,6 @@ FILE_CONTENT = (
 )
 
 
-class PatchedSettings:
-    """Temporarily change some settings, and restore them when the context is exited."""
-
-    def __init__(self, **kwargs):
-        self.patched_settings = kwargs
-        self.original_settings = {}
-
-    def __enter__(self):
-        from django.conf import settings
-
-        for k, v in self.patched_settings.items():
-            if hasattr(settings, k):
-                self.original_settings[k] = getattr(settings, k)
-            setattr(settings, k, v)
-
-    def __exit__(self, exc_type, exc_val, exc_tb):
-        from django.conf import settings
-
-        for k in self.patched_settings:
-            if k in self.original_settings:
-                setattr(settings, k, self.original_settings[k])
-            else:
-                delattr(settings, k)
-
-
 class TestIsPackagePresent(TestCase):
     def test_is_package_present(self):
         self.assertTrue(is_package_present("df_config"))
