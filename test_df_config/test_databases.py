@@ -267,17 +267,17 @@ class TestCacheSetting(TestDynamicSetting):
             expected = {
                 "base": {
                     "BACKEND": "django_redis.cache.RedisCache",
-                    "LOCATION": "redis://:password@localhost:6379/1",
+                    "LOCATION": ["redis://:password@localhost:6379/1"],
                     "OPTIONS": {"CLIENT_CLASS": "django_redis.client.DefaultClient"},
                 },
                 "cached": {
                     "BACKEND": "django_redis.cache.RedisCache",
-                    "LOCATION": "redis://:password@localhost:6379/1",
+                    "LOCATION": ["redis://:password@localhost:6379/1"],
                     "OPTIONS": {"CLIENT_CLASS": "django_redis.client.DefaultClient"},
                 },
                 "default": {
                     "BACKEND": "django_redis.cache.RedisCache",
-                    "LOCATION": "redis://:password@localhost:6379/1",
+                    "LOCATION": ["redis://:password@localhost:6379/1"],
                     "OPTIONS": {"CLIENT_CLASS": "django_redis.client.DefaultClient"},
                 },
                 "locmem": {
@@ -331,17 +331,26 @@ class TestCacheSetting(TestDynamicSetting):
             expected = {
                 "base": {
                     "BACKEND": "django_redis.cache.RedisCache",
-                    "LOCATION": "redis://:password@localhost:6379/1",
+                    "LOCATION": [
+                        "redis://:password@hostname1:6379/1",
+                        "redis://:password@hostname2:6379/1",
+                    ],
                     "OPTIONS": {"CLIENT_CLASS": "django_redis.client.DefaultClient"},
                 },
                 "cached": {
                     "BACKEND": "django_redis.cache.RedisCache",
-                    "LOCATION": "redis://:password@localhost:6379/1",
+                    "LOCATION": [
+                        "redis://:password@hostname1:6379/1",
+                        "redis://:password@hostname2:6379/1",
+                    ],
                     "OPTIONS": {"CLIENT_CLASS": "django_redis.client.DefaultClient"},
                 },
                 "default": {
                     "BACKEND": "django_redis.cache.RedisCache",
-                    "LOCATION": "redis://:password@localhost:6379/1",
+                    "LOCATION": [
+                        "redis://:password@hostname1:6379/1",
+                        "redis://:password@hostname2:6379/1",
+                    ],
                     "OPTIONS": {"CLIENT_CLASS": "django_redis.client.DefaultClient"},
                 },
                 "locmem": {
@@ -387,17 +396,17 @@ class TestCacheSetting(TestDynamicSetting):
             expected = {
                 "base": {
                     "BACKEND": "django_redis.cache.RedisCache",
-                    "LOCATION": "redis://:password@localhost:6379/1",
+                    "LOCATION": ["redis://:password@localhost:6379/1"],
                     "OPTIONS": {"CLIENT_CLASS": "django_redis.client.DefaultClient"},
                 },
                 "cached": {
                     "BACKEND": "django_redis.cache.RedisCache",
-                    "LOCATION": "redis://:password@localhost:6379/1",
+                    "LOCATION": ["redis://:password@localhost:6379/1"],
                     "OPTIONS": {"CLIENT_CLASS": "django_redis.client.DefaultClient"},
                 },
                 "default": {
                     "BACKEND": "django_redis.cache.RedisCache",
-                    "LOCATION": "redis://:password@localhost:6379/1",
+                    "LOCATION": ["redis://:password@localhost:6379/1"],
                     "OPTIONS": {"CLIENT_CLASS": "django_redis.client.DefaultClient"},
                 },
                 "locmem": {
@@ -541,28 +550,13 @@ class TestCacheSetting(TestDynamicSetting):
             )
 
     def test_cache_setting_debug_memcache(self):
-        expected = {
-            "base": {
-                "BACKEND": "django.core.cache.backends.memcached.PyMemcacheCache",
-                "LOCATION": "localhost:11211",
-            },
-            "cached": {
-                "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
-                "LOCATION": "unique-snowflake",
-            },
-            "default": {"BACKEND": "django.core.cache.backends.dummy.DummyCache"},
-            "locmem": {
-                "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
-                "LOCATION": "unique-snowflake",
-            },
-        }
         s = CallableSetting(cache_setting)
         with mock.patch("df_config.utils.is_package_present", new=lambda x: False):
             self.assertRaises(
                 ImproperlyConfigured,
                 lambda: self.check(
                     s,
-                    expected,
+                    {},
                     extra_values={
                         "DEBUG": True,
                         "CACHE_URL": "memcache://localhost:11211",
