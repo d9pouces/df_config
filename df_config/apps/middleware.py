@@ -83,9 +83,9 @@ class DFConfigMiddleware(RemoteUserMiddleware):
 
         remote_user_header = self.get_remoteuser_header()
         if (
-            remote_user_header
+            settings.DEBUG
+            and remote_user_header
             and self.get_df_fake_authentication_username()
-            and settings.DEBUG
         ):
             # set the remote username for testing purpose
             remote_addr = request.META.get("REMOTE_ADDR")
