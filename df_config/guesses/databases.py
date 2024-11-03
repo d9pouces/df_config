@@ -90,7 +90,7 @@ class RedisSmartSetting:
     Can be used as :class:`df_config.config.dynamic_settings.CallableSetting`.
     """
 
-    _config_values = ["PROTOCOL", "HOST", "PORT", "DB", "PASSWORD"]
+    _config_values = ["PROTOCOL", "HOST", "PORT", "DB", "PASSWORD", "USERNAME"]
 
     def __init__(
         self,
@@ -103,11 +103,12 @@ class RedisSmartSetting:
         """Build Redis connection parameters from a set of settings.
 
         These settings are:
-        - %(prefix)sPROTOCOL,
-        - %(prefix)sHOST,
-        - %(prefix)sPORT,
-        - %(prefix)sDB,
-        - %(prefix)sPASSWORD.
+        - "{prefix}PROTOCOL",
+        - "{prefix}HOST",
+        - "{prefix}PORT",
+        - "{prefix}DB",
+        - "{prefix}USERNAME",
+        - "{prefix}PASSWORD".
 
         :param prefix: prefix of all settings
         :param env_variable: if this environment variable is present, override given settings
@@ -122,15 +123,12 @@ class RedisSmartSetting:
         self.env_variable = env_variable
         self.only_redis = only_redis
         self.config_values = list(self._config_values)
-        if not only_redis:
-            self.config_values += ["USERNAME"]
         self.required_settings = [prefix + x for x in self.config_values]
         self.extra_values = extra_values
 
     def __call__(self, settings_dict):
         """Return the redis setting."""
         values = {x: settings_dict[self.prefix + x] for x in self.config_values}
-        values.setdefault("USERNAME")
         values["AUTH"] = ""
         if values["PASSWORD"]:
             values["AUTH"] = "%s:%s@" % (values["USERNAME"] or "", values["PASSWORD"])
