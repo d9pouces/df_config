@@ -192,8 +192,9 @@ class Middlewares:
             ("USE_ALL_AUTH", "allauth.account.middleware.AccountMiddleware"),
         ]
     )
-    required_settings = ["DF_MIDDLEWARE", "USE_PROMETHEUS"] + list(common_third_parties)
-    social_apps = SOCIAL_PROVIDER_APPS
+    required_settings = ["DF_MIDDLEWARE", "USE_PROMETHEUS", "INSTALLED_APPS"] + list(
+        common_third_parties
+    )
 
     def __call__(self, settings_dict):
         """Return the list of required middlewares."""
@@ -201,6 +202,8 @@ class Middlewares:
         mw_list += self.base_django_middlewares
         mw_list.append(ExpandIterable("DF_MIDDLEWARE"))
         mw_list += self.process_third_parties(settings_dict)
+        if "allauth.usersessions" in settings_dict["INSTALLED_APPS"]:
+            mw_list.append("allauth.usersessions.middleware.UserSessionsMiddleware")
         if settings_dict["USE_DEBUG_TOOLBAR"]:
             mw_list.insert(0, "debug_toolbar.middleware.DebugToolbarMiddleware")
         if self.use_cache_middleware:

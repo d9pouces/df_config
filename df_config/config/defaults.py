@@ -84,6 +84,7 @@ from df_config.guesses.misc import (
     csp_connect,
     csrf_trusted_origins,
     excluded_django_commands,
+    from_email,
     get_asgi_application,
     get_command_name,
     get_hostname,
@@ -160,7 +161,7 @@ DEVELOPMENT = True
 # display all commands (like "migrate" or "runserver") in manage.py
 # if False, development-specific commands are hidden
 
-DEFAULT_FROM_EMAIL = "webmaster@{SERVER_NAME}"
+DEFAULT_FROM_EMAIL = CallableSetting(from_email)
 FILE_UPLOAD_TEMP_DIR = DirectoryOrNone("{LOCAL_PATH}/tmp-uploads")
 INSTALLED_APPS = DeduplicatedCallableList(installed_apps)
 LANGUAGE_COOKIE_NAME = CallableSetting(CookieName("django_language"))
@@ -366,7 +367,6 @@ TERSER_ARGUMENTS = []
 
 # Django-All-Auth
 ACCOUNT_EMAIL_SUBJECT_PREFIX = "[{SERVER_NAME}] "
-ACCOUNT_EMAIL_VERIFICATION = None
 ALLAUTH_PROVIDER_APPS = DeduplicatedCallableList(allauth_provider_apps)
 ALLAUTH_APPLICATIONS_CONFIG = AutocreateFile("{LOCAL_PATH}/social_auth.ini", mode=0o600)
 ACCOUNT_EMAIL_REQUIRED = True
@@ -600,13 +600,15 @@ DATABASE_NAME = DATABASE_URL.database(Path("{LOCAL_PATH}/db.sqlite3"))
 DATABASE_USER = DATABASE_URL.username("")
 DATABASE_PASSWORD = DATABASE_URL.password("")
 DATABASE_HOST = DATABASE_URL.hostname("localhost")
-DATABASE_PORT = DATABASE_URL.port_int()
+DATABASE_PORT = DATABASE_URL.port()
 DATABASE_OPTIONS = {}
-EMAIL_HOST_URL = URLSetting("EMAIL_HOST_URL")
+DATABASE_CONN_MAX_AGE = 3600  # reset DB connection after 1 hour
+EMAIL_HOST_URL = URLSetting("EMAIL_HOST_URL", split_char="")
 EMAIL_HOST = EMAIL_HOST_URL.hostname("localhost")
 EMAIL_HOST_PASSWORD = EMAIL_HOST_URL.password("")
 EMAIL_HOST_USER = EMAIL_HOST_URL.username("")
-EMAIL_FROM = "{ADMIN_EMAIL}"
+# EMAIL_FROM is now useless and will be removed in a future version
+EMAIL_FROM = "{DEFAULT_FROM_EMAIL}"
 EMAIL_PORT = EMAIL_HOST_URL.port_int(25)
 EMAIL_SUBJECT_PREFIX = "[{SERVER_NAME}] "
 EMAIL_USE_TLS = EMAIL_HOST_URL.use_tls()
@@ -636,6 +638,7 @@ SESSION_REDIS_HOST = COMMON_REDIS_URL.hostname("localhost")
 SESSION_REDIS_PORT = COMMON_REDIS_URL.port_int(6379)
 SESSION_REDIS_DB = COMMON_REDIS_URL.database(1)
 SESSION_REDIS_PASSWORD = COMMON_REDIS_URL.password()
+SESSION_REDIS_USERNAME = COMMON_REDIS_URL.username()
 
 # django_redis (cache)
 CACHE_PROTOCOL = COMMON_REDIS_URL.scheme("redis")
@@ -643,6 +646,7 @@ CACHE_HOST = COMMON_REDIS_URL.hostname("localhost")
 CACHE_PORT = COMMON_REDIS_URL.port_int(6379)
 CACHE_DB = COMMON_REDIS_URL.database(2)
 CACHE_PASSWORD = COMMON_REDIS_URL.password()
+CACHE_USERNAME = COMMON_REDIS_URL.username()
 
 # celery
 CELERY_PROTOCOL = COMMON_REDIS_URL.scheme("redis")
@@ -650,7 +654,7 @@ CELERY_HOST = COMMON_REDIS_URL.hostname("localhost")
 CELERY_PORT = COMMON_REDIS_URL.port_int(6379)
 CELERY_DB = COMMON_REDIS_URL.database(4)
 CELERY_PASSWORD = COMMON_REDIS_URL.password()
-CELERY_USERNAME = None  # only useful for amqp
+CELERY_USERNAME = COMMON_REDIS_URL.username()
 CELERY_PROCESSES = 4
 
 CELERY_RESULT_PROTOCOL = SettingReference("CELERY_PROTOCOL")
@@ -666,6 +670,7 @@ WEBSOCKET_REDIS_HOST = COMMON_REDIS_URL.hostname("localhost")
 WEBSOCKET_REDIS_PORT = COMMON_REDIS_URL.port_int(6379)
 WEBSOCKET_REDIS_DB = COMMON_REDIS_URL.database(1)
 WEBSOCKET_REDIS_PASSWORD = COMMON_REDIS_URL.password()
+WEBSOCKET_REDIS_USERNAME = COMMON_REDIS_URL.username()
 WEBSOCKET_CACHE_BACKEND = "base"
 
 # sentry.io

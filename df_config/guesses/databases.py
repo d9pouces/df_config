@@ -14,13 +14,15 @@
 #                                                                              #
 # ##############################################################################
 """Settings for database and cache backends."""
-from urllib.parse import urlencode, urlparse
+from typing import List, Set
+from urllib.parse import ParseResult, urlencode, urlparse
 
 from django.core.exceptions import ImproperlyConfigured
-from django.utils.version import get_complete_version
+from django.utils import version
 
+from df_config import utils
+from df_config.config.dynamic_settings import Directory
 from df_config.config.url import DatabaseURL
-from df_config.utils import is_package_present
 
 prometheus_engines = {
     "django.db.backends.sqlite3": "django_prometheus.db.backends.sqlite3",
@@ -35,22 +37,36 @@ prometheus_engines = {
 
 
 def databases(settings_dict):
-    """Build a complete DATABASES setting.
+    """Build a complete DATABASES setting for the default database.
 
-    If present, Takes the `DATABASE_URL` environment variable into account
-    (used on the Heroku platform).
+    When django-prometheus is used, the engine is replaced by the matching prometheus engine.
     """
     engine = DatabaseURL.normalize_engine(settings_dict["DATABASE_ENGINE"])
-    if settings_dict.get("USE_PROMETHEUS", False):
+    if settings_dict["USE_PROMETHEUS"]:
         engine = prometheus_engines.get(engine, engine)
+    hosts, ports = None, None
+    host = settings_dict["DATABASE_HOST"]
+    if isinstance(host, str):
+        hosts = host.split(",")
+    port = settings_dict["DATABASE_PORT"]
+    if isinstance(port, int):
+        port = str(port)
+    if isinstance(port, str):
+        ports = port.split(",")
+    if hosts and ports and len(ports) != len(hosts):
+        raise ImproperlyConfigured(
+            "DATABASE_HOST and DATABASE_PORT must have the same number of elements."
+        )
     default = {
         "ENGINE": engine,
         "NAME": settings_dict["DATABASE_NAME"],
         "USER": settings_dict["DATABASE_USER"],
         "OPTIONS": settings_dict["DATABASE_OPTIONS"],
         "PASSWORD": settings_dict["DATABASE_PASSWORD"],
-        "HOST": settings_dict["DATABASE_HOST"],
-        "PORT": settings_dict["DATABASE_PORT"],
+        "HOST": host,
+        "PORT": port,
+        "CONN_MAX_AGE": settings_dict["DATABASE_CONN_MAX_AGE"],
+        "CONN_HEALTH_CHECKS": bool(settings_dict["DATABASE_CONN_MAX_AGE"]),
     }
     return {"default": default}
 
@@ -63,6 +79,7 @@ databases.required_settings = [
     "DATABASE_PASSWORD",
     "DATABASE_HOST",
     "DATABASE_PORT",
+    "DATABASE_CONN_MAX_AGE",
     "USE_PROMETHEUS",
 ]
 
@@ -73,7 +90,7 @@ class RedisSmartSetting:
     Can be used as :class:`df_config.config.dynamic_settings.CallableSetting`.
     """
 
-    _config_values = ["PROTOCOL", "HOST", "PORT", "DB", "PASSWORD"]
+    _config_values = ["PROTOCOL", "HOST", "PORT", "DB", "PASSWORD", "USERNAME"]
 
     def __init__(
         self,
@@ -86,11 +103,12 @@ class RedisSmartSetting:
         """Build Redis connection parameters from a set of settings.
 
         These settings are:
-        - %(prefix)sPROTOCOL,
-        - %(prefix)sHOST,
-        - %(prefix)sPORT,
-        - %(prefix)sDB,
-        - %(prefix)sPASSWORD.
+        - "{prefix}PROTOCOL",
+        - "{prefix}HOST",
+        - "{prefix}PORT",
+        - "{prefix}DB",
+        - "{prefix}USERNAME",
+        - "{prefix}PASSWORD".
 
         :param prefix: prefix of all settings
         :param env_variable: if this environment variable is present, override given settings
@@ -105,15 +123,12 @@ class RedisSmartSetting:
         self.env_variable = env_variable
         self.only_redis = only_redis
         self.config_values = list(self._config_values)
-        if not only_redis:
-            self.config_values += ["USERNAME"]
         self.required_settings = [prefix + x for x in self.config_values]
         self.extra_values = extra_values
 
     def __call__(self, settings_dict):
         """Return the redis setting."""
         values = {x: settings_dict[self.prefix + x] for x in self.config_values}
-        values.setdefault("USERNAME")
         values["AUTH"] = ""
         if values["PASSWORD"]:
             values["AUTH"] = "%s:%s@" % (values["USERNAME"] or "", values["PASSWORD"])
@@ -176,17 +191,23 @@ websocket_redis_channels = RedisSmartSetting(prefix="WEBSOCKET_REDIS_", fmt="cha
 def cache_setting(settings_dict):
     """Automatically compute cache settings.
 
-    Three caches are defined:
+    Four caches are defined:
 
-      * `locmem` (using local memory, destroyed when the process is killed)
-      * `base` (using the CACHE_URL setting, using redis, rediss or memcache protocols)
-      * `default` (`=="locmem"` when DEBUG is true,`=="base"` else)
+      * `base` that uses the CACHE_URL setting with redis, rediss or memcache protocols as soon as possible,
+      * `locmem`: always uses the local memory, hence destroyed when the process is killed,
+      * `cached`: "locmem" when DEBUG is true, `base` else,
+      * `default`: "dummy" when DEBUG is true,`base` else.
+
+    The rational is that developping (DEBUG=True) requires sometimes actually no cache at all
+    (we do not want HTML caching) and sometimes a cache (the authentication cannot work with no cache at all).
 
     :param settings_dict:
     :return:
     """
-    parsed_url = urlparse(settings_dict["CACHE_URL"])
-    django_version = get_complete_version()
+    cache_url: str = settings_dict["CACHE_URL"]
+    parsed_urls: List[ParseResult] = [urlparse(x) for x in cache_url.split(",")]
+    schemes: Set[str] = {x.scheme.lower() for x in parsed_urls}
+    django_version = version.get_complete_version()
     backend = "django.core.cache.backends.locmem.LocMemCache"
     prometheus_engines_ = {}
     if settings_dict.get("USE_PROMETHEUS", False):
@@ -199,39 +220,52 @@ def cache_setting(settings_dict):
     backend = "django.core.cache.backends.dummy.DummyCache"
     dummy = {"BACKEND": prometheus_engines_.get(backend, backend)}
     actual = locmem
-    if django_version >= (4, 0) and parsed_url.scheme in ("redis", "rediss"):
+    if django_version >= (4, 0) and schemes.issubset({"redis", "rediss"}):
         backend = "django.core.cache.backends.redis.RedisCache"
         actual = {
             "BACKEND": prometheus_engines_.get(backend, backend),
-            "LOCATION": "{CACHE_URL}",
+            "LOCATION": [x.geturl() for x in parsed_urls],
         }
-    elif parsed_url.scheme in ("redis", "rediss"):
-        if is_package_present("django_redis"):
+    elif schemes.issubset({"redis", "rediss"}):
+        if utils.is_package_present("django_redis"):
             # noinspection PyUnresolvedReferences
             actual = {
                 "BACKEND": "django_redis.cache.RedisCache",
-                "LOCATION": "{CACHE_URL}",
+                "LOCATION": [x.geturl() for x in parsed_urls],
                 "OPTIONS": {"CLIENT_CLASS": "django_redis.client.DefaultClient"},
             }
-    elif parsed_url.scheme == "memcache":
-        if django_version >= (3, 2) and is_package_present("pymemcache"):
+        else:
+            raise ImproperlyConfigured(
+                "Please install 'django-redis' package to use Redis cache."
+            )
+    elif schemes == {"memcache"}:
+        if django_version >= (3, 2) and utils.is_package_present("pymemcache"):
             backend = "django.core.cache.backends.memcached.PyMemcacheCache"
-        elif django_version >= (3, 2) and is_package_present("pylibmc"):
+        elif django_version >= (3, 2) and utils.is_package_present("pylibmc"):
             backend = "django.core.cache.backends.memcached.PyLibMCCache"
-        elif is_package_present("memcache"):
-            backend = "django.core.cache.backends.memcached.MemcachedCache"
         else:
             raise ImproperlyConfigured(
                 "Please install 'pylibmc' package before using memcache engine."
             )
-        location = "%s:%s" % (
-            parsed_url.hostname or "localhost",
-            parsed_url.port or 11211,
-        )
+        info = [(x.hostname or "localhost", x.port or 11211) for x in parsed_urls]
         actual = {
             "BACKEND": prometheus_engines_.get(backend, backend),
-            "LOCATION": location,
+            "LOCATION": [f"{x[0]}:{x[1]}" for x in info],
         }
+    elif schemes == {"file"}:
+        backend = "django.core.cache.backends.filebased.FileBasedCache"
+        if len(parsed_urls) > 1:
+            raise ImproperlyConfigured(
+                "CACHE_URL with 'file' scheme must contain only one URL."
+            )
+        actual = {
+            "BACKEND": prometheus_engines_.get(backend, backend),
+            "LOCATION": Directory(parsed_urls[0].path),
+        }
+    elif cache_url:
+        raise ImproperlyConfigured(
+            "CACHE_URL must be a list of URLs with the 'file', 'redis', 'rediss' or 'memcache' scheme."
+        )
     default = dummy if settings_dict["DEBUG"] else actual
     cached = locmem if settings_dict["DEBUG"] else actual
     return {"default": default, "locmem": locmem, "base": actual, "cached": cached}
