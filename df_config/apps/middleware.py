@@ -38,36 +38,33 @@ class DFConfigMiddleware(RemoteUserMiddleware):
     * set response header for Internet Explorer (to use its most recent render engine)
     """
 
-    def __init__(self, get_response=None):
-        """Initialize the middleware and read the settings."""
-        super().__init__(get_response=get_response)
-        header = getattr(settings, "DF_REMOTE_USER_HEADER", None)
-        if header:
-            header = header.upper().replace("-", "_")
-        self.remote_user_header = header
-        self.use_x_forwarded_for = getattr(settings, "USE_X_FORWARDED_FOR", False)
-        self.use_http_basic_auth = getattr(settings, "USE_HTTP_BASIC_AUTH", False)
-        self.df_fake_authentication_username = getattr(
-            settings, "DF_FAKE_AUTHENTICATION_USERNAME", None
-        )
-        # can emulate an authentication by remote user, for testing purpose
-
     @lru_cache()
     def get_remoteuser_header(self):
         """Return the header to use for the remote user."""
         # avoid cached_property to ease unittests
-        return self.remote_user_header
+        header = getattr(settings, "DF_REMOTE_USER_HEADER", None)
+        if header:
+            header = header.upper().replace("-", "_")
+        return header
+
+    @lru_cache()
+    def get_df_fake_authentication_username(self):
+        """Return the username to add in the REMOTE_USER header for testing purpose."""
+        # avoid cached_property to ease unittests
+        return getattr(settings, "DF_FAKE_AUTHENTICATION_USERNAME", None)
+        # can emulate an authentication by remote user, for testing purpose
 
     def process_request(self, request: HttpRequest):
         """Set request.user using the REMOTE_USER header and the remote address."""
         request.remote_username = None
 
-        if self.use_x_forwarded_for and "HTTP_X_FORWARDED_FOR" in request.META:
+        use_x_forwarded_for = getattr(settings, "USE_X_FORWARDED_FOR", False)
+        if use_x_forwarded_for and "HTTP_X_FORWARDED_FOR" in request.META:
             request.META["REMOTE_ADDR"] = (
                 request.META["HTTP_X_FORWARDED_FOR"].split(",")[0].strip()
             )
-
-        if self.use_http_basic_auth and "HTTP_AUTHORIZATION" in request.META:
+        use_http_basic_auth = getattr(settings, "USE_HTTP_BASIC_AUTH", False)
+        if use_http_basic_auth and "HTTP_AUTHORIZATION" in request.META:
             authentication = request.META["HTTP_AUTHORIZATION"]
             authmeth, sep, auth_data = authentication.partition(" ")
             if sep == " " and authmeth.lower() == "basic":
@@ -84,17 +81,18 @@ class DFConfigMiddleware(RemoteUserMiddleware):
                         request.user = user
                         auth.login(request, user)
 
+        remote_user_header = self.get_remoteuser_header()
         if (
-            self.remote_user_header
-            and self.df_fake_authentication_username
+            remote_user_header
+            and self.get_df_fake_authentication_username()
             and settings.DEBUG
         ):
             # set the remote username for testing purpose
             remote_addr = request.META.get("REMOTE_ADDR")
             if remote_addr in settings.INTERNAL_IPS:
                 request.META[
-                    self.remote_user_header
-                ] = self.df_fake_authentication_username
+                    remote_user_header
+                ] = self.get_df_fake_authentication_username()
             elif remote_addr:
                 logger.warning(
                     "Unable to use `settings.DF_FAKE_AUTHENTICATION_USERNAME`. "
@@ -102,9 +100,9 @@ class DFConfigMiddleware(RemoteUserMiddleware):
                     % remote_addr
                 )
 
-        if self.remote_user_header and self.remote_user_header in request.META:
+        if remote_user_header and remote_user_header in request.META:
             # authenticate the user using the remote user header
-            remote_username = request.META.get(self.remote_user_header)
+            remote_username = request.META.get(remote_user_header)
             if (
                 not remote_username or remote_username == "(null)"
             ):  # special case due to apache2+auth_mod_kerb :-(
