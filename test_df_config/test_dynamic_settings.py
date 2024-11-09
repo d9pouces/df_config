@@ -14,6 +14,7 @@
 #                                                                              #
 # ##############################################################################
 import copy
+import io
 import os
 import tempfile
 from typing import Dict, Union
@@ -36,6 +37,7 @@ from df_config.config.values_providers import DictProvider
 
 
 class TestDynamicSetting(TestCase):
+    maxDiff = None
     setting_name = "X"
     other_values: Dict[str, Union[str, DynamicSettting]] = {"OTHER": "42"}
 
@@ -49,6 +51,8 @@ class TestDynamicSetting(TestCase):
         post_migrate=False,
         previous_settings=None,
         extra_values=None,
+        expected_stdout="",
+        expected_stderr="",
     ):
         p_values = [x for x in settings_check_results]
         settings_check_results[:] = []
@@ -62,7 +66,9 @@ class TestDynamicSetting(TestCase):
                 x: y for (x, y) in values.items() if x in dynamic_setting.required
             }
         provider = DictProvider(values, name="d1")
-        merger = SettingMerger(None, [provider])
+        stdout = io.StringIO()
+        stderr = io.StringIO()
+        merger = SettingMerger(None, [provider], stdout=stdout, stderr=stderr)
         merger.load_raw_settings()
         actual_value = dynamic_setting.get_value(
             merger, provider.name, self.setting_name
@@ -86,6 +92,8 @@ class TestDynamicSetting(TestCase):
             )
         n_values = [x for x in settings_check_results]
         settings_check_results[:] = p_values
+        self.assertEqual(expected_stdout, stdout.getvalue())
+        self.assertEqual(expected_stderr, stderr.getvalue())
         return n_values
 
 
@@ -98,21 +106,26 @@ class TestDynamicSettingClasses(TestDynamicSetting):
 
     def test_directory(self):
         with tempfile.TemporaryDirectory() as dirname:
+            stdout = f"""Creating directory '{dirname}/test'
+Change mode of '{dirname}/test' to 0o777\n"""
             path = dirname + "/test"
             r = self.check(
                 Directory(path, mode=0o777),
                 dirname + "/test/",
                 pre_migrate=True,
                 pre_collectstatic=True,
+                expected_stdout=stdout,
             )
             self.assertTrue(os.path.isdir(path))
             self.assertEqual(1, len(r))
             self.assertEqual(0o777, (os.stat(path).st_mode & 0o777))
+            stdout = f"""Change mode of '{dirname}/test' to 0o700\n"""
             r = self.check(
                 Directory(path, mode=0o700),
                 dirname + "/test/",
                 pre_migrate=True,
                 pre_collectstatic=True,
+                expected_stdout=stdout,
             )
             self.assertTrue(os.path.isdir(path))
             self.assertEqual(0, len(r))
@@ -121,16 +134,26 @@ class TestDynamicSettingClasses(TestDynamicSetting):
     def test_file(self):
         with tempfile.TemporaryDirectory() as dirname:
             path = dirname + "/test/file"
+            stdout = f"Creating directory '{dirname}/test'\n"
             r = self.check(
-                File(path, mode=0o700), path, pre_migrate=True, pre_collectstatic=True
+                File(path, mode=0o700),
+                path,
+                pre_migrate=True,
+                pre_collectstatic=True,
+                expected_stdout=stdout,
             )
             self.assertTrue(os.path.isdir(dirname + "/test"))
             self.assertFalse(os.path.isfile(path))
             self.assertEqual(1, len(r))
             with open(path, "w") as fd:
                 fd.write("test")
+            stdout = f"Change mode of '{dirname}/test/file' to 0o700\n"
             r = self.check(
-                File(path, mode=0o700), path, pre_migrate=True, pre_collectstatic=True
+                File(path, mode=0o700),
+                path,
+                pre_migrate=True,
+                pre_collectstatic=True,
+                expected_stdout=stdout,
             )
             self.assertTrue(os.path.isfile(path))
             self.assertEqual(0, len(r))
@@ -139,11 +162,15 @@ class TestDynamicSettingClasses(TestDynamicSetting):
     def test_autocreatefilecontent(self):
         with tempfile.TemporaryDirectory() as dirname:
             path = dirname + "/test/file"
+            stdout = f"""Creating directory '{dirname}/test'
+Writing new value to '{dirname}/test/file'
+Change mode of '{dirname}/test/file' to 0o700\n"""
             r = self.check(
                 AutocreateFileContent(path, lambda x: "test", mode=0o700),
                 "test",
                 pre_migrate=True,
                 pre_collectstatic=True,
+                expected_stdout=stdout,
             )
             self.assertTrue(os.path.isfile(path))
             self.assertEqual(1, len(r))
@@ -152,11 +179,18 @@ class TestDynamicSettingClasses(TestDynamicSetting):
     def test_autocreatefile(self):
         with tempfile.TemporaryDirectory() as dirname:
             path = dirname + "/test/file"
+            stdout = (
+                f"Creating directory '{dirname}/test'\n"
+                f"Writing new value to '{dirname}/test/file'\n"
+                f"Change mode of '{dirname}/test/file' to "
+                "0o700\n"
+            )
             r = self.check(
                 AutocreateFile(path, mode=0o700),
                 path,
                 pre_migrate=True,
                 pre_collectstatic=True,
+                expected_stdout=stdout,
             )
             self.assertTrue(os.path.isfile(path))
             self.assertEqual(1, len(r))

@@ -82,3 +82,13 @@ TEMPLATES = [
     }
 ]
 ROOT_URLCONF = "df_config.root_urls"
+
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": True,
+    "formatters": {},
+    "filters": {},
+    "handlers": {},
+    "loggers": {},
+    "root": {"handlers": [], "level": "CRITICAL"},
+}
