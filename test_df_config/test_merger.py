@@ -13,6 +13,7 @@
 #  or https://cecill.info/licences/Licence_CeCILL-B_V1-fr.txt (French)         #
 #                                                                              #
 # ##############################################################################
+import io
 from collections import OrderedDict, defaultdict
 from unittest import TestCase
 
@@ -113,18 +114,24 @@ class TestSettingMerger(TestCase):
         self.assertRaises(ValueError, merger.process)
 
     def test_dynamic_setting(self):
+        stderr = io.StringIO()
+        stdout = io.StringIO()
         merger = SettingMerger(
             None,
             [
                 DictProvider({"X": 1}, name="d1"),
                 DictProvider({"X": RawValue("{Y}")}, name="d2"),
             ],
+            stderr=stderr,
+            stdout=stdout,
         )
         merger.process()
         self.assertEqual({"X": "{Y}"}, merger.settings)
         self.assertEqual(
             OrderedDict([("d1", 1), ("d2", RawValue("{Y}"))]), merger.raw_settings["X"]
         )
+        self.assertEqual("", stderr.getvalue())
+        self.assertEqual("", stdout.getvalue())
 
     def test_complex_settings_ref(self):
         merger = SettingMerger(
