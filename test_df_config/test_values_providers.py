@@ -54,6 +54,8 @@ class EnvPatch:
 
 
 class TestEnvironmentConfigProvider(TestCase):
+    maxDiff = None
+
     def test_has_value(self):
         provider = EnvironmentConfigProvider(prefix="DF_")
         with EnvPatch(DF_UNITTEST="on"):
@@ -81,22 +83,38 @@ class TestEnvironmentConfigProvider(TestCase):
         provider = EnvironmentConfigProvider(prefix="DF_")
         self.assertEqual(True, provider.is_valid())
 
-    def test_to_str(self):
+    def test_to_str(self, include_doc=False):
         provider = EnvironmentConfigProvider(prefix="DF_")
         with EnvPatch():
             provider.set_value(
-                BooleanConfigField("test.test", "UNITTEST", default=True)
+                BooleanConfigField("test.test", "UNITTEST", default=True),
+                include_doc=include_doc,
             )
             provider.set_value(
                 CharConfigField(
-                    "test.test2", "UNITTEST2", default="$KEY {VALUE} 'SPECIAL \"CHARS"
-                )
+                    "test.test2",
+                    "UNITTEST2",
+                    default="$KEY {VALUE} 'SPECIAL \"CHARS",
+                    help_str="This is a documentation\nstring",
+                ),
+                include_doc=include_doc,
             )
-        content = provider.to_str()
-        self.assertEqual(
-            "DF_UNITTEST=true\nDF_UNITTEST2='$KEY {VALUE} '\"'\"'SPECIAL \"CHARS'\n",
-            content,
-        )
+        actual = provider.to_str()
+        if include_doc:
+            expected = (
+                "DF_UNITTEST=true\n"
+                "DF_UNITTEST2='$KEY {VALUE} '\"'\"'SPECIAL \"CHARS'\n"
+                "# This is a documentation\n"
+                "# string\n"
+            )
+        else:
+            expected = (
+                "DF_UNITTEST=true\nDF_UNITTEST2='$KEY {VALUE} '\"'\"'SPECIAL \"CHARS'\n"
+            )
+        self.assertEqual(expected, actual)
+
+    def test_to_str_include_doc(self):
+        self.test_to_str(include_doc=True)
 
 
 class TestIniConfigProvider(TestCase):
