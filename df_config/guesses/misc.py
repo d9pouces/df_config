@@ -23,6 +23,7 @@ from urllib.parse import urlparse
 
 # noinspection PyPackageRequirements
 from django.core.checks import Warning
+from django.core.exceptions import ImproperlyConfigured
 
 # noinspection PyPackageRequirements
 from django.utils.crypto import get_random_string
@@ -263,8 +264,8 @@ def use_x_forwarded_for(settings_dict) -> bool:
 
     """
     listen_address, sep, listen_port = settings_dict["LISTEN_ADDRESS"].rpartition(":")
-    if not re.match(r"\d+", listen_port):
-        raise ValueError("Invalid LISTEN_ADDRESS port %s" % listen_port)
+    if not re.match(r"^[1-9]\d$*", listen_port):
+        raise ImproperlyConfigured("Invalid LISTEN_ADDRESS port %s" % listen_port)
     return int(listen_port) != settings_dict["SERVER_PORT"]
 
 
