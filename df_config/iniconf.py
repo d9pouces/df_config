@@ -14,7 +14,11 @@
 #                                                                              #
 # ##############################################################################
 """List of external settings (via .ini or environment variables)."""
+import re
+from ipaddress import ip_address
 from typing import List
+
+from django.core.exceptions import ImproperlyConfigured
 
 from df_config.config.fields import (
     BooleanConfigField,
@@ -33,6 +37,26 @@ def x_accel_converter(value):
     if bool_setting(value):
         return [("{MEDIA_ROOT}/", "{MEDIA_URL}")]
     return []
+
+
+def normalize_listen_address(value: str) -> str:
+    """Check if the listen address is a valid value."""
+    address, sep, port = value.rpartition(":")
+    if sep != ":" and address:
+        raise ImproperlyConfigured(
+            "Listen address must be in the form 'address:port' or 'port'."
+        )
+    elif not address:
+        address = "0.0.0.0"
+    if not re.match(r"^[1-9]\d*$", port) or not 1 <= int(port) <= 65535:
+        raise ImproperlyConfigured("Listen port must be a valid port number.")
+    try:
+        address = ip_address(address)
+    except ValueError:
+        raise ImproperlyConfigured(
+            "Listen address must be in the form 'address:port' or 'port'."
+        )
+    return f"{address.compressed}:{port}"
 
 
 ALLAUTH_MAPPING = []
@@ -82,13 +106,8 @@ BASE_MAPPING = [
     CharConfigField(
         "global.listen_address",
         "LISTEN_ADDRESS",
-        help_str="address used by your web server (like 127.0.0.1:8000).",
-    ),
-    IntegerConfigField(
-        None,
-        "LISTEN_PORT",
-        help_str="port to listen to (force to listen on 0.0.0.0:$PORT).",
-        env_name="PORT",
+        help_str="Address listen by your web server (like 127.0.0.1:8000 or :8000).",
+        from_str=normalize_listen_address,
     ),
     CharConfigField(
         "global.server_url",
