@@ -20,7 +20,7 @@ from pathlib import Path
 
 from django.conf import settings
 
-if settings.USE_PIPELINE:
+if getattr(settings, "USE_PIPELINE", False):
     from pipeline.compilers import SubProcessCompiler
     from pipeline.compressors import SubProcessCompressor
     from pipeline.storage import PipelineManifestStorage, PipelineMixin
@@ -31,7 +31,7 @@ else:
     PipelineMixin = None
 
 
-if settings.USE_WHITENOISE:
+if getattr(settings, "USE_WHITENOISE", False):
     # noinspection PyPackageRequirements,PyUnresolvedReferences
     from whitenoise.storage import CompressedManifestStaticFilesStorage
 else:

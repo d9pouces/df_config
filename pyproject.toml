@@ -76,4 +76,4 @@ coverage = "^7.6.4"
 DJANGO_SETTINGS_MODULE = "test_df_config.data.settings"
 minversion = "6.0"
 required_plugins = "pytest-django"
-testpaths = ["test_df_config"]
+testpaths = ["test_df_config", "df_config"]
