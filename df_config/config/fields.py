@@ -14,8 +14,7 @@
 #                                                                              #
 # ##############################################################################
 
-"""Convert values from string to Python values
-===========================================
+"""Convert values from string to Python values.
 
 Use these classes in your mapping provided in `yourproject.iniconf:INI_MAPPING`.
 Check :mod:`df_config.iniconf` for examples.
@@ -32,22 +31,22 @@ MISSING_VALUE = [[]]
 
 
 def bool_setting(value):
-    """return `True` if the provided (lower-cased) text is one of {'1', 'ok', 'yes', 'true', 'on'}"""
+    """Return `True` if the provided (lower-cased) text is one of {'1', 'ok', 'yes', 'true', 'on'}."""
     return str(value).lower() in {"1", "ok", "yes", "true", "on"}
 
 
 def str_or_none(text):
-    """return `None` if the text is empty, else returns the text"""
+    """Return `None` if the text is empty, else returns the text."""
     return text or None
 
 
 def str_or_blank(value):
-    """return '' if the provided value is `None`, else return value"""
+    """Return '' if the provided value is `None`, else return value."""
     return "" if value is None else str(value)
 
 
 def guess_relative_path(value):
-    """Replace an absolute path by its relative path if the abspath begins by the current dir"""
+    """Replace an absolute path by its relative path if the abspath begins by the current dir."""
     if not value:
         return ""
     value = os.path.abspath(value)
@@ -109,6 +108,7 @@ class ConfigField:
         default: Any = None,
         env_name: Optional[Union[set, str]] = AUTO,
     ):
+        """Create a new field that maps an option in a .ini file or in the environment to a setting."""
         self.name = name
         self.setting_name = setting_name
         self.from_str = from_str
@@ -118,6 +118,7 @@ class ConfigField:
         self.environ_name = env_name
 
     def __str__(self):
+        """Return the setting name as a string."""
         return self.name or self.setting_name
 
 
@@ -125,16 +126,18 @@ class CharConfigField(ConfigField):
     """Accepts str values. If `allow_none`, then `None` replaces any empty value."""
 
     def __init__(self, name, setting_name, allow_none=True, **kwargs):
+        """Create a new field that accepts any string value."""
         from_str = str_or_none if allow_none else str
-        super().__init__(
-            name, setting_name, from_str=from_str, to_str=str_or_blank, **kwargs
-        )
+        kwargs.setdefault("to_str", str_or_blank)
+        kwargs.setdefault("from_str", from_str)
+        super().__init__(name, setting_name, **kwargs)
 
 
 class IntegerConfigField(ConfigField):
     """Accept integer values. If `allow_none`, then `None` replaces any empty values (other `0` is used)."""
 
     def __init__(self, name, setting_name, allow_none=True, **kwargs):
+        """Create a new field that only accepts an integer value."""
         if allow_none:
 
             def from_str(value: str):
@@ -154,6 +157,7 @@ class FloatConfigField(ConfigField):
     """Accept floating-point values. If `allow_none`, then `None` replaces any empty values (other `0.0` is used)."""
 
     def __init__(self, name, setting_name, allow_none=True, **kwargs):
+        """Create a new field that only accepts a floating-point value."""
         if allow_none:
 
             def from_str(value):
@@ -170,9 +174,11 @@ class FloatConfigField(ConfigField):
 
 
 class ListConfigField(ConfigField):
-    """Convert a string to a list of values, splitted with the :meth:`df_config.config.fields.strip_split` function."""
+    """Convert a string to a list of values, split with the :meth:`df_config.config.fields.strip_split` function."""
 
     def __init__(self, name, setting_name, **kwargs):
+        """Create a new field that only accepts a list of values."""
+
         def to_str(value):
             if value:
                 return ",".join([str(x) for x in value])
@@ -185,11 +191,13 @@ class ListConfigField(ConfigField):
 
 class BooleanConfigField(ConfigField):
     """Search for a boolean value in the ini file.
+
     If this value is empty and `allow_none` is `True`, then the value is `None`.
-    Otherwise returns `True` if the provided (lower-cased) text is one of ('1', 'ok', 'yes', 'true', 'on')
+    Otherwise, returns `True` if the provided (lower-cased) text is one of ('1', 'ok', 'yes', 'true', 'on')
     """
 
     def __init__(self, name, setting_name, allow_none=False, **kwargs):
+        """Create a new field that only accepts a boolean value."""
         if allow_none:
 
             def from_str(value):
@@ -215,6 +223,7 @@ class BooleanConfigField(ConfigField):
 
 class ChoiceConfigFile(ConfigField):
     """Only allow a limited set of values in the .ini file.
+
     The available values must be given as :class:`str`.
 
     Choices must be a :class:`dict`, mapping .ini (string) values to actual values.
@@ -224,6 +233,8 @@ class ChoiceConfigFile(ConfigField):
     """
 
     def __init__(self, name, setting_name, choices, help_str="", **kwargs):
+        """Create a new field that only accepts a limited set of values."""
+
         def from_str(value):
             if value not in choices:
                 valid = ", ".join([f'"{x}"' for x in choices])
