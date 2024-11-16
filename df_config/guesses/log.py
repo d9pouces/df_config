@@ -24,7 +24,7 @@ import warnings
 from traceback import extract_stack
 from urllib.parse import urlparse
 
-from django.core.checks.messages import Warning
+from django.core.checks import Warning
 from django.core.management import color_style
 from django.utils.log import AdminEmailHandler as BaseAdminEmailHandler
 
