@@ -37,11 +37,9 @@ Since the second file overrides the first one, `TEMPLATE_DEBUG` always has the s
 
 """
 import os
-import socket
 import sys
 from collections import OrderedDict
 from typing import Any, Set
-from urllib.parse import urlparse
 
 from django.core.checks import Warning
 from django.utils.module_loading import import_string
@@ -117,6 +115,7 @@ class DynamicSettting:
             Warning(
                 msg,
                 obj="configuration",
+                id="df_config.W002",
             )
         )
 
@@ -274,7 +273,11 @@ class File(Path):
         value = os.path.normpath(value)
         if not os.path.isfile(value):
             settings_check_results.append(
-                Warning("'%s' does not exist." % value, obj="configuration")
+                Warning(
+                    f"'{value}' does not exist.",
+                    obj="configuration",
+                    id="df_config.W003",
+                )
             )
         return value
 
@@ -447,9 +450,9 @@ class AutocreateFile(AutocreateFileContent):
         if not os.path.isfile(filename):
             settings_check_results.append(
                 Warning(
-                    "'%s' does not exist. Run the 'migrate' command to fix this problem."
-                    % filename,
+                    f"'{filename}' does not exist. Run the 'migrate' command to fix this problem.",
                     obj="configuration",
+                    id="df_config.W004",
                 )
             )
         return filename

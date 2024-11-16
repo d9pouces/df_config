@@ -13,7 +13,7 @@
 #  or https://cecill.info/licences/Licence_CeCILL-B_V1-fr.txt (French)         #
 #                                                                              #
 # ##############################################################################
-
+"""Provide LDAP-related functions and a common auth backend."""
 
 # noinspection PyMethodMayBeStatic
 import grp
@@ -28,24 +28,29 @@ from df_config.checks import missing_package, settings_check_results
 
 
 class CookieName:
-    """Provide cookie names that are different when SSL is used."""
+    """Provide cookie names that are secure when SSL is used."""
 
     required_settings = ["USE_SSL"]
 
     def __init__(self, cookie_name: str):
+        """Initialize the cookie name."""
         self.cookie_name = cookie_name
 
     def __call__(self, settings_dict) -> str:
+        """Return the cookie name."""
         if settings_dict["USE_SSL"]:
             return "__Secure-%s" % self.cookie_name
         return self.cookie_name
 
     def __repr__(self):
+        """Return a string representation of the cookie name."""
         return f"{self.__class__.__name__}({self.cookie_name!r})"
 
 
 # noinspection PyMethodMayBeStatic
 class AuthenticationBackends:
+    """Provide a list of authentication backends."""
+
     required_settings = [
         "ALLAUTH_PROVIDER_APPS",
         "DF_REMOTE_USER_HEADER",
@@ -57,6 +62,7 @@ class AuthenticationBackends:
     ]
 
     def __call__(self, settings_dict):
+        """Return the authentication backends."""
         backends = []
         backends += self.process_remote_user(settings_dict)
         backends += self.process_radius(settings_dict)
@@ -67,16 +73,19 @@ class AuthenticationBackends:
         return backends
 
     def process_django(self, settings_dict):
+        """Return the Django authentication backend when available."""
         if settings_dict["DF_ALLOW_LOCAL_USERS"]:
             return ["django.contrib.auth.backends.ModelBackend"]
         return []
 
     def process_remote_user(self, settings_dict):
+        """Return the remote user authentication backend when available."""
         if settings_dict["DF_REMOTE_USER_HEADER"]:
             return ["df_config.apps.backends.DefaultGroupsRemoteUserBackend"]
         return []
 
     def process_allauth(self, settings_dict):
+        """Return the allauth authentication backend when available."""
         if (
             not settings_dict["USE_ALL_AUTH"]
             and not settings_dict["ALLAUTH_PROVIDER_APPS"]
@@ -89,6 +98,7 @@ class AuthenticationBackends:
             return []
 
     def process_radius(self, settings_dict):
+        """Return the RADIUS authentication backend when available."""
         if not settings_dict["RADIUS_SERVER"]:
             return []
         try:
@@ -101,6 +111,7 @@ class AuthenticationBackends:
         return ["radiusauth.backends.RADIUSBackend"]
 
     def process_django_ldap(self, settings_dict):
+        """Return the LDAP authentication backend when available."""
         if not settings_dict["AUTH_LDAP_SERVER_URI"]:
             return []
         try:
@@ -113,6 +124,7 @@ class AuthenticationBackends:
         return ["django_auth_ldap.backend.LDAPBackend"]
 
     def process_pam(self, settings_dict):
+        """Return the PAM authentication backend when available."""
         if not settings_dict["USE_PAM_AUTHENTICATION"]:
             return []
         try:
@@ -129,22 +141,24 @@ class AuthenticationBackends:
         ):
             settings_check_results.append(
                 Error(
-                    'The user "%s" must belong to the "shadow" group to use PAM '
-                    "authentication." % username,
+                    f"The user '{username}' must belong to the 'shadow' group to use PAM authentication.",
                     obj="configuration",
+                    id="df_config.E004",
                 )
             )
             return []
         return ["django_pam.auth.backends.PAMBackend"]
 
     def __repr__(self):
-        return "%s.%s" % (self.__module__, "authentication_backends")
+        """Return a string representation of the authentication backends."""
+        return f"{self.__module__}.authentication_backends"
 
 
 authentication_backends = AuthenticationBackends()
 
 
 def ldap_user_search(settings_dict):
+    """Return the LDAP user search."""
     if (
         settings_dict["AUTH_LDAP_SERVER_URI"]
         and settings_dict["AUTH_LDAP_USER_SEARCH_BASE"]
@@ -153,7 +167,7 @@ def ldap_user_search(settings_dict):
             # noinspection PyPackageRequirements,PyUnresolvedReferences
             import ldap
 
-            # noinspection PyUnresolvedReferences
+            # noinspection PyUnresolvedReferences,PyPackageRequirements
             from django_auth_ldap.config import LDAPSearch
         except ImportError:
             return None
@@ -173,6 +187,7 @@ ldap_user_search.required_settings = [
 
 
 def ldap_group_search(settings_dict):
+    """Return the search for the groups associated to the username."""
     if (
         settings_dict["AUTH_LDAP_SERVER_URI"]
         and settings_dict["AUTH_LDAP_GROUP_SEARCH_BASE"]
@@ -181,7 +196,7 @@ def ldap_group_search(settings_dict):
             # noinspection PyPackageRequirements,PyUnresolvedReferences
             import ldap
 
-            # noinspection PyUnresolvedReferences
+            # noinspection PyUnresolvedReferences,PyPackageRequirements
             from django_auth_ldap.config import LDAPSearch
         except ImportError:
             return None
@@ -200,6 +215,7 @@ ldap_group_search.required_settings = [
 
 
 def ldap_attribute_map(settings_dict):
+    """Return the LDAP attribute map."""
     result = {}
     if settings_dict["AUTH_LDAP_USER_FIRST_NAME"]:
         result["first_name"] = settings_dict["AUTH_LDAP_USER_FIRST_NAME"]
@@ -218,6 +234,7 @@ ldap_attribute_map.required_settings = [
 
 
 def ldap_boolean_attribute_map(settings_dict):
+    """Return the LDAP boolean attribute map."""
     result = {}
     if settings_dict["AUTH_LDAP_USER_IS_ACTIVE"]:
         result["is_active"] = settings_dict["AUTH_LDAP_USER_IS_ACTIVE"]
@@ -236,6 +253,7 @@ ldap_boolean_attribute_map.required_settings = [
 
 
 def ldap_group_class(settings_dict):
+    """Return the LDAP group class."""
     if settings_dict["AUTH_LDAP_SERVER_URI"]:
         try:
             cls = import_string(settings_dict["AUTH_LDAP_GROUP_NAME"])

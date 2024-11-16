@@ -242,6 +242,7 @@ class ChoiceConfigFile(ConfigField):
                     Error(
                         f'Invalid value "{value}". Valid choices: {valid}.',
                         obj="configuration",
+                        id="df_config.E002",
                     )
                 )
             return choices.get(value)

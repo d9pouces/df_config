@@ -422,6 +422,7 @@ class LogConfiguration:
                 "The only known schemes for remote logging are syslog, syslog+tcp, loki or lokis.",
                 hint=None,
                 obj="configuration",
+                id="df_config.W005",
             )
             settings_check_results.append(warning)
         return has_handler
@@ -578,6 +579,7 @@ class LogConfiguration:
                 "Unable to import logging_loki (required to log to Loki)",
                 hint=None,
                 obj="configuration",
+                id="df_config.W006",
             )
             settings_check_results.append(warning)
             # replace loki by writing to a plain-text log
@@ -598,6 +600,7 @@ class LogConfiguration:
                 "Unable to import systemd.journal (required to log with journlad)",
                 hint=None,
                 obj="configuration",
+                id="df_config.W007",
             )
             settings_check_results.append(warning)
             # replace logd by writing to a plain-text log
@@ -614,9 +617,10 @@ class LogConfiguration:
         if not os.path.isdir(log_directory):
             if not self.log_directory_warning:
                 warning = Warning(
-                    f'Missing directory "{log_directory}"',
+                    f"Missing directory '{log_directory}'.",
                     hint=None,
-                    obj=log_directory,
+                    obj="configuration",
+                    id="df_config.W008",
                 )
                 settings_check_results.append(warning)
                 self.log_directory_warning = True
@@ -633,9 +637,10 @@ class LogConfiguration:
                 os.remove(log_filename)
         except PermissionError:
             warning_ = Warning(
-                f'Unable to write logs in "{log_directory}". Unsufficient rights?',
+                f"Unable to write logs in '{log_directory}' (unsufficient rights?).",
                 hint=None,
-                obj=log_directory,
+                obj="configuration",
+                id="df_config.W009",
             )
             settings_check_results.append(warning_)
             self.add_handler(logger, "stdout", level=level, **kwargs)

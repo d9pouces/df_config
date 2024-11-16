@@ -412,13 +412,18 @@ def use_sentry(settings_dict: Dict) -> bool:
         return False
     if not is_package_present("sentry_sdk"):
         settings_check_results.append(
-            Warning("sentry_sdk must be installed.", obj="configuration")
+            Warning(
+                "sentry_sdk must be installed.",
+                obj="configuration",
+                hint="Install sentry_sdk with 'pip install sentry-sdk'.",
+                id="df_config.W010",
+            )
         )
         return False
-    # noinspection PyUnresolvedReferences
+    # noinspection PyUnresolvedReferences,PyPackageRequirements
     import sentry_sdk
 
-    # noinspection PyUnresolvedReferences
+    # noinspection PyUnresolvedReferences,PyPackageRequirements
     from sentry_sdk.integrations.django import DjangoIntegration
 
     integrations = [DjangoIntegration()]
