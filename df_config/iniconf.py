@@ -25,6 +25,7 @@ from df_config.config.fields import (
     CharConfigField,
     ChoiceConfigFile,
     ConfigField,
+    DirectoryPathConfigField,
     FloatConfigField,
     IntegerConfigField,
     ListConfigField,
@@ -73,13 +74,13 @@ BASE_MAPPING = [
         help_str="Secret key to provide cryptographic signing, and should be set to a unique, unpredictable value.",
         env_name="SECRET_KEY",
     ),
-    CharConfigField(
+    DirectoryPathConfigField(
         "global.data",
         "LOCAL_PATH",
         help_str="where all data will be stored (static/uploaded/temporary files, …). "
         "If you change it, you must run the collectstatic and migrate commands again.\n",
     ),
-    CharConfigField(
+    DirectoryPathConfigField(
         "global.upload_directory",
         "MEDIA_ROOT",
         help_str="where uploaded media files will be stored.",
@@ -91,7 +92,7 @@ BASE_MAPPING = [
         help_str="S3 storage regions, when S3 storage is used for storing uplaoded media.",
         env_name="S3_REGION",
     ),
-    CharConfigField(
+    DirectoryPathConfigField(
         "global.data",
         "FILE_UPLOAD_TEMP_DIR",
         help_str="where temporary data will be stored.",

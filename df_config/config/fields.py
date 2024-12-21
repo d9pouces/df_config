@@ -21,9 +21,9 @@ Check :mod:`df_config.iniconf` for examples.
 """
 
 import os
-from typing import Any, Optional, Union
+from typing import Any, Callable, Optional, Union
 
-from django.core.checks import Error
+from django.core.checks import Warning
 
 from df_config.checks import settings_check_results
 
@@ -54,6 +54,50 @@ def guess_relative_path(value):
     if value.startswith(cwd):
         return ".%s" % (value[len(cwd) :])
     return value
+
+
+def str_to_filepath(value: Optional[str]) -> Optional[str]:
+    """Convert a string to an absolute file path.
+
+    If the provided value is `None`, then `None` is returned.
+    Otherwise, the value is converted to a file path (using :func:`os.path.abspath`).
+
+    :param value: the file path
+    """
+    if value and value.strip():
+        value = os.path.abspath(value.strip())
+        if not os.path.isfile(value):
+            settings_check_results.append(
+                Warning(
+                    f'File "{value}" is not a file.',
+                    obj="configuration",
+                    id="df_config.W002",
+                )
+            )
+        return value
+    return None
+
+
+def str_to_directory_path(value: Optional[str]) -> Optional[str]:
+    """Convert a string to an absolute directory path.
+
+    If the provided value is `None`, then `None` is returned.
+    Otherwise, the value is converted to a directory path (using :func:`os.path.abspath`).
+
+    :param value: the directory path
+    """
+    if value and value.strip():
+        value = os.path.abspath(value.strip())
+        if not os.path.isdir(value):
+            settings_check_results.append(
+                Warning(
+                    f'File "{value}" is not a directory.',
+                    obj="configuration",
+                    id="df_config.W002",
+                )
+            )
+        return value
+    return None
 
 
 def strip_split(value):
@@ -102,8 +146,8 @@ class ConfigField:
         self,
         name: Optional[str],
         setting_name: str,
-        from_str=str,
-        to_str=str_or_blank,
+        from_str: Callable[[str], Optional[Any]] = str,
+        to_str: Callable[[Any], str] = str_or_blank,
         help_str: str = None,
         default: Any = None,
         env_name: Optional[Union[set, str]] = AUTO,
@@ -267,3 +311,19 @@ class ChoiceConfigFile(ConfigField):
             help_str=help_str,
             **kwargs,
         )
+
+
+class FilePathConfigField(ConfigField):
+    """Convert a filename to a relative path if it is in the current directory."""
+
+    def __init__(self, name, setting_name, **kwargs):
+        """Create a new field that only accepts a filename."""
+        super().__init__(name, setting_name, from_str=str_to_filepath, **kwargs)
+
+
+class DirectoryPathConfigField(ConfigField):
+    """Convert a filename to a relative path if it is in the current directory."""
+
+    def __init__(self, name, setting_name, **kwargs):
+        """Create a new field that only accepts a filename."""
+        super().__init__(name, setting_name, from_str=str_to_directory_path, **kwargs)
