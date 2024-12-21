@@ -14,6 +14,7 @@
 #                                                                              #
 # ##############################################################################
 """Settings for database and cache backends."""
+import os.path
 from typing import List, Set
 from urllib.parse import ParseResult, urlencode, urlparse
 
@@ -81,6 +82,67 @@ databases.required_settings = [
     "DATABASE_PORT",
     "DATABASE_CONN_MAX_AGE",
     "USE_PROMETHEUS",
+]
+
+
+def databases_options(settings_dict):
+    """Return the options for the database."""
+    engine = DatabaseURL.normalize_engine(settings_dict["DATABASE_ENGINE"])
+    options = {}
+    server_ca = settings_dict["DATABASE_SSL_CA"]
+    server_crl = settings_dict["DATABASE_SSL_CRL"]
+    ssl_mode = (settings_dict["DATABASE_SSL_MODE"] or "").lower()
+    client_cert = settings_dict["DATABASE_SSL_CLIENT_CERT"]
+    client_key = settings_dict["DATABASE_SSL_CLIENT_KEY"]
+    pg_ssl_modes = {"disable", "allow", "prefer", "require", "verify-ca", "verify-full"}
+    mysql_ssl_modes = {
+        "disable": "DISABLED",
+        "allow": "PREFERRED",
+        "prefer": "PREFERRED",
+        "require": "REQUIRED",
+        "verify-ca": "VERIFY_CA",
+        "verify-full": "VERIFY_IDENTITY",
+    }
+    if ssl_mode and ssl_mode not in pg_ssl_modes:
+        raise ImproperlyConfigured(
+            "DATABASE_SSL_MODE must be one of 'disable', 'allow', 'prefer', 'require', 'verify-ca' or 'verify-full'"
+        )
+    if engine == "django.db.backends.postgresql":
+        if ssl_mode:
+            options["sslmode"] = ssl_mode
+        if server_ca:
+            options["sslrootcert"] = server_ca
+        if server_crl:
+            options["sslcrl"] = server_crl
+        if client_cert:
+            options["sslcert"] = client_cert
+        if client_key:
+            options["sslkey"] = client_key
+    elif engine == "django.db.backends.mysql":
+        if ssl_mode:
+            options["ssl_mode"] = mysql_ssl_modes[ssl_mode]
+        if server_ca:
+            options.setdefault("ssl", {})["ca"] = server_ca
+        if server_crl:
+            options.setdefault("ssl", {})["crl"] = server_crl
+        if client_cert:
+            options.setdefault("ssl", {})["cert"] = client_cert
+        if client_key:
+            options.setdefault("ssl", {})["key"] = client_key
+
+    for path in [server_ca, server_crl, client_cert, client_key]:
+        if path and not os.path.isfile(path):
+            raise ImproperlyConfigured(f"'{path}' must be a valid file path.")
+    return options
+
+
+databases_options.required_settings = [
+    "DATABASE_ENGINE",
+    "DATABASE_SSL_CA",
+    "DATABASE_SSL_CRL",
+    "DATABASE_SSL_MODE",
+    "DATABASE_SSL_CLIENT_CERT",
+    "DATABASE_SSL_CLIENT_KEY",
 ]
 
 

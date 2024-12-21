@@ -72,6 +72,7 @@ from df_config.guesses.databases import (
     celery_broker_url,
     celery_result_url,
     databases,
+    databases_options,
     session_redis_dict,
     websocket_redis_channels,
     websocket_redis_dict,
@@ -154,6 +155,11 @@ CSRF_COOKIE_SAMESITE = "Lax"
 CSRF_COOKIE_SECURE = SettingReference("USE_SSL")
 CSRF_TRUSTED_ORIGINS = DeduplicatedCallableList(csrf_trusted_origins)
 DATABASES = CallableSetting(databases)
+DATABASE_SSL_CA = None
+DATABASE_SSL_MODE = None  #  "disable", "allow", "prefer", "require",  "verify-ca" or "verify-full" for PostgreSQL
+DATABASE_SSL_CLIENT_CERT = None
+DATABASE_SSL_CRL = None
+DATABASE_SSL_CLIENT_KEY = None
 
 DEBUG = False
 # you should create a "local_settings.py" with "DEBUG = True" at the root of your project
@@ -413,6 +419,7 @@ AUTH_LDAP_GROUP_SEARCH_BASE = "ou=groups,dc=example,dc=com"
 AUTH_LDAP_AUTHORIZE_ALL_USERS = True
 
 # django-cors-headers
+# noinspection HttpUrlsUsage
 CORS_ALLOWED_ORIGINS = [
     "{SERVER_PROTOCOL}://{SERVER_NAME}:{SERVER_PORT}",
     "http://{LISTEN_ADDRESS}",
@@ -601,7 +608,7 @@ DATABASE_USER = DATABASE_URL.username("")
 DATABASE_PASSWORD = DATABASE_URL.password("")
 DATABASE_HOST = DATABASE_URL.hostname("localhost")
 DATABASE_PORT = DATABASE_URL.port()
-DATABASE_OPTIONS = {}
+DATABASE_OPTIONS = CallableSetting(databases_options)
 DATABASE_CONN_MAX_AGE = 3600  # reset DB connection after 1 hour
 EMAIL_HOST_URL = URLSetting("EMAIL_HOST_URL", split_char="")
 EMAIL_HOST = EMAIL_HOST_URL.hostname("localhost")
@@ -626,8 +633,9 @@ LISTEN_PORT = None  # listen port (if value is set, listen on 0.0.0.0)
 LOCAL_PATH = Path("./django_data")  # aliased in settings.ini as "[global]data"
 __split_path = __file__.split(os.path.sep)
 if "lib" in __split_path:
-    prefix = os.path.join(*__split_path[: __split_path.index("lib")])
-    LOCAL_PATH = Path("/%s/var/{DF_MODULE_NAME}" % prefix)
+    # noinspection PyArgumentList
+    __prefix = os.path.join(*__split_path[: __split_path.index("lib")])
+    LOCAL_PATH = Path("/%s/var/{DF_MODULE_NAME}" % __prefix)
 
 COMMON_REDIS_URL = RedisURL("COMMON_REDIS_URL")
 CURRENT_COMMAND_NAME = CallableSetting(get_command_name)
