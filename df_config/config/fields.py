@@ -23,7 +23,7 @@ Check :mod:`df_config.iniconf` for examples.
 import os
 from typing import Any, Callable, Optional, Union
 
-from django.core.checks import Warning
+from django.core.checks import Error, Warning
 
 from df_config.checks import settings_check_results
 
