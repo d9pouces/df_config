@@ -74,6 +74,7 @@ coverage = "^7.6.4"
 
 [tool.pytest.ini_options]
 DJANGO_SETTINGS_MODULE = "test_df_config.data.settings"
-minversion = "6.0"
+minversion = "8.0"
 required_plugins = "pytest-django"
 testpaths = ["test_df_config", "df_config"]
+addopts = "-s --doctest-modules --doctest-glob=df_config/*.py --doctest-glob=df_config/**/*.py"
