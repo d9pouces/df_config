@@ -15,6 +15,7 @@
 # ##############################################################################
 """Settings for database and cache backends."""
 import os.path
+import sys
 from typing import List, Set
 from urllib.parse import ParseResult, urlencode, urlparse
 
@@ -119,16 +120,35 @@ def databases_options(settings_dict):
         if client_key:
             options["sslkey"] = client_key
     elif engine == "django.db.backends.mysql":
-        if ssl_mode:
-            options["ssl_mode"] = mysql_ssl_modes[ssl_mode]
-        if server_ca:
-            options.setdefault("ssl", {})["ca"] = server_ca
-        if server_crl:
-            options.setdefault("ssl", {})["crl"] = server_crl
-        if client_cert:
-            options.setdefault("ssl", {})["cert"] = client_cert
-        if client_key:
-            options.setdefault("ssl", {})["key"] = client_key
+        use_pymysql = (
+            utils.is_package_present("pymysql")
+            and not utils.is_package_present("MySQLdb")
+        ) or ("MySQLdb" in sys.modules and sys.modules["MySQLdb"].__name__ == "pymysql")
+        # pymysql can patch MySQLdb but does not support all options
+        if use_pymysql:
+            if server_ca:
+                options["ssl_ca"] = server_ca
+            if server_crl:
+                options["ssl_crl"] = server_crl
+            if client_cert:
+                options["ssl_cert"] = client_cert
+            if client_key:
+                options["ssl_key"] = client_key
+            if ssl_mode == "verify-ca" or ssl_mode == "verify-full":
+                options["ssl_verify_cert"] = True
+            if ssl_mode == "verify-full":
+                options["ssl_verify_identity"] = True
+        else:
+            if ssl_mode:
+                options["ssl_mode"] = mysql_ssl_modes[ssl_mode]
+            if server_ca:
+                options.setdefault("ssl", {})["ca"] = server_ca
+            if server_crl:
+                options.setdefault("ssl", {})["crl"] = server_crl
+            if client_cert:
+                options.setdefault("ssl", {})["cert"] = client_cert
+            if client_key:
+                options.setdefault("ssl", {})["key"] = client_key
 
     for path in [server_ca, server_crl, client_cert, client_key]:
         if path and not os.path.isfile(path):
