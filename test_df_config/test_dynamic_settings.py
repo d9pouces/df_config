@@ -94,6 +94,11 @@ class TestDynamicSetting(TestCase):
         settings_check_results[:] = p_values
         self.assertEqual(expected_stdout, stdout.getvalue())
         self.assertEqual(expected_stderr, stderr.getvalue())
+        if isinstance(dynamic_setting, CallableSetting):
+            # check if all required settings are listed in setting.required_settings
+            provided_keys = set(extra_values or {})
+            expected_keys = set(dynamic_setting.required)
+            self.assertTrue(provided_keys.issubset(expected_keys))
         return n_values
 
 

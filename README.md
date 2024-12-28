@@ -1,18 +1,22 @@
 df_config
 =========
 
-Django, *the web framework for perfectionists with deadlines*, is based on a single settings Python module defined in a environment variable.
-However, these settings could be organized into three categories:
+Django, *the web framework for perfectionists with deadlines*, is based on a single settings Python module (defined in a environment variable).
+
+`df-config` helps you to manage your settings in a more flexible way:
+- most common settings are **defined out-of-the-box with good, auto-discovered, defaults**,
+- other settings can be defined in **environment variables**, in a **.ini file**, or in **a Python module**,
+- settings can be **dynamically defined, based on other settings**.
+
+These settings could be organized into three categories:
 
   * settings that are very common and that can be kept as-is for most projects (`USE_TZ = True` or `MEDIA_URL = '/media/'`),
   * settings that are specific to your project but common to all instances of your project (like `INSTALLED_APPS`),
   * settings that are installation-dependent (`DATABASE_PASSWORD`, …)
 
-
 Moreover, there are dependencies between settings. For example, `ADMIN_EMAIL`, `ALLOWED_HOSTS` and `CSRF_COOKIE_DOMAIN` depend
  on the same domain name of your site,  and `SESSION_COOKIE_SECURE` and `CSRF_COOKIE_SECURE` can be set only when you use TLS.
-df_config allows to use functions to dynamically define these settings using some other settings as parameters.
-
+`df_config` allows to use functions to dynamically define these settings using some other settings as parameters.
 
 Finally, df_config dynamically merges several sources to define the final settings:
 
@@ -43,7 +47,7 @@ How to use it?
 --------------
 
 df_config assumes that your project has a main module `yourproject`.
-Then you just have two steps to do:
+Then you just have two steps to follow:
 
 - update your `manage.py` file: 
 
@@ -148,10 +152,13 @@ ALLOWED_HOSTS = CallableSetting(lambda x: [urlparse(x['SERVER_BASE_URL']).hostna
 CSRF_COOKIE_DOMAIN = CallableSetting(lambda x: urlparse(x['SERVER_BASE_URL']).hostname, 'SERVER_BASE_URL')
 ```
 
+Ok, it looks a bit more complex but df-config defines them for you by default, based on the `SERVER_BASE_URL` setting. 
+In fact, you just have to write the right `SERVER_BASE_URL` and all the other settings are automatically defined.
+
 Configuration files and environment variables
 ---------------------------------------------
 
-Your user probably prefer use .ini files instead of Python ones.
+Your user probably prefer use .ini files instead of Python ones or use environment variables.
 By default, df_config searches for a list `INI_MAPPING` into the module `yourproject.iniconf` or uses `df_config.iniconf.INI_MAPPING`.
 
 ```python
@@ -165,12 +172,16 @@ You can also pickup some predefined list in `df_config.iniconf`.
 You can also use environment variables instead of an .ini file (only for values in the INI_MAPPING list):
 ```bash
 export SERVER_URL=http://www.example-2.com
+export DATABASE_URL=postgres://user:password@localhost:5432/dbname?sslmode=disable
+export REDIS_URL=rediss://:password@localhost:6379/1
 python3 manage.py config python -v 2 | grep SERVER_BASE_URL
 ```
 
 You can check the current config as a .ini file or as environment variables: 
 ```bash
 export SERVER_URL=http://www.example-2.com
+export DATABASE_URL=postgres://user:password@localhost:5432/dbname?sslmode=disable
+export REDIS_URL=rediss://:password@localhost:6379/1
 python3 manage.py config env
 python3 manage.py config ini
 ```

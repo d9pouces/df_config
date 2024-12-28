@@ -38,7 +38,11 @@ def allauth_provider_apps(settings_dict):
         parser.read([config])
     except Exception:  # nosec  # nosec
         settings_check_results.append(
-            Error("Invalid config file. %s" % config, obj="configuration")
+            Error(
+                f"Invalid config file '{config}.",
+                obj="configuration",
+                id="df_config.E003",
+            )
         )
         return []
     return [

@@ -1,10 +1,11 @@
+import tempfile
 from unittest import mock
 
 from django.core.exceptions import ImproperlyConfigured
 from django.utils.version import get_complete_version
 
 from df_config.config.dynamic_settings import CallableSetting
-from df_config.guesses.databases import cache_setting, databases
+from df_config.guesses.databases import cache_setting, databases, databases_options
 from test_df_config.test_dynamic_settings import TestDynamicSetting
 
 
@@ -135,6 +136,77 @@ class TestDatabaseSetting(TestDynamicSetting):
                 "DATABASE_CONN_MAX_AGE": 0,
             },
         )
+
+    def test_databases_options(self):
+        s = CallableSetting(databases_options)
+        settings = {
+            "DATABASE_ENGINE": "postgres",
+            "DATABASE_SSL_CA": "",
+            "DATABASE_SSL_CRL": "",
+            "DATABASE_SSL_MODE": "",
+            "DATABASE_SSL_CLIENT_CERT": "",
+            "DATABASE_SSL_CLIENT_KEY": "",
+        }
+        expected = {}
+        self.check(s, expected, extra_values=settings)
+        settings = {
+            "DATABASE_ENGINE": "mysql",
+            "DATABASE_SSL_CA": "",
+            "DATABASE_SSL_CRL": "",
+            "DATABASE_SSL_MODE": "",
+            "DATABASE_SSL_CLIENT_CERT": "",
+            "DATABASE_SSL_CLIENT_KEY": "",
+        }
+        expected = {}
+        self.check(s, expected, extra_values=settings)
+        with tempfile.NamedTemporaryFile() as fd:
+            fd.write(
+                b"""-----BEGIN CERTIFICATE-----
+MIIEMDCCAxigAwIBAgIQUJRs7Bjq1ZxN1ZfvdY+grTANBgkqhkiG9w0BAQUFADCB
+-----END CERTIFICATE-----"""
+            )
+            fd.flush()
+            settings = {
+                "DATABASE_ENGINE": "postgres",
+                "DATABASE_SSL_CA": fd.name,
+                "DATABASE_SSL_CRL": fd.name,
+                "DATABASE_SSL_MODE": "verify-ca",
+                "DATABASE_SSL_CLIENT_CERT": fd.name,
+                "DATABASE_SSL_CLIENT_KEY": fd.name,
+            }
+            expected = {
+                "sslcert": fd.name,
+                "sslcrl": fd.name,
+                "sslkey": fd.name,
+                "sslmode": "verify-ca",
+                "sslrootcert": fd.name,
+            }
+            self.check(s, expected, extra_values=settings)
+            settings = {
+                "DATABASE_ENGINE": "mysql",
+                "DATABASE_SSL_CA": fd.name,
+                "DATABASE_SSL_CRL": fd.name,
+                "DATABASE_SSL_MODE": "verify-ca",
+                "DATABASE_SSL_CLIENT_CERT": fd.name,
+                "DATABASE_SSL_CLIENT_KEY": fd.name,
+            }
+            expected = {
+                "ssl": {"ca": fd.name, "cert": fd.name, "crl": fd.name, "key": fd.name},
+                "ssl_mode": "VERIFY_CA",
+            }
+            self.check(s, expected, extra_values=settings)
+        with self.assertRaises(ImproperlyConfigured):
+            self.check(s, expected, extra_values=settings)
+        with self.assertRaises(ImproperlyConfigured):
+            settings = {
+                "DATABASE_ENGINE": "mysql",
+                "DATABASE_SSL_CA": "",
+                "DATABASE_SSL_CRL": "",
+                "DATABASE_SSL_MODE": "ca-check",
+                "DATABASE_SSL_CLIENT_CERT": "",
+                "DATABASE_SSL_CLIENT_KEY": "",
+            }
+            self.check(s, expected, extra_values=settings)
 
 
 class TestCacheSetting(TestDynamicSetting):

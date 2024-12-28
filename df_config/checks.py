@@ -5,6 +5,7 @@
 #  All Rights Reserved                                                         #
 #                                                                              #
 # ##############################################################################
+"""Check installed modules and settings to provide lists of middlewares/installed apps."""
 import os
 import sys
 
@@ -14,6 +15,7 @@ settings_check_results = []
 
 
 def missing_package(package_name, desc=""):
+    """Return a warning if a Python package is missing."""
     if hasattr(sys, "real_prefix"):  # inside a virtualenv
         cmd = f"Try 'python -m pip install {package_name}' to install it."
     elif __file__.startswith(os.environ.get("HOME", "/home")):
@@ -21,6 +23,8 @@ def missing_package(package_name, desc=""):
     else:
         cmd = f"Try 'sudo python3 -m pip install {package_name}' to install it."
     return Warning(
-        f"Python package '{package_name}' is required{desc}. {cmd}",
+        f"Python package '{package_name}' is required{desc}.",
         obj="configuration",
+        hint=cmd,
+        id="df_config.W001",
     )
