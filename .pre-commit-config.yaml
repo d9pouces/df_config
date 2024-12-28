@@ -2,11 +2,11 @@
 # See https://pre-commit.com/hooks.html for more hooks
 repos:
 -   repo: https://github.com/d9pouces/mybestpractices
-    rev: 0.3.4
+    rev: 0.3.8
     hooks:
     -   id: mybestpractices-git-autotag
 -   repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v4.5.0
+    rev: v5.0.0
     hooks:
     -   id: check-added-large-files
     -   id: check-ast
@@ -17,7 +17,7 @@ repos:
     -   id: check-toml
     -   id: check-yaml
 -   repo: https://github.com/psf/black
-    rev: 23.12.1
+    rev: 24.10.0
     hooks:
     -   id: black
 -   repo: https://github.com/PyCQA/pydocstyle
@@ -40,4 +40,4 @@ repos:
     -   id: python-check-mock-methods
     -   id: python-check-blanket-noqa
 default_language_version:
-    python: python3.8
+    python: python3.13
