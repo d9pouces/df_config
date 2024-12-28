@@ -16,7 +16,7 @@
 """Settings for database and cache backends."""
 import os.path
 import sys
-from typing import List, Set
+from typing import List, Optional, Set
 from urllib.parse import ParseResult, urlencode, urlparse
 
 from django.core.exceptions import ImproperlyConfigured
@@ -25,6 +25,23 @@ from django.utils import version
 from df_config import utils
 from df_config.config.dynamic_settings import Directory
 from df_config.config.url import DatabaseURL
+
+SSL_MODES_MYSQL = {
+    "disable": "DISABLED",
+    "allow": "PREFERRED",
+    "prefer": "PREFERRED",
+    "require": "REQUIRED",
+    "verify-ca": "VERIFY_CA",
+    "verify-full": "VERIFY_IDENTITY",
+}
+SSL_MODES_POSTGRESQL = {
+    "disable",
+    "allow",
+    "prefer",
+    "require",
+    "verify-ca",
+    "verify-full",
+}
 
 prometheus_engines = {
     "django.db.backends.sqlite3": "django_prometheus.db.backends.sqlite3",
@@ -89,70 +106,107 @@ databases.required_settings = [
 def databases_options(settings_dict):
     """Return the options for the database."""
     engine = DatabaseURL.normalize_engine(settings_dict["DATABASE_ENGINE"])
-    options = {}
     server_ca = settings_dict["DATABASE_SSL_CA"]
     server_crl = settings_dict["DATABASE_SSL_CRL"]
     ssl_mode = (settings_dict["DATABASE_SSL_MODE"] or "").lower()
     client_cert = settings_dict["DATABASE_SSL_CLIENT_CERT"]
     client_key = settings_dict["DATABASE_SSL_CLIENT_KEY"]
-    pg_ssl_modes = {"disable", "allow", "prefer", "require", "verify-ca", "verify-full"}
-    mysql_ssl_modes = {
-        "disable": "DISABLED",
-        "allow": "PREFERRED",
-        "prefer": "PREFERRED",
-        "require": "REQUIRED",
-        "verify-ca": "VERIFY_CA",
-        "verify-full": "VERIFY_IDENTITY",
-    }
-    if ssl_mode and ssl_mode not in pg_ssl_modes:
+    if ssl_mode and ssl_mode not in SSL_MODES_POSTGRESQL:
         raise ImproperlyConfigured(
             "DATABASE_SSL_MODE must be one of 'disable', 'allow', 'prefer', 'require', 'verify-ca' or 'verify-full'"
         )
     if engine == "django.db.backends.postgresql":
-        if ssl_mode:
-            options["sslmode"] = ssl_mode
-        if server_ca:
-            options["sslrootcert"] = server_ca
-        if server_crl:
-            options["sslcrl"] = server_crl
-        if client_cert:
-            options["sslcert"] = client_cert
-        if client_key:
-            options["sslkey"] = client_key
+        options = set_postgresql_ssl_options(
+            ssl_mode, client_cert, client_key, server_ca, server_crl
+        )
     elif engine == "django.db.backends.mysql":
-        use_pymysql = (
-            utils.is_package_present("pymysql")
-            and not utils.is_package_present("MySQLdb")
-        ) or ("MySQLdb" in sys.modules and sys.modules["MySQLdb"].__name__ == "pymysql")
+        present = utils.is_package_present
+        use_pymysql = (present("pymysql") and not present("MySQLdb")) or (
+            "MySQLdb" in sys.modules and sys.modules["MySQLdb"].__name__ == "pymysql"
+        )
         # pymysql can patch MySQLdb but does not support all options
         if use_pymysql:
-            if server_ca:
-                options["ssl_ca"] = server_ca
-            if server_crl:
-                options["ssl_crl"] = server_crl
-            if client_cert:
-                options["ssl_cert"] = client_cert
-            if client_key:
-                options["ssl_key"] = client_key
-            if ssl_mode == "verify-ca" or ssl_mode == "verify-full":
-                options["ssl_verify_cert"] = True
-            if ssl_mode == "verify-full":
-                options["ssl_verify_identity"] = True
+            options = set_pymysql_ssl_options(
+                ssl_mode, client_cert, client_key, server_ca, server_crl
+            )
         else:
-            if ssl_mode:
-                options["ssl_mode"] = mysql_ssl_modes[ssl_mode]
-            if server_ca:
-                options.setdefault("ssl", {})["ca"] = server_ca
-            if server_crl:
-                options.setdefault("ssl", {})["crl"] = server_crl
-            if client_cert:
-                options.setdefault("ssl", {})["cert"] = client_cert
-            if client_key:
-                options.setdefault("ssl", {})["key"] = client_key
+            options = set_myqldb_ssl_options(
+                ssl_mode, client_cert, client_key, server_ca, server_crl
+            )
+    else:
+        options = {}
 
     for path in [server_ca, server_crl, client_cert, client_key]:
         if path and not os.path.isfile(path):
             raise ImproperlyConfigured(f"'{path}' must be a valid file path.")
+    return options
+
+
+def set_myqldb_ssl_options(
+    ssl_mode: str,
+    client_cert: Optional[str],
+    client_key: Optional[str],
+    server_ca: Optional[str],
+    server_crl: Optional[str],
+):
+    """Set the SSL options for MySQL with the MySQLDB connector."""
+    options = {}
+    if ssl_mode:
+        options["ssl_mode"] = SSL_MODES_MYSQL[ssl_mode]
+    if server_ca:
+        options.setdefault("ssl", {})["ca"] = server_ca
+    if server_crl:
+        options.setdefault("ssl", {})["crl"] = server_crl
+    if client_cert:
+        options.setdefault("ssl", {})["cert"] = client_cert
+    if client_key:
+        options.setdefault("ssl", {})["key"] = client_key
+    return options
+
+
+def set_pymysql_ssl_options(
+    ssl_mode: str,
+    client_cert: Optional[str],
+    client_key: Optional[str],
+    server_ca: Optional[str],
+    server_crl: Optional[str],
+):
+    """Set the SSL options for MySQL with the pymysql connector."""
+    options = {}
+    if server_ca:
+        options["ssl_ca"] = server_ca
+    if server_crl:
+        options["ssl_crl"] = server_crl
+    if client_cert:
+        options["ssl_cert"] = client_cert
+    if client_key:
+        options["ssl_key"] = client_key
+    if ssl_mode == "verify-ca" or ssl_mode == "verify-full":
+        options["ssl_verify_cert"] = True
+    if ssl_mode == "verify-full":
+        options["ssl_verify_identity"] = True
+    return options
+
+
+def set_postgresql_ssl_options(
+    ssl_mode: str,
+    client_cert: Optional[str],
+    client_key: Optional[str],
+    server_ca: Optional[str],
+    server_crl: Optional[str],
+):
+    """Set the SSL options for PostgreSQL."""
+    options = {}
+    if ssl_mode:
+        options["sslmode"] = ssl_mode
+    if server_ca:
+        options["sslrootcert"] = server_ca
+    if server_crl:
+        options["sslcrl"] = server_crl
+    if client_cert:
+        options["sslcert"] = client_cert
+    if client_key:
+        options["sslkey"] = client_key
     return options
 
 

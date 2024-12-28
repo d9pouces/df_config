@@ -4,8 +4,10 @@ import re
 import urllib.parse
 from importlib.metadata import PackageNotFoundError, version
 from typing import Callable, Dict, List, Optional, Tuple, Union
+from urllib.parse import ParseResult
 
 from django.core.exceptions import ImproperlyConfigured
+from setuptools.command.bdist_egg import can_scan
 
 from df_config.config.dynamic_settings import DynamicSettting
 
@@ -44,11 +46,12 @@ class Attribute(DynamicSettting):
 
 
 class URLSetting:
-    """Represents an URL setting, such that each URL component can be used as a DynamicSetting."""
+    """Represents a URL setting, such that each URL component can be used as a DynamicSetting."""
 
     ENGINES = {}
     REQUIREMENTS = {}
     SCHEME_ALIASES = {}
+    # noinspection SpellCheckingInspection
     SCHEMES: Dict[str, Tuple[int, bool, bool]] = {
         "amqp": (5672, False, False),
         "file": (None, False, False),
@@ -74,34 +77,20 @@ class URLSetting:
         required: List[str] = None,
         url: Optional[str] = None,
         split_char: str = ",",
-        split_netloc_only: bool = True,
     ):
         """Initialize the object.
 
         :param setting_name: The name of the Django setting that contains the URL string.
         :param required: A list of setting names that are required to be loaded before this one.
         :param url: The URL string to be parsed.
-        :param split_char: A character to split the raw URL string into multiple URLs (useful for DB clusters).
-        :param split_netloc_only: If True, scheme, auth, params and path parts must be identical across URLs.
-
-
+        :param split_char: A character to split the netloc part to form multiple URLs (useful for DB clusters).
         """
-        self.split_char = split_char
-        self.split_netloc_only = split_netloc_only
-        if not url:
-            self._url_str = None
-            self.parsed_urls = None
-            self._loaded = False
-        else:
-            self._url_str = url
-            if self.split_char != "":
-                self.parsed_urls = [
-                    urllib.parse.urlparse(x)
-                    for x in self._url_str.split(self.split_char)
-                ]
-            else:
-                self.parsed_urls = [urllib.parse.urlparse(self._url_str)]
-            self._loaded = True
+        self.split_char: Optional[str] = split_char
+        self._url_str: Optional[str] = None
+        self.parsed_urls: Optional[List[ParseResult]] = None
+        self.parsed_query: Optional[Dict[str, str]] = None
+        self._loaded: bool = False
+        self.parse_value(url)
         self.setting_name = setting_name
         self.required = required or []
 
@@ -113,6 +102,28 @@ class URLSetting:
         """Return the loaded URL string."""
         return self._url_str if self._url_str is not None else ""
 
+    def parse_value(self, value: Optional[str]):
+        """Parse the URL string and load its components."""
+        parsed_url = None
+        if value is self or not value:
+            self._url_str = None
+            self.parsed_urls = None
+            self.parsed_query = None
+        elif self.split_char != "":
+            self._url_str = value
+            parsed_url = urllib.parse.urlparse(value)
+            self.parsed_urls = [
+                parsed_url._replace(netloc=x)
+                for x in parsed_url.netloc.split(self.split_char)
+            ]
+        else:
+            self._url_str = value
+            parsed_url = urllib.parse.urlparse(value)
+            self.parsed_urls = [parsed_url]
+        if parsed_url:
+            self.parsed_query = urllib.parse.parse_qs(parsed_url.query)
+        self._loaded = bool(parsed_url)
+
     def load(self, merger):
         """Get the URL string for the merger, parse it and load it to extract its components."""
         if self._loaded or not self.setting_name:
@@ -120,17 +131,7 @@ class URLSetting:
         for required in self.required:
             merger.get_setting_value(required)
         value = merger.get_setting_value(self.setting_name)
-        if value is self or not value:
-            self._url_str = None
-            self.parsed_urls = None
-        elif self.split_char != "":
-            self._url_str = value
-            self.parsed_urls = [
-                urllib.parse.urlparse(x) for x in self._url_str.split(self.split_char)
-            ]
-        else:
-            self._url_str = value
-            self.parsed_urls = [urllib.parse.urlparse(self._url_str)]
+        self.parse_value(value)
         self._loaded = True
 
     def hostname(self, default="localhost"):
@@ -159,18 +160,18 @@ class URLSetting:
 
     def params_(self) -> Optional[str]:
         """Return the params part of the URL."""
-        return self.get_attribute_("params")
+        return self.get_attribute_single("params")
 
-    def get_attribute_(self, attr_name) -> Optional[str]:
+    def get_attribute_single(self, attr_name) -> Optional[str]:
         """Return the params part of the URL."""
         if self.parsed_urls is None:
             return None
-        elif self.split_netloc_only:
-            if len({getattr(x, attr_name) for x in self.parsed_urls}) > 1:
-                raise ImproperlyConfigured(
-                    f"{attr_name} must be identical across URLs '{self._url_str}'."
-                )
-            return getattr(self.parsed_urls[0], attr_name)
+        return getattr(self.parsed_urls[0], attr_name)
+
+    def get_attribute_multiple(self, attr_name) -> Optional[str]:
+        """Return the params part of the URL."""
+        if self.parsed_urls is None:
+            return None
         return self.split_char.join(getattr(x, attr_name) for x in self.parsed_urls)
 
     def password(self, default=None):
@@ -179,7 +180,7 @@ class URLSetting:
 
     def password_(self) -> Optional[str]:
         """Return the user password."""
-        return self.get_attribute_("password")
+        return self.get_attribute_single("password")
 
     def path(self, default=""):
         """Return a DynamicSetting that represents the path of the URL."""
@@ -187,7 +188,7 @@ class URLSetting:
 
     def path_(self) -> Optional[str]:
         """Return the path of the URL."""
-        return self.get_attribute_("path")
+        return self.get_attribute_single("path")
 
     def port(self, default=None):
         """Return a DynamicSetting that represents the port of the URL."""
@@ -213,7 +214,7 @@ class URLSetting:
 
     def query_(self) -> Optional[str]:
         """Return the query string from the URL."""
-        return self.get_attribute_("query")
+        return self.get_attribute_single("query")
 
     def scheme(self, default=None):
         """Return a DynamicSetting that represents the URL scheme."""
@@ -223,15 +224,9 @@ class URLSetting:
         """Return the URL scheme."""
         if self.parsed_urls is None:
             return None
-        schemes = [x.scheme.lower() for x in self.parsed_urls]
-        schemes = [self.SCHEME_ALIASES.get(x, x) for x in schemes]
-        if self.split_netloc_only:
-            if len(set(schemes)) > 1:
-                raise ImproperlyConfigured(
-                    f"Scheme must be identical across URLs '{self._url_str}'."
-                )
-            return schemes[0]
-        return self.split_char.join(schemes)
+        scheme = self.parsed_urls[0].scheme.lower()
+        scheme = self.SCHEME_ALIASES.get(scheme, scheme)
+        return scheme
 
     def username(self, default=None):
         """Return a DynamicSetting that represents the username."""
@@ -239,7 +234,7 @@ class URLSetting:
 
     def username_(self):
         """Return the username, if defined in the URL string."""
-        return self.get_attribute_("username")
+        return self.get_attribute_single("username")
 
     def database(self, default=None):
         """Return a DynamicSetting that represents the database name."""
@@ -247,7 +242,7 @@ class URLSetting:
 
     def database_(self):
         """Return the database name."""
-        v = self.get_attribute_("path")
+        v = self.get_attribute_single("path")
         if not v or not (matcher := re.match(r"/([^/]+)", v)):
             return None
         return matcher.group(1)
@@ -273,14 +268,13 @@ class URLSetting:
         """Return a dynamic setting for the TLS usage."""
         return Attribute(self, self.use_tls_, default=default)
 
-    def use_tls_(self):
+    def use_tls_(self, index=2):
         """Return True is TLS is used."""
         if not self.parsed_urls:
             return False
-        elif len(self.parsed_urls) > 1:
-            raise ImproperlyConfigured("Multiple URLs, cannot return a single value.")
         s = self.scheme_()
-        return self.SCHEMES[s][2]
+        response = self.SCHEMES[s][index]
+        return response
 
     def use_ssl(self, default=False):
         """Return a dynamic setting for the SSL usage."""
@@ -288,12 +282,11 @@ class URLSetting:
 
     def use_ssl_(self):
         """Return True if SSL is used."""
-        if not self.parsed_urls:
-            return False
-        elif len(self.parsed_urls) > 1:
-            raise ImproperlyConfigured("Multiple URLs, cannot return a single value.")
-        s = self.scheme_()
-        return self.SCHEMES[s][1]
+        return self.use_tls_(index=1) or self.ssl_mode_() in {
+            "require",
+            "verify-ca",
+            "verify-full",
+        }
 
     def engine(self, default=None):
         """Return a dynamic setting for the database engine."""
@@ -327,6 +320,83 @@ class URLSetting:
             )
         return engine
 
+    def client_cert_(self) -> Optional[str]:
+        """Return the client certificate file from the URL query string."""
+        if not self.parsed_urls:
+            return None
+        return self.parsed_query.get("ssl_certfile", [""])[0] or None
+
+    def client_cert(self, default=None) -> Attribute:
+        """Return a dynamic setting for the client certificate."""
+        return Attribute(self, self.client_cert_, default=default)
+
+    def client_key_(self) -> Optional[str]:
+        """Return the client key file from the URL query string."""
+        if not self.parsed_urls:
+            return None
+        # ssl_check_hostname=false&ssl_cert_reqs=required&ssl_certfile=./localhost.crt&ssl_keyfile=./localhost.key&ssl_ca_certs=./CA.crt
+        return self.parsed_query.get("ssl_keyfile", [""])[0] or None
+
+    def client_key(self, default=None) -> Attribute:
+        """Return a dynamic setting for the client key."""
+        return Attribute(self, self.client_key_, default=default)
+
+    def ca_cert_(self) -> Optional[str]:
+        """Return the CA certificate file from the URL query string."""
+        if not self.parsed_urls:
+            return None
+        return self.parsed_query.get("ssl_ca_certs", [""])[0] or None
+
+    def ca_cert(self, default=None) -> Attribute:
+        """Return a dynamic setting for the CA certificate."""
+        return Attribute(self, self.ca_cert_, default=default)
+
+    def ca_crl_(self) -> Optional[str]:
+        """Return the CRL file from the URL query string."""
+        if not self.parsed_urls:
+            return None
+        return self.parsed_query.get("ssl_crlfile", [""])[0] or None
+
+    def ca_crl(self, default=None) -> Attribute:
+        """Return a dynamic setting for the CRL file."""
+        return Attribute(self, self.ca_crl_, default=default)
+
+    def ssl_mode_(self) -> Optional[str]:
+        """Return the SSL mode from the URL query string (mysql and postgres)."""
+        if not self.parsed_urls:
+            return None
+        ssl_mode = self.parsed_query.get("ssl_mode", ["allow"])[0]
+        if ssl_mode in {
+            "disable",
+            "allow",
+            "prefer",
+            "require",
+            "verify-ca",
+            "verify-full",
+        }:
+            return ssl_mode
+        check_hostname = (
+            self.parsed_query.get("ssl_check_hostname", ["true"])[0] != "false"
+        )
+        check_ca = self.parsed_query.get("ssl_cert_reqs", ["required"])[0] != "none"
+        use_ssl = (
+            self.use_tls_(index=1) or self.parsed_query.get("ssl", [""])[0] == "true"
+        )
+        avoid_ssl = self.parsed_query.get("ssl", [""])[0] == "false"
+        if not avoid_ssl and check_hostname:
+            return "verify-full"
+        elif not avoid_ssl and check_ca:
+            return "verify-ca"
+        elif use_ssl:
+            return "require"
+        elif avoid_ssl:
+            return "disable"
+        return "prefer"
+
+    def ssl_mode(self, default=None) -> Attribute:
+        """Return a dynamic setting for the SSL mode."""
+        return Attribute(self, self.ssl_mode_, default=default)
+
 
 class DatabaseURL(URLSetting):
     """Guess the database engines from a URL string."""
@@ -344,18 +414,18 @@ class DatabaseURL(URLSetting):
         "sqlite": "sqlite3",
     }
     REQUIREMENTS = {
-        "django.db.backends.postgresql": ["psycopg2-binary", "psycopg2"],
+        "django.db.backends.postgresql": ["psycopg2-binary", "psycopg2", "psycopg"],
         "django.db.backends.oracle": ["cx_Oracle"],
         "django.db.backends.mysql": ["mysqlclient", "pymysql"],
     }
 
 
 class RedisURL(URLSetting):
-    """Specialized class for Redis URLs, since databases are identified by a integer."""
+    """Specialized class for Redis URLs, since databases are identified by an integer."""
 
     def database_(self) -> Optional[int]:
         """Extract a valid database number for Redis connections."""
-        v = self.get_attribute_("path")
+        v = self.get_attribute_single("path")
         if not v or not (matcher := re.match(r"/(0|[1-9]\d*)$", v)):
             return None
         return int(matcher.group(1))

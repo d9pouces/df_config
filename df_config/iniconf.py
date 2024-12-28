@@ -181,7 +181,14 @@ CELERY_MAPPING = [
 ]
 DATABASE_MAPPING = [
     CharConfigField(
-        None, "DATABASE_URL", help_str="URL of the database", env_name="DATABASE_URL"
+        None,
+        "DATABASE_URL",
+        help_str="URL of the database (e.g. (e.g. (postgres|mysql)://username:password@127.0.0.1:5432/database"
+        "?ssl_mode=verify-full"
+        "&ssl_certfile=./etc/client.crt"
+        "&ssl_keyfile=./etc/client.key"
+        "&ssl_ca_certs=./etc/ca.crt)",
+        env_name="DATABASE_URL",
     ),
     CharConfigField(
         "database.db",
@@ -439,7 +446,12 @@ REDIS_MAPPING = [
     CharConfigField(
         None,
         "COMMON_REDIS_URL",
-        help_str="Redis database URL, for all redis things.",
+        help_str="Redis database URL, for all Redis things (e.g. rediss://django:mysecret@redis.example.com:6379/0"
+        "?ssl_check_hostname=true"
+        "&ssl_cert_reqs=required"
+        "&ssl_certfile=/etc/client.crt"
+        "&ssl_keyfile=/etc/client.key"
+        "&ssl_ca_certs=/etc/ca.crt).",
         env_name="REDIS_URL",
     ),
     IntegerConfigField(

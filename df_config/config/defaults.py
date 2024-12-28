@@ -67,7 +67,6 @@ from df_config.guesses.auth import (
     ldap_user_search,
 )
 from df_config.guesses.databases import (
-    cache_redis_url,
     cache_setting,
     celery_broker_url,
     celery_result_url,
@@ -146,7 +145,7 @@ USE_PROMETHEUS = is_package_present("django_prometheus")
 # ######################################################################################################################
 ADMINS = (("admin", "{ADMIN_EMAIL}"),)
 ALLOWED_HOSTS = DeduplicatedCallableList(allowed_hosts)
-CACHE_URL = CallableSetting(cache_redis_url)
+CACHE_URL = "{COMMON_REDIS_URL}"
 CACHES = CallableSetting(cache_setting)
 CSRF_COOKIE_DOMAIN = "{SERVER_NAME}"
 CSRF_COOKIE_HTTPONLY = False
@@ -155,11 +154,6 @@ CSRF_COOKIE_SAMESITE = "Lax"
 CSRF_COOKIE_SECURE = SettingReference("USE_SSL")
 CSRF_TRUSTED_ORIGINS = DeduplicatedCallableList(csrf_trusted_origins)
 DATABASES = CallableSetting(databases)
-DATABASE_SSL_CA = None
-DATABASE_SSL_MODE = None  #  "disable", "allow", "prefer", "require",  "verify-ca" or "verify-full" for PostgreSQL
-DATABASE_SSL_CLIENT_CERT = None
-DATABASE_SSL_CRL = None
-DATABASE_SSL_CLIENT_KEY = None
 
 DEBUG = False
 # you should create a "local_settings.py" with "DEBUG = True" at the root of your project
@@ -608,6 +602,12 @@ DATABASE_USER = DATABASE_URL.username("")
 DATABASE_PASSWORD = DATABASE_URL.password("")
 DATABASE_HOST = DATABASE_URL.hostname("localhost")
 DATABASE_PORT = DATABASE_URL.port()
+DATABASE_SSL_CA = DATABASE_URL.ca_cert()
+DATABASE_SSL_MODE = DATABASE_URL.ssl_mode("prefer")
+DATABASE_SSL_CLIENT_CERT = DATABASE_URL.client_cert()
+DATABASE_SSL_CLIENT_KEY = DATABASE_URL.client_key()
+DATABASE_SSL_CRL = DATABASE_URL.ca_crl()
+
 DATABASE_OPTIONS = CallableSetting(databases_options)
 DATABASE_CONN_MAX_AGE = 3600  # reset DB connection after 1 hour
 EMAIL_HOST_URL = URLSetting("EMAIL_HOST_URL", split_char="")

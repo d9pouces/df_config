@@ -13,10 +13,7 @@
 #  or https://cecill.info/licences/Licence_CeCILL-B_V1-fr.txt (French)         #
 #                                                                              #
 # ##############################################################################
-from pathlib import Path
 from typing import Dict, Optional
-
-from django.core.exceptions import ImproperlyConfigured
 
 from df_config.config.url import DatabaseURL
 from df_config.guesses.databases import databases
@@ -77,7 +74,7 @@ class TestDynamicSettingURL(TestDynamicSetting):
         )
 
     def test_url_multiple_values(self):
-        values = {"DATABASE_URL": "psql://localhost,psql://localhost:5433"}
+        values = {"DATABASE_URL": "psql://localhost,localhost:5433"}
         self.check_alls(
             values,
             {
@@ -97,7 +94,7 @@ class TestDynamicSettingURL(TestDynamicSetting):
 
     def test_url_multiple_values_with_dict(self):
         database_url = DatabaseURL(
-            "DATABASE_URL", url="psql://localhost,psql://localhost:5433"
+            "DATABASE_URL", url="psql://localhost,localhost:5433"
         )
         settings_dict = {
             "DATABASE_ENGINE": database_url.engine_(),
@@ -126,20 +123,52 @@ class TestDynamicSettingURL(TestDynamicSetting):
         }
         self.assertEqual(actual, expected)
 
-    def test_url_multiple_values_with_dict_invalid(self):
+    def test_url_multiple_values_with_dict_ssl(self):
         database_url = DatabaseURL(
             "DATABASE_URL",
-            url="psql://username:password@localhost/db1,psql://localhost:5433/db2",
+            url="psql://username:password@localhost,localhost:5433/db2?ssl_mode=verify-full"
+            "&ssl_certfile=./etc/client.crt"
+            "&ssl_keyfile=./etc/client.key"
+            "&ssl_ca_certs=./etc/ca.crt",
         )
-        self.assertRaises(ImproperlyConfigured, lambda: database_url.database_())
-        self.assertRaises(ImproperlyConfigured, lambda: database_url.username_())
-        self.assertRaises(ImproperlyConfigured, lambda: database_url.password_())
-        settings_dict = {
-            "DATABASE_ENGINE": database_url.engine_(),
-            "DATABASE_HOST": database_url.hostname_(),
-            "DATABASE_PORT": database_url.port_(),
-            "DATABASE_OPTIONS": {},
-        }
+        self.assertEqual(database_url.engine_(), "django.db.backends.postgresql")
+        self.assertEqual(database_url.username_(), "username")
+        self.assertEqual(database_url.password_(), "password")
+        self.assertEqual(
+            database_url.netloc_(), "username:password@localhost,localhost:5433"
+        )
+        self.assertEqual(database_url.hostname_(), "localhost,localhost")
+        self.assertEqual(database_url.port_(), "5432,5433")
+        self.assertEqual(database_url.database_(), "db2")
+        self.assertEqual(database_url.use_ssl_(), True)
+        self.assertEqual(database_url.use_tls_(), False)
+        self.assertEqual(database_url.ssl_mode_(), "verify-full")
+        self.assertEqual(database_url.client_cert_(), "./etc/client.crt")
+        self.assertEqual(database_url.client_key_(), "./etc/client.key")
+        self.assertEqual(database_url.ca_cert_(), "./etc/ca.crt")
+        self.assertIsNone(database_url.ca_crl_())
+
+    def test_url_multiple_values_with_dict_nossl(self):
+        database_url = DatabaseURL(
+            "DATABASE_URL",
+            url="psql://username:password@localhost,localhost:5433/db2",
+        )
+        self.assertEqual(database_url.engine_(), "django.db.backends.postgresql")
+        self.assertEqual(database_url.username_(), "username")
+        self.assertEqual(database_url.password_(), "password")
+        self.assertEqual(
+            database_url.netloc_(), "username:password@localhost,localhost:5433"
+        )
+        self.assertEqual(database_url.hostname_(), "localhost,localhost")
+        self.assertEqual(database_url.port_(), "5432,5433")
+        self.assertEqual(database_url.database_(), "db2")
+        self.assertEqual(database_url.use_ssl_(), False)
+        self.assertEqual(database_url.use_tls_(), False)
+        self.assertEqual(database_url.ssl_mode_(), "allow")
+        self.assertIsNone(database_url.client_cert_())
+        self.assertIsNone(database_url.client_key_())
+        self.assertIsNone(database_url.ca_cert_())
+        self.assertIsNone(database_url.ca_crl_())
 
     def test_default_values(self):
         values = {"DATABASE_URL": None}
