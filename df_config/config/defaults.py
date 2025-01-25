@@ -530,8 +530,9 @@ DF_JS = []
 DF_INDEX_VIEW = None
 DF_PROJECT_NAME = CallableSetting(project_name)
 DF_URL_CONF = "{DF_MODULE_NAME}.urls.urlpatterns"
-DF_ADMIN_SITE = "django.contrib.admin.site"
-DF_JS_CATALOG_VIEWS = ["django.contrib.admin"]
+DF_ADMIN_SITE = "django.contrib.admin.sites.site"
+DF_ADMIN_APP_CONFIG = "django.contrib.admin"
+DF_JS_CATALOG_VIEWS = ["{DF_ADMIN_APP_CONFIG}"]
 # noinspection PyUnresolvedReferences
 DF_INSTALLED_APPS = ["{DF_MODULE_NAME}"]  # your django app!
 DF_MIDDLEWARE = []

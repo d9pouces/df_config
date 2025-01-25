@@ -73,7 +73,7 @@ class InstalledApps:
         "django.contrib.sitemaps",
         "django.contrib.sites",
         "django.contrib.staticfiles",
-        "django.contrib.admin",
+        "{DF_ADMIN_APP_CONFIG}",
     ]
     common_third_parties = OrderedDict(
         [
@@ -90,6 +90,7 @@ class InstalledApps:
     )
     required_settings = [
         "ALLAUTH_PROVIDER_APPS",
+        "DF_ADMIN_APP_CONFIG",
         "DF_INSTALLED_APPS",
         "SESSION_ENGINE",
         "USE_ALL_AUTH",
