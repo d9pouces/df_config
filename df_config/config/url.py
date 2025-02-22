@@ -7,7 +7,6 @@ from typing import Callable, Dict, List, Optional, Tuple, Union
 from urllib.parse import ParseResult
 
 from django.core.exceptions import ImproperlyConfigured
-from setuptools.command.bdist_egg import can_scan
 
 from df_config.config.dynamic_settings import DynamicSettting
 
