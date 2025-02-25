@@ -370,7 +370,7 @@ ACCOUNT_EMAIL_SUBJECT_PREFIX = "[{SERVER_NAME}] "
 ALLAUTH_PROVIDER_APPS = DeduplicatedCallableList(allauth_provider_apps)
 ALLAUTH_APPLICATIONS_CONFIG = AutocreateFile("{LOCAL_PATH}/social_auth.ini", mode=0o600)
 ACCOUNT_EMAIL_REQUIRED = True
-ACCOUNT_AUTHENTICATION_METHOD = "username_email"
+ACCOUNT_LOGIN_METHODS = {"email", "username"}
 ACCOUNT_DEFAULT_HTTP_PROTOCOL = "{SERVER_PROTOCOL}"
 ACCOUNT_ADAPTER = "df_config.apps.allauth.AccountAdapter"
 
@@ -550,6 +550,12 @@ NPM_FILE_PATTERNS = {
 }
 # used by the "npm" command: downloads these packages and copies the files matching any pattern in the list
 LOG_REMOTE_ACCESS = True
+LOG_LOKI_EXTRA_TAGS = {
+    "log_source": "django",
+    "command": "{CURRENT_COMMAND_NAME}",
+    "application": "{SERVER_NAME}",
+    "hostname": "{HOSTNAME}",
+}
 LOG_SLOW_QUERY_DURATION_IN_S = 10.0
 LOG_DIRECTORY = Directory("{LOCAL_PATH}/log")
 LOG_EXCLUDED_COMMANDS = {

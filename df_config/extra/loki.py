@@ -22,11 +22,7 @@ class LokiHandler(LokiQueueHandler):
 
         if queue is None:
             queue = Queue(-1)
-        tags = {"log_source": "django"}
-        if hasattr(settings, "CURRENT_COMMAND_NAME"):
-            tags["command"] = settings.CURRENT_COMMAND_NAME
-        if hasattr(settings, "SERVER_NAME"):
-            tags["application"] = settings.SERVER_NAME
-        if hasattr(settings, "HOSTNAME"):
-            tags["hostname"] = settings.HOSTNAME
+        tags = {}
+        if hasattr(settings, "LOG_LOKI_EXTRA_TAGS"):
+            tags = settings.LOG_LOKI_EXTRA_TAGS
         super().__init__(queue=queue, url=url, tags=tags, auth=auth, version="1")
