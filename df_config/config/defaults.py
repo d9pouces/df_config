@@ -56,7 +56,12 @@ from df_config.config.dynamic_settings import (
     SettingReference,
 )
 from df_config.config.url import DatabaseURL, RedisURL, URLSetting
-from df_config.guesses.apps import allauth_provider_apps, installed_apps, middlewares
+from df_config.guesses.apps import (
+    allauth_provider_apps,
+    allauth_version,
+    installed_apps,
+    middlewares,
+)
 from df_config.guesses.auth import (
     CookieName,
     authentication_backends,
@@ -366,11 +371,20 @@ TERSER_BINARY = "terser"
 TERSER_ARGUMENTS = []
 
 # Django-All-Auth
+_allauth_version = allauth_version()
 ACCOUNT_EMAIL_SUBJECT_PREFIX = "[{SERVER_NAME}] "
 ALLAUTH_PROVIDER_APPS = DeduplicatedCallableList(allauth_provider_apps)
 ALLAUTH_APPLICATIONS_CONFIG = AutocreateFile("{LOCAL_PATH}/social_auth.ini", mode=0o600)
-ACCOUNT_EMAIL_REQUIRED = True
-ACCOUNT_LOGIN_METHODS = {"email", "username"}
+if _allauth_version >= [65, 4, 0]:
+    ACCOUNT_LOGIN_METHODS = {"email", "username"}
+else:
+    ACCOUNT_AUTHENTICATION_METHOD = "username_email"
+if _allauth_version >= [65, 5, 0]:
+    ACCOUNT_SIGNUP_FIELDS = ["email*", "password1*", "password2*"]
+else:
+    ACCOUNT_EMAIL_REQUIRED = True
+
+ACCOUNT_FORMS = {"signup": "df_config.forms.SignupForm"}
 ACCOUNT_DEFAULT_HTTP_PROTOCOL = "{SERVER_PROTOCOL}"
 ACCOUNT_ADAPTER = "df_config.apps.allauth.AccountAdapter"
 
