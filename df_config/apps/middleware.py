@@ -38,6 +38,8 @@ class DFConfigMiddleware(RemoteUserMiddleware):
     * set response header for Internet Explorer (to use its most recent render engine)
     """
 
+    async_capable = False
+
     @lru_cache()
     def get_remoteuser_header(self):
         """Return the header to use for the remote user."""
@@ -90,9 +92,9 @@ class DFConfigMiddleware(RemoteUserMiddleware):
             # set the remote username for testing purpose
             remote_addr = request.META.get("REMOTE_ADDR")
             if remote_addr in settings.INTERNAL_IPS:
-                request.META[
-                    remote_user_header
-                ] = self.get_df_fake_authentication_username()
+                request.META[remote_user_header] = (
+                    self.get_df_fake_authentication_username()
+                )
             elif remote_addr:
                 logger.warning(
                     "Unable to use `settings.DF_FAKE_AUTHENTICATION_USERNAME`. "

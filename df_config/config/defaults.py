@@ -563,7 +563,7 @@ NPM_FILE_PATTERNS = {
     "respond.js": ["dest/*"],
 }
 # used by the "npm" command: downloads these packages and copies the files matching any pattern in the list
-LOG_REMOTE_ACCESS = True
+LOG_REMOTE_ACCESS = False
 LOG_LOKI_EXTRA_TAGS = {
     "log_source": "django",
     "command": "{CURRENT_COMMAND_NAME}",
