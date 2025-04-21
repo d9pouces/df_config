@@ -56,6 +56,12 @@ class DFConfigMiddleware(RemoteUserMiddleware):
         return getattr(settings, "DF_FAKE_AUTHENTICATION_USERNAME", None)
         # can emulate an authentication by remote user, for testing purpose
 
+    def __call__(self, request):
+        """Process the request with Django 5.2+."""
+        self.process_request(request)
+        response = self.get_response(request)
+        return self.process_response(request, response)
+
     def process_request(self, request: HttpRequest):
         """Set request.user using the REMOTE_USER header and the remote address."""
         request.remote_username = None
