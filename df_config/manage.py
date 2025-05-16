@@ -36,6 +36,8 @@ SETTINGS_VARIABLE_NAME = "DJANGO_SETTINGS_MODULE"
 DEFAULT_SETTINGS_MODULE = "df_config.config.base"
 MODULE_VARIABLE_NAME = "DF_CONF_NAME"
 
+logger = logging.getLogger(__name__)
+
 
 def set_env(
     module_name: str = None,
@@ -127,8 +129,7 @@ def manage(argv=None, module_name: str = None, settings_module=DEFAULT_SETTINGS_
 
     patch_commands()
     argv = argv or sys.argv
-    logger = logging.getLogger("django.server")
-    logger.info("command='%s'", " ".join(argv))
+    logger.debug("command='%s'", " ".join(argv))
     execute_from_command_line(argv=argv)
 
 
