@@ -72,7 +72,7 @@ class ServerFormatter(logging.Formatter):
     def format(self, record):
         """Format an access, colorizing it depending on the status code."""
         msg = record.msg
-        status_code = getattr(record, "status_code", None)
+        status_code = getattr(record, "status_code", 0)
         level = record.levelno
         if status_code:
             if 200 <= status_code < 300:
@@ -179,7 +179,7 @@ class SlowQueriesFilter(logging.Filter):
         duration = getattr(record, "duration", 0)
         if duration > self.slow_query_duration_in_s:
             # Same as in _log for when stack_info=True is used.
-            # noinspection PyTypeChecker
+            # noinspection PyTypeChecker,PydanticTypeChecker
             fn, lno, func, sinfo = logging.Logger.findCaller(None, True)
             record.stack_info = sinfo
             return True
@@ -399,6 +399,7 @@ class LogConfiguration:
                     self.add_handler(logger, "syslog", level="DEBUG", **kwargs)
             has_handler = True
         elif scheme == "loki" or scheme == "lokis":
+            # noinspection HttpUrlsUsage
             url = f"http://{parsed_log_url.hostname}"
             if scheme == "lokis":
                 url = f"https://{parsed_log_url.hostname}"
@@ -633,7 +634,7 @@ class LogConfiguration:
             open(log_filename, "a").close()  # ok, we can write
             if (
                 remove
-            ):  # but if this file did not exist, we remove it to avoid lot of empty log files...
+            ):  # but if this file did not exist, we remove it to avoid a lot of empty log files...
                 os.remove(log_filename)
         except PermissionError:
             warning_ = Warning(
@@ -648,8 +649,8 @@ class LogConfiguration:
         handler_name = "%s.%s" % (self.log_suffix, filename)
         handler = {
             "class": "logging.handlers.RotatingFileHandler",
-            "maxBytes": 1000000,
-            "backupCount": 3,
+            "maxBytes": self.get_logfile_maxsize(),
+            "backupCount": self.get_logfile_backup_count(),
             "formatter": "nocolor",
             "filename": log_filename,
             "level": level,
@@ -657,8 +658,16 @@ class LogConfiguration:
         }
         return handler, handler_name
 
+    def get_logfile_backup_count(self):
+        """Return the number of log files to keep before deleting the oldest one."""
+        return 3
+
+    def get_logfile_maxsize(self):
+        """Return the maximum size of a log file before rotating it."""
+        return 1000000
+
     def add_handler_stdout(self, filename, formatter, level):
-        """Add an handler for stdout."""
+        """Add a handler for stdout."""
         handler_name = f"{filename}.{level.lower()}"
         if formatter in ("django.server", "colorized") and not self.stdout.isatty():
             formatter = None
@@ -673,7 +682,7 @@ class LogConfiguration:
         return handler, handler_name
 
     def add_handler_stderr(self, filename, formatter, level):
-        """Add an handler for stderr."""
+        """Add a handler for stderr."""
         handler_name = f"{filename}.{level.lower()}"
         if formatter in ("django.server", "colorized") and not self.stderr.isatty():
             formatter = None
