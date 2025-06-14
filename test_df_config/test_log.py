@@ -163,6 +163,11 @@ class LogConfigurationTest(TestCase):
                         "level": "INFO",
                         "propagate": False,
                     },
+                    "granian.access": {
+                        "handlers": ["logging-server.access"],
+                        "level": "INFO",
+                        "propagate": False,
+                    },
                     "django.server": {
                         "handlers": ["logging-server.access"],
                         "level": "INFO",
@@ -315,6 +320,11 @@ class LogConfigurationTest(TestCase):
                         "filters": ["remove_duplicate_warnings"],
                     },
                     "aiohttp.access": {
+                        "handlers": ["logging-server.access"],
+                        "level": "INFO",
+                        "propagate": False,
+                    },
+                    "granian.access": {
                         "handlers": ["logging-server.access"],
                         "level": "INFO",
                         "propagate": False,
@@ -484,6 +494,11 @@ class LogConfigurationTest(TestCase):
                         "level": "INFO",
                         "propagate": False,
                     },
+                    "granian.access": {
+                        "handlers": ["logging-server.access", "loki.debug"],
+                        "level": "INFO",
+                        "propagate": False,
+                    },
                     "django.server": {
                         "handlers": ["logging-server.access", "loki.debug"],
                         "level": "INFO",
@@ -630,6 +645,11 @@ class LogConfigurationTest(TestCase):
                         "level": "INFO",
                         "propagate": False,
                     },
+                    "granian.access": {
+                        "handlers": ["logging-server.access"],
+                        "level": "INFO",
+                        "propagate": False,
+                    },
                     "django.server": {
                         "handlers": ["logging-server.access"],
                         "level": "INFO",
@@ -761,6 +781,11 @@ class LogConfigurationTest(TestCase):
                         "level": "INFO",
                         "propagate": False,
                     },
+                    "granian.access": {
+                        "handlers": ["stderr.warning.django.server"],
+                        "level": "INFO",
+                        "propagate": False,
+                    },
                     "django.server": {
                         "handlers": ["stderr.warning.django.server"],
                         "level": "INFO",
@@ -888,6 +913,11 @@ class LogConfigurationTest(TestCase):
                         "filters": ["remove_duplicate_warnings"],
                     },
                     "aiohttp.access": {
+                        "handlers": ["stderr.debug.django.server"],
+                        "level": "INFO",
+                        "propagate": False,
+                    },
+                    "granian.access": {
                         "handlers": ["stderr.debug.django.server"],
                         "level": "INFO",
                         "propagate": False,
