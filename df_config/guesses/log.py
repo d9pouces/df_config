@@ -238,17 +238,18 @@ class LogConfiguration:
     }
     access_loggers = {
         "aiohttp.access": _level_access,
-        "django.server": _level_access,
         "django.channels.server": _level_access,
+        "django.server": _level_access,
         "geventwebsocket.handler": _level_access,
+        "granian.access": _level_access,
         "gunicorn.access": _level_access,
         "uvicorn.access": _level_access,
     }
 
     problem_loggers = {
+        "df_websockets.signals": {},
         "django": _level_up,
         "django.db": _level_up,
-        "django.db.backends.schema": _level_up,
         "django.db.backends": {
             "DEBUG": "DEBUG",
             "INFO": "DEBUG",
@@ -256,13 +257,13 @@ class LogConfiguration:
             "ERROR": "ERROR",
             "CRITICAL": "CRITICAL",
         },
+        "django.db.backends.schema": _level_up,
         "django.request": {},
         "django.security": {},
-        "df_websockets.signals": {},
         "gunicorn.error": {},
-        "uvicorn.error": {},
         "pip.vcs": _level_up,
         "py.warnings": _level_up,
+        "uvicorn.error": {},
     }
     compat_log_levels = {
         "WARN": "WARNING",
