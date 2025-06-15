@@ -637,6 +637,9 @@ class LogConfiguration:
                 remove
             ):  # but if this file did not exist, we remove it to avoid a lot of empty log files...
                 os.remove(log_filename)
+        except FileNotFoundError:
+            # happen when two processes try to create the same file and remove at the same time
+            pass
         except PermissionError:
             warning_ = Warning(
                 f"Unable to write logs in '{log_directory}' (unsufficient rights?).",
