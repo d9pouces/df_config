@@ -28,6 +28,7 @@ from urllib.parse import quote
 from django.conf import settings
 from django.core.exceptions import ImproperlyConfigured
 from django.http import (
+    FileResponse,
     HttpRequest,
     HttpResponse,
     HttpResponseNotModified,
@@ -293,11 +294,11 @@ def send_file(
             file_content = RangedChunkReader(fileobj, ranges, chunk_size=chunk_size)
             if len(ranges) == 1:
                 status = 206
+            response = StreamingHttpResponse(
+                file_content, content_type=mimetype, status=status
+            )
         else:
-            file_content = ChunkReader(fileobj, chunk_size=chunk_size)
-        response = StreamingHttpResponse(
-            file_content, content_type=mimetype, status=status
-        )
+            response = FileResponse(fileobj, content_type=mimetype, status=status)
         if len(ranges) == 1:
             response["Content-Range"] = "bytes %d-%d/%d" % (
                 ranges[0][0],
