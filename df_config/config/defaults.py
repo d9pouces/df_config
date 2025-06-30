@@ -630,7 +630,7 @@ DATABASE_SSL_CLIENT_KEY = DATABASE_URL.client_key()
 DATABASE_SSL_CRL = DATABASE_URL.ca_crl()
 
 DATABASE_OPTIONS = CallableSetting(databases_options)
-DATABASE_CONN_MAX_AGE = 3600  # reset DB connection after 1 hour
+DATABASE_CONN_MAX_AGE = 0
 EMAIL_HOST_URL = URLSetting("EMAIL_HOST_URL", split_char="")
 EMAIL_HOST = EMAIL_HOST_URL.hostname("localhost")
 EMAIL_HOST_PASSWORD = EMAIL_HOST_URL.password("")
