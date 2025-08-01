@@ -630,7 +630,7 @@ class LogConfiguration:
             return None, None
         basename = f"{self.log_suffix}-{filename}.log"
         log_filename = os.path.join(log_directory, basename)
-        if not os.access(log_filename, os.W_OK):
+        if not os.access(log_directory, os.W_OK):
             warning_ = Warning(
                 f"Unable to write logs in '{log_directory}' (unsufficient rights?).",
                 hint=None,
