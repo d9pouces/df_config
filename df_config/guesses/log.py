@@ -630,17 +630,7 @@ class LogConfiguration:
             return None, None
         basename = f"{self.log_suffix}-{filename}.log"
         log_filename = os.path.join(log_directory, basename)
-        try:
-            remove = not os.path.exists(log_filename)
-            open(log_filename, "a").close()  # ok, we can write
-            if (
-                remove
-            ):  # but if this file did not exist, we remove it to avoid a lot of empty log files...
-                os.remove(log_filename)
-        except FileNotFoundError:
-            # happen when two processes try to create the same file and remove at the same time
-            pass
-        except PermissionError:
+        if not os.access(log_filename, os.W_OK):
             warning_ = Warning(
                 f"Unable to write logs in '{log_directory}' (unsufficient rights?).",
                 hint=None,
