@@ -177,6 +177,7 @@ class IniConfigProvider(ConfigProvider):
         if include_doc and config_field.__doc__:
             for line in config_field.__doc__.splitlines():
                 to_str += " \n# %s" % line
+        to_str = to_str.replace("%", "%%")  # Escape percent signs
         self.parser.set(section, option, to_str)
 
     def get_value(self, config_field: ConfigField):
