@@ -51,7 +51,8 @@ prometheus_engines = {
     "django.core.cache.backends.locmem.LocMemCache": "django_prometheus.cache.backends.locmem.LocMemCache",
     "django.core.cache.backends.memcached.PyLibMCCache": "django_prometheus.cache.backends.memcached.PyLibMCCache",
     "django.core.cache.backends.memcached.PyMemcacheCache": "django_prometheus.cache.backends.memcached.PyMemcacheCache",
-    "django.core.cache.backends.redis.RedisCache": "django_prometheus.cache.backends.redis.RedisCache",
+    "django.core.cache.backends.redis.RedisCache": "django_prometheus.cache.backends.redis.NativeRedisCache",
+    "django_redis.cache.RedisCache": "django_prometheus.cache.backends.redis.RedisCache",
 }
 
 
@@ -357,14 +358,13 @@ def cache_setting(settings_dict):
     dummy = {"BACKEND": prometheus_engines_.get(backend, backend)}
     actual = locmem
     if django_version >= (4, 0) and schemes.issubset({"redis", "rediss"}):
-        backend = "django.core.cache.backends.redis.RedisCache"
+        # django-prometheus require django-redis even for native redis cache
         actual = {
-            "BACKEND": prometheus_engines_.get(backend, backend),
+            "BACKEND": "django.core.cache.backends.redis.RedisCache",
             "LOCATION": [x.geturl() for x in parsed_urls],
         }
     elif schemes.issubset({"redis", "rediss"}):
         if utils.is_package_present("django_redis"):
-            # noinspection PyUnresolvedReferences
             actual = {
                 "BACKEND": "django_redis.cache.RedisCache",
                 "LOCATION": [x.geturl() for x in parsed_urls],

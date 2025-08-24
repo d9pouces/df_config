@@ -447,15 +447,15 @@ class TestCacheSetting(TestDynamicSetting):
             # noinspection PyUnresolvedReferences
             expected = {
                 "base": {
-                    "BACKEND": "django_prometheus.cache.backends.redis.RedisCache",
+                    "BACKEND": "django.core.cache.backends.redis.RedisCache",
                     "LOCATION": ["redis://:password@localhost:6379/1"],
                 },
                 "cached": {
-                    "BACKEND": "django_prometheus.cache.backends.redis.RedisCache",
+                    "BACKEND": "django.core.cache.backends.redis.RedisCache",
                     "LOCATION": ["redis://:password@localhost:6379/1"],
                 },
                 "default": {
-                    "BACKEND": "django_prometheus.cache.backends.redis.RedisCache",
+                    "BACKEND": "django.core.cache.backends.redis.RedisCache",
                     "LOCATION": ["redis://:password@localhost:6379/1"],
                 },
                 "locmem": {
