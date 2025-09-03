@@ -58,7 +58,7 @@ class LogConfigurationTest(TestCase):
                 "formatters": {
                     "django.server": {
                         "()": "df_config.guesses.log.ServerFormatter",
-                        "format": "%(asctime)s [test.example.com:9000] %(message)s",
+                        "fmt": "%(asctime)s [test.example.com:9000] %(message)s",
                     },
                     "nocolor": {
                         "()": "logging.Formatter",
@@ -220,7 +220,7 @@ class LogConfigurationTest(TestCase):
                 "formatters": {
                     "django.server": {
                         "()": "df_config.guesses.log.ServerFormatter",
-                        "format": "%(asctime)s [test.example.com:9000] %(message)s",
+                        "fmt": "%(asctime)s [test.example.com:9000] %(message)s",
                     },
                     "nocolor": {
                         "()": "logging.Formatter",
@@ -384,7 +384,7 @@ class LogConfigurationTest(TestCase):
                 "formatters": {
                     "django.server": {
                         "()": "df_config.guesses.log.ServerFormatter",
-                        "format": "%(asctime)s [test.example.com:9000] %(message)s",
+                        "fmt": "%(asctime)s [test.example.com:9000] %(message)s",
                     },
                     "nocolor": {
                         "()": "logging.Formatter",
@@ -547,7 +547,7 @@ class LogConfigurationTest(TestCase):
                 "formatters": {
                     "django.server": {
                         "()": "df_config.guesses.log.ServerFormatter",
-                        "format": "%(asctime)s [test.example.com:9000] %(message)s",
+                        "fmt": "%(asctime)s [test.example.com:9000] %(message)s",
                     },
                     "nocolor": {
                         "()": "logging.Formatter",
@@ -693,7 +693,7 @@ class LogConfigurationTest(TestCase):
                 "formatters": {
                     "django.server": {
                         "()": "df_config.guesses.log.ServerFormatter",
-                        "format": "%(asctime)s [test.example.com:9000] %(message)s",
+                        "fmt": "%(asctime)s [test.example.com:9000] %(message)s",
                     },
                     "nocolor": {
                         "()": "logging.Formatter",
@@ -829,7 +829,7 @@ class LogConfigurationTest(TestCase):
                 "formatters": {
                     "django.server": {
                         "()": "df_config.guesses.log.ServerFormatter",
-                        "format": "%(asctime)s [test.example.com:9000] %(message)s",
+                        "fmt": "%(asctime)s [test.example.com:9000] %(message)s",
                     },
                     "nocolor": {
                         "()": "logging.Formatter",

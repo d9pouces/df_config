@@ -472,7 +472,7 @@ class LogConfiguration:
         return {
             "django.server": {
                 "()": "df_config.guesses.log.ServerFormatter",
-                "format": "%(asctime)s [{}] %(message)s".format(name),
+                "fmt": "%(asctime)s [{}] %(message)s".format(name),
             },
             "nocolor": {
                 "()": "logging.Formatter",
