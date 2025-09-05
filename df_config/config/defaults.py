@@ -631,7 +631,9 @@ DATABASE_SSL_CRL = DATABASE_URL.ca_crl()
 
 DATABASE_OPTIONS = CallableSetting(databases_options)
 DATABASE_CONN_MAX_AGE = 0
-EMAIL_HOST_URL = URLSetting("EMAIL_HOST_URL", split_char="")
+EMAIL_HOST_URL = URLSetting(
+    "EMAIL_HOST_URL", split_char="", accepted_schemes={"smtp", "smtps", "smtp+tls"}
+)
 EMAIL_HOST = EMAIL_HOST_URL.hostname("localhost")
 EMAIL_HOST_PASSWORD = EMAIL_HOST_URL.password("")
 EMAIL_HOST_USER = EMAIL_HOST_URL.username("")

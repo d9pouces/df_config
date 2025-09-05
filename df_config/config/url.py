@@ -3,7 +3,7 @@
 import re
 import urllib.parse
 from importlib.metadata import PackageNotFoundError, version
-from typing import Callable, Dict, List, Optional, Tuple, Union
+from typing import Callable, Dict, List, Optional, Set, Tuple, Union
 from urllib.parse import ParseResult
 
 from django.core.exceptions import ImproperlyConfigured
@@ -76,6 +76,7 @@ class URLSetting:
         required: List[str] = None,
         url: Optional[str] = None,
         split_char: str = ",",
+        accepted_schemes: Optional[Set[str]] = None,
     ):
         """Initialize the object.
 
@@ -92,6 +93,7 @@ class URLSetting:
         self.parse_value(url)
         self.setting_name = setting_name
         self.required = required or []
+        self.accepted_schemes = accepted_schemes
 
     def __repr__(self):
         """Represent this object as a string."""
@@ -204,6 +206,8 @@ class URLSetting:
             else:
                 s = parsed_url.scheme.lower()
                 s = self.SCHEME_ALIASES.get(s, s)
+                if self.accepted_schemes and s not in self.accepted_schemes:
+                    raise ImproperlyConfigured(f"Unknown scheme '{s}' in URL.")
                 ports.append(str(self.SCHEMES[s][0]))
         return self.split_char.join(ports)
 
@@ -261,6 +265,8 @@ class URLSetting:
             return parsed_url.port
         s = parsed_url.scheme.lower()
         s = self.SCHEME_ALIASES.get(s, s)
+        if self.accepted_schemes and s not in self.accepted_schemes:
+            raise ImproperlyConfigured(f"Unknown scheme '{s}' in URL.")
         return self.SCHEMES[s][0]
 
     def use_tls(self, default=False):
@@ -272,6 +278,8 @@ class URLSetting:
         if not self.parsed_urls:
             return False
         s = self.scheme_()
+        if self.accepted_schemes and s not in self.accepted_schemes:
+            raise ImproperlyConfigured(f"Unknown scheme '{s}' in URL.")
         response = self.SCHEMES[s][index]
         return response
 
@@ -295,8 +303,11 @@ class URLSetting:
         """Return the engine name from the URL scheme."""
         if not self.parsed_urls:
             return None
-        scheme = self.parsed_urls[0].scheme.lower()
-        return self.normalize_engine(scheme)
+        s = self.parsed_urls[0].scheme.lower()
+        s = self.SCHEME_ALIASES.get(s, s)
+        if self.accepted_schemes and s not in self.accepted_schemes:
+            raise ImproperlyConfigured(f"Unknown scheme '{s}' in URL.")
+        return self.normalize_engine(s)
 
     @classmethod
     def normalize_engine(cls, scheme: str):
@@ -418,6 +429,22 @@ class DatabaseURL(URLSetting):
         "django.db.backends.mysql": ["mysqlclient", "pymysql"],
     }
 
+    def __init__(
+        self,
+        setting_name: str = None,
+        required: List[str] = None,
+        url: Optional[str] = None,
+        split_char: str = ",",
+    ):
+        """Initialize the object, specifying the allowed schemes."""
+        super().__init__(
+            setting_name=setting_name,
+            required=required,
+            url=url,
+            split_char=split_char,
+            accepted_schemes={"postgres", "mysql", "sqlite3", "mariadb", "oracle"},
+        )
+
 
 class RedisURL(URLSetting):
     """Specialized class for Redis URLs, since databases are identified by an integer."""
@@ -428,3 +455,19 @@ class RedisURL(URLSetting):
         if not v or not (matcher := re.match(r"/(0|[1-9]\d*)$", v)):
             return None
         return int(matcher.group(1))
+
+    def __init__(
+        self,
+        setting_name: str = None,
+        required: List[str] = None,
+        url: Optional[str] = None,
+        split_char: str = ",",
+    ):
+        """Initialize the object, specifying the allowed schemes."""
+        super().__init__(
+            setting_name=setting_name,
+            required=required,
+            url=url,
+            split_char=split_char,
+            accepted_schemes={"redis", "rediss"},
+        )
