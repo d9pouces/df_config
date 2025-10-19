@@ -325,7 +325,7 @@ class ChoiceConfigFile(ConfigField):
         """Return the help string for this field, including valid choices."""
         valid_values = str(_(", ")).join(['"%s"' % x for x in self.choices])
         help_str = self.__doc__
-        if help_str:
+        if help_str is not None:
             help_str += _(" Valid choices: {valid_values}").format(
                 valid_values=valid_values
             )
