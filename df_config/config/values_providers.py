@@ -112,8 +112,9 @@ class EnvironmentConfigProvider(ConfigProvider):
         key = shlex.quote(key)
         value = shlex.quote(value)
         doc = ""
-        if include_doc and config_field.__doc__:
-            for doc_line in config_field.__doc__.splitlines():
+        help_str = config_field.get_help()
+        if include_doc and help_str:
+            for doc_line in help_str.splitlines():
                 doc += f"\n# {doc_line}"
         self.exports += f"{key}={value}{doc}\n"
         self.exported_lines.append(f"{key}={value}{doc}")
@@ -174,8 +175,9 @@ class IniConfigProvider(ConfigProvider):
         if not self.parser.has_section(section):
             self.parser.add_section(section)
         to_str = config_field.to_str(config_field.value)
-        if include_doc and config_field.__doc__:
-            for line in config_field.__doc__.splitlines():
+        help_str = config_field.get_help()
+        if include_doc and help_str:
+            for line in help_str.splitlines():
                 to_str += " \n# %s" % line
         to_str = to_str.replace("%", "%%")  # Escape percent signs
         self.parser.set(section, option, to_str)

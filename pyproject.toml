@@ -51,7 +51,7 @@ name = "df_config"
 packages = [{ include = "df_config" }]
 readme = "README.md"
 repository = 'https://github.com/d9pouces/df_config'
-version = "1.2.81"
+version = "1.2.82"
 
 [tool.poetry.dependencies]
 django = ">=2.1"

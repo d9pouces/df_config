@@ -21,11 +21,13 @@ Check :mod:`df_config.iniconf` for examples.
 """
 
 import os
-from typing import Any, Callable, Optional, Union
+from typing import Any, Callable, Dict, Optional, Union
 
 from django.core.checks import Error, Warning
+from django.utils.translation import gettext_lazy as _
 
 from df_config.checks import settings_check_results
+from df_config.utils import StrOrPromise
 
 MISSING_VALUE = [[]]
 
@@ -148,7 +150,7 @@ class ConfigField:
         setting_name: str,
         from_str: Callable[[str], Optional[Any]] = str,
         to_str: Callable[[Any], str] = str_or_blank,
-        help_str: str = None,
+        help_str: StrOrPromise = "",
         default: Any = None,
         env_name: Optional[Union[set, str]] = AUTO,
     ):
@@ -157,9 +159,13 @@ class ConfigField:
         self.setting_name = setting_name
         self.from_str = from_str
         self.to_str = to_str
-        self.__doc__ = help_str
+        self.__doc__: StrOrPromise = help_str
         self.value = default
         self.environ_name = env_name
+
+    def get_help(self) -> StrOrPromise:
+        """Return the help string for this field."""
+        return str(self.__doc__)
 
     def __str__(self):
         """Return the setting name as a string."""
@@ -276,7 +282,14 @@ class ChoiceConfigFile(ConfigField):
     through the Django check system.
     """
 
-    def __init__(self, name, setting_name, choices, help_str="", **kwargs):
+    def __init__(
+        self,
+        name,
+        setting_name,
+        choices: Dict[str, Any],
+        help_str: StrOrPromise = "",
+        **kwargs,
+    ):
         """Create a new field that only accepts a limited set of values."""
 
         def from_str(value):
@@ -297,11 +310,7 @@ class ChoiceConfigFile(ConfigField):
                     return str(k)
             return ""
 
-        valid_values = ", ".join(['"%s"' % x for x in choices])
-        if help_str:
-            help_str += f" Valid choices: {valid_values}"
-        else:
-            help_str = f"Valid choices: {valid_values}"
+        self.choices = choices
 
         super().__init__(
             name,
@@ -311,6 +320,20 @@ class ChoiceConfigFile(ConfigField):
             help_str=help_str,
             **kwargs,
         )
+
+    def get_help(self) -> StrOrPromise:
+        """Return the help string for this field, including valid choices."""
+        valid_values = str(_(", ")).join(['"%s"' % x for x in self.choices])
+        help_str = self.__doc__
+        if help_str:
+            help_str += _(" Valid choices: {valid_values}").format(
+                valid_values=valid_values
+            )
+        else:
+            help_str = _("Valid choices: {valid_values}").format(
+                valid_values=valid_values
+            )
+        return str(help_str)
 
 
 class FilePathConfigField(ConfigField):

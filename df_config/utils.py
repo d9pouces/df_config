@@ -18,11 +18,12 @@ import argparse
 import datetime
 import mimetypes
 import os
+import pathlib
 import re
 from email.utils import mktime_tz, parsedate_tz
 from importlib import metadata
 from importlib.util import find_spec
-from typing import Iterable, Optional, Set, Tuple
+from typing import Iterable, Optional, Set, Tuple, Union
 from urllib.parse import quote
 
 from django.conf import settings
@@ -34,8 +35,11 @@ from django.http import (
     HttpResponseNotModified,
     StreamingHttpResponse,
 )
+from django.utils.functional import Promise
 from django.utils.http import http_date
 from django.utils.module_loading import import_string
+
+StrOrPromise = Union[str, Promise]
 
 
 class RemovedInDjangoFloor200Warning(DeprecationWarning):
@@ -44,7 +48,7 @@ class RemovedInDjangoFloor200Warning(DeprecationWarning):
     pass
 
 
-def ensure_dir(path, parent=True):
+def ensure_dir(path: Union[str, pathlib.Path], parent=True):
     """Ensure that the given directory exists.
 
     :param path: the path to check
@@ -56,7 +60,7 @@ def ensure_dir(path, parent=True):
     return path
 
 
-def is_package_present(package_name):
+def is_package_present(package_name: str) -> bool:
     """Return True is the `package_name` package is present in your current Python environment."""
     return find_spec(package_name) is not None
 
