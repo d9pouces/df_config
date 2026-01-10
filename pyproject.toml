@@ -30,6 +30,7 @@ classifiers = [
     'Framework :: Django :: 5.0',
     'Framework :: Django :: 5.1',
     'Framework :: Django :: 5.2',
+    'Framework :: Django :: 6.0',
     'License :: OSI Approved :: CEA CNRS Inria Logiciel Libre License, version 2.1 (CeCILL-2.1)',
     'Operating System :: MacOS :: MacOS X',
     'Operating System :: Microsoft :: Windows',
@@ -41,7 +42,8 @@ classifiers = [
     'Programming Language :: Python :: 3.10',
     'Programming Language :: Python :: 3.11',
     'Programming Language :: Python :: 3.12',
-    'Programming Language :: Python :: 3.13'
+    'Programming Language :: Python :: 3.13',
+    'Programming Language :: Python :: 3.14'
 ]
 description = "Smart default settings for Django websites"
 documentation = 'https://github.com/d9pouces/df_config'
@@ -51,7 +53,7 @@ name = "df_config"
 packages = [{ include = "df_config" }]
 readme = "README.md"
 repository = 'https://github.com/d9pouces/df_config'
-version = "1.2.82"
+version = "1.2.83"
 
 [tool.poetry.dependencies]
 django = ">=2.1"
@@ -70,8 +72,8 @@ django-minio-storage = "^0.5.7"
 whitenoise = "^6.6.0"
 django-prometheus = "^2.3.1"
 django-debug-toolbar = "^4.4.6"
-django-allauth = "^65.1.0"
-coverage = "^7.6.4"
+django-allauth = "^65.13.1"
+coverage = "^7.13.1"
 
 [tool.pytest.ini_options]
 DJANGO_SETTINGS_MODULE = "test_df_config.data.settings"
