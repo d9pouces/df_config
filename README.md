@@ -1,6 +1,9 @@
 df_config
 =========
 
+[![Basic unittests](https://github.com/d9pouces/df_config/actions/workflows/basic_unittests.yml/badge.svg)](https://github.com/d9pouces/df_config/actions/workflows/basic_unittests.yml) ![PyPI](https://img.shields.io/pypi/v/df_config?label=df_config)
+
+
 Django, *the web framework for perfectionists with deadlines*, is based on a single settings Python module (defined in a environment variable).
 
 `df-config` helps you to manage your settings in a more flexible way:
