@@ -84,6 +84,7 @@ BASE_MAPPING = [
             "Where all data will be stored (static/uploaded/temporary files, …). "
             "If you change it, you must run the collectstatic and migrate commands again.\n"
         ),
+        env_name="LOCAL_PATH",
     ),
     DirectoryPathConfigField(
         "global.upload_directory",
