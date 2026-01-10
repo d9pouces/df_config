@@ -1,79 +1,69 @@
-# ##############################################################################
-#  This file is part of df_config                                              #
-#                                                                              #
-#  Copyright (C) 2020 Matthieu Gallet <df_config@19pouces.net>                    #
-#  All Rights Reserved                                                         #
-#                                                                              #
-#  You may use, distribute and modify this code under the                      #
-#  terms of the (BSD-like) CeCILL-B license.                                   #
-#                                                                              #
-#  You should have received a copy of the CeCILL-B license with                #
-#  this file. If not, please visit:                                            #
-#  https://cecill.info/licences/Licence_CeCILL-B_V1-en.txt (English)           #
-#  or https://cecill.info/licences/Licence_CeCILL-B_V1-fr.txt (French)         #
-#                                                                              #
-# ##############################################################################
-
 [build-system]
-build-backend = "poetry.core.masonry.api"
-requires = ["poetry-core"]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
 
-[tool.poetry]
-authors = ["Matthieu Gallet <github@19pouces.net>"]
-classifiers = [
-    'Development Status :: 5 - Production/Stable',
-    'Framework :: Django :: 3.1',
-    'Framework :: Django :: 3.2',
-    'Framework :: Django :: 4.0',
-    'Framework :: Django :: 4.1',
-    'Framework :: Django :: 4.2',
-    'Framework :: Django :: 5.0',
-    'Framework :: Django :: 5.1',
-    'Framework :: Django :: 5.2',
-    'Framework :: Django :: 6.0',
-    'License :: OSI Approved :: CEA CNRS Inria Logiciel Libre License, version 2.1 (CeCILL-2.1)',
-    'Operating System :: MacOS :: MacOS X',
-    'Operating System :: Microsoft :: Windows',
-    'Operating System :: POSIX :: BSD',
-    'Operating System :: POSIX :: Linux',
-    'Operating System :: Unix',
-    'Programming Language :: Python :: 3 :: Only',
-    'Programming Language :: Python :: 3.9',
-    'Programming Language :: Python :: 3.10',
-    'Programming Language :: Python :: 3.11',
-    'Programming Language :: Python :: 3.12',
-    'Programming Language :: Python :: 3.13',
-    'Programming Language :: Python :: 3.14'
-]
-description = "Smart default settings for Django websites"
-documentation = 'https://github.com/d9pouces/df_config'
-license = "CECILL-B"
-maintainers = ["Matthieu Gallet <github@19pouces.net>"]
+[project]
 name = "df_config"
-packages = [{ include = "df_config" }]
-readme = "README.md"
-repository = 'https://github.com/d9pouces/df_config'
 version = "1.2.83"
+description = "Smart default settings for Django websites"
+authors = [{ name = "Matthieu Gallet", email = "github@19pouces.net" }]
+requires-python = ">=3.10"
+readme = "README.md"
+license = "CECILL-B"
+maintainers = [{ name = "Matthieu Gallet", email = "github@19pouces.net" }]
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Framework :: Django :: 3.1",
+    "Framework :: Django :: 3.2",
+    "Framework :: Django :: 4.0",
+    "Framework :: Django :: 4.1",
+    "Framework :: Django :: 4.2",
+    "Framework :: Django :: 5.0",
+    "Framework :: Django :: 5.1",
+    "Framework :: Django :: 5.2",
+    "Framework :: Django :: 6.0",
+    "License :: OSI Approved :: CEA CNRS Inria Logiciel Libre License, version 2.1 (CeCILL-2.1)",
+    "Operating System :: MacOS :: MacOS X",
+    "Operating System :: Microsoft :: Windows",
+    "Operating System :: POSIX :: BSD",
+    "Operating System :: POSIX :: Linux",
+    "Operating System :: Unix",
+    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+]
+dependencies = ["django>=2.1"]
 
-[tool.poetry.dependencies]
-django = ">=2.1"
-python = ">=3.9"
+[project.urls]
+Repository = "https://github.com/d9pouces/df_config"
+Documentation = "https://github.com/d9pouces/df_config"
 
-[tool.poetry.group.dev.dependencies]
-hypothesis = ">=6.72.0"
-pytest = "^8.3.2"
-pytest-django = ">=4.5.2"
-tox = ">=4.4.12"
-python-logging-loki = ">=0.3.1"
-gunicorn = ">=21.2.0"
-daphne = ">=4.0.0"
-uvicorn = ">=0.23.2"
-django-minio-storage = "^0.5.7"
-whitenoise = "^6.6.0"
-django-prometheus = "^2.3.1"
-django-debug-toolbar = "^4.4.6"
-django-allauth = "^65.13.1"
-coverage = "^7.13.1"
+[dependency-groups]
+dev = [
+    "hypothesis>=6.72.0",
+    "pytest>=8.3.2,<9",
+    "pytest-django>=4.5.2",
+    "tox>=4.4.12",
+    "python-logging-loki>=0.3.1",
+    "gunicorn>=21.2.0",
+    "daphne>=4.0.0",
+    "uvicorn>=0.23.2",
+    "django-minio-storage>=0.5.7,<0.6",
+    "whitenoise>=6.6.0,<7",
+    "django-prometheus>=2.3.1,<3",
+    "django-debug-toolbar>=4.4.6,<5",
+    "django-allauth>=65.13.1,<66",
+    "coverage>=7.13.1,<8",
+]
+
+[tool.hatch.build.targets.sdist]
+include = ["df_config"]
+
+[tool.hatch.build.targets.wheel]
+include = ["df_config"]
 
 [tool.pytest.ini_options]
 DJANGO_SETTINGS_MODULE = "test_df_config.data.settings"
