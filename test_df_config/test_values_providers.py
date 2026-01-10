@@ -21,7 +21,7 @@ from typing import Dict, Iterable
 from unittest import TestCase
 
 from hypothesis import given
-from hypothesis.strategies import floats, integers, text
+from hypothesis.strategies import text
 
 from df_config.config.fields import BooleanConfigField, CharConfigField
 from df_config.config.values_providers import (
