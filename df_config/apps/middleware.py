@@ -38,6 +38,8 @@ class DFConfigMiddleware(RemoteUserMiddleware):
     * set response header for Internet Explorer (to use its most recent render engine)
     """
 
+    async_capable = False
+
     @lru_cache()
     def get_remoteuser_header(self):
         """Return the header to use for the remote user."""
@@ -53,6 +55,12 @@ class DFConfigMiddleware(RemoteUserMiddleware):
         # avoid cached_property to ease unittests
         return getattr(settings, "DF_FAKE_AUTHENTICATION_USERNAME", None)
         # can emulate an authentication by remote user, for testing purpose
+
+    def __call__(self, request):
+        """Process the request with Django 5.2+."""
+        self.process_request(request)
+        response = self.get_response(request)
+        return self.process_response(request, response)
 
     def process_request(self, request: HttpRequest):
         """Set request.user using the REMOTE_USER header and the remote address."""
@@ -90,9 +98,9 @@ class DFConfigMiddleware(RemoteUserMiddleware):
             # set the remote username for testing purpose
             remote_addr = request.META.get("REMOTE_ADDR")
             if remote_addr in settings.INTERNAL_IPS:
-                request.META[
-                    remote_user_header
-                ] = self.get_df_fake_authentication_username()
+                request.META[remote_user_header] = (
+                    self.get_df_fake_authentication_username()
+                )
             elif remote_addr:
                 logger.warning(
                     "Unable to use `settings.DF_FAKE_AUTHENTICATION_USERNAME`. "

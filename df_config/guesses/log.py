@@ -72,7 +72,7 @@ class ServerFormatter(logging.Formatter):
     def format(self, record):
         """Format an access, colorizing it depending on the status code."""
         msg = record.msg
-        status_code = getattr(record, "status_code", None)
+        status_code = getattr(record, "status_code", 0)
         level = record.levelno
         if status_code:
             if 200 <= status_code < 300:
@@ -179,7 +179,7 @@ class SlowQueriesFilter(logging.Filter):
         duration = getattr(record, "duration", 0)
         if duration > self.slow_query_duration_in_s:
             # Same as in _log for when stack_info=True is used.
-            # noinspection PyTypeChecker
+            # noinspection PyTypeChecker,PydanticTypeChecker
             fn, lno, func, sinfo = logging.Logger.findCaller(None, True)
             record.stack_info = sinfo
             return True
@@ -238,17 +238,18 @@ class LogConfiguration:
     }
     access_loggers = {
         "aiohttp.access": _level_access,
-        "django.server": _level_access,
         "django.channels.server": _level_access,
+        "django.server": _level_access,
         "geventwebsocket.handler": _level_access,
+        "granian.access": _level_access,
         "gunicorn.access": _level_access,
         "uvicorn.access": _level_access,
     }
 
     problem_loggers = {
+        "df_websockets.signals": {},
         "django": _level_up,
         "django.db": _level_up,
-        "django.db.backends.schema": _level_up,
         "django.db.backends": {
             "DEBUG": "DEBUG",
             "INFO": "DEBUG",
@@ -256,13 +257,13 @@ class LogConfiguration:
             "ERROR": "ERROR",
             "CRITICAL": "CRITICAL",
         },
+        "django.db.backends.schema": _level_up,
         "django.request": {},
         "django.security": {},
-        "df_websockets.signals": {},
         "gunicorn.error": {},
-        "uvicorn.error": {},
         "pip.vcs": _level_up,
         "py.warnings": _level_up,
+        "uvicorn.error": {},
     }
     compat_log_levels = {
         "WARN": "WARNING",
@@ -399,6 +400,7 @@ class LogConfiguration:
                     self.add_handler(logger, "syslog", level="DEBUG", **kwargs)
             has_handler = True
         elif scheme == "loki" or scheme == "lokis":
+            # noinspection HttpUrlsUsage
             url = f"http://{parsed_log_url.hostname}"
             if scheme == "lokis":
                 url = f"https://{parsed_log_url.hostname}"
@@ -470,7 +472,7 @@ class LogConfiguration:
         return {
             "django.server": {
                 "()": "df_config.guesses.log.ServerFormatter",
-                "format": "%(asctime)s [{}] %(message)s".format(name),
+                "fmt": "%(asctime)s [{}] %(message)s".format(name),
             },
             "nocolor": {
                 "()": "logging.Formatter",
@@ -628,14 +630,7 @@ class LogConfiguration:
             return None, None
         basename = f"{self.log_suffix}-{filename}.log"
         log_filename = os.path.join(log_directory, basename)
-        try:
-            remove = not os.path.exists(log_filename)
-            open(log_filename, "a").close()  # ok, we can write
-            if (
-                remove
-            ):  # but if this file did not exist, we remove it to avoid lot of empty log files...
-                os.remove(log_filename)
-        except PermissionError:
+        if not os.access(log_directory, os.W_OK):
             warning_ = Warning(
                 f"Unable to write logs in '{log_directory}' (unsufficient rights?).",
                 hint=None,
@@ -648,8 +643,8 @@ class LogConfiguration:
         handler_name = "%s.%s" % (self.log_suffix, filename)
         handler = {
             "class": "logging.handlers.RotatingFileHandler",
-            "maxBytes": 1000000,
-            "backupCount": 3,
+            "maxBytes": self.get_logfile_maxsize(),
+            "backupCount": self.get_logfile_backup_count(),
             "formatter": "nocolor",
             "filename": log_filename,
             "level": level,
@@ -657,8 +652,16 @@ class LogConfiguration:
         }
         return handler, handler_name
 
+    def get_logfile_backup_count(self):
+        """Return the number of log files to keep before deleting the oldest one."""
+        return 3
+
+    def get_logfile_maxsize(self):
+        """Return the maximum size of a log file before rotating it."""
+        return 1000000
+
     def add_handler_stdout(self, filename, formatter, level):
-        """Add an handler for stdout."""
+        """Add a handler for stdout."""
         handler_name = f"{filename}.{level.lower()}"
         if formatter in ("django.server", "colorized") and not self.stdout.isatty():
             formatter = None
@@ -673,7 +676,7 @@ class LogConfiguration:
         return handler, handler_name
 
     def add_handler_stderr(self, filename, formatter, level):
-        """Add an handler for stderr."""
+        """Add a handler for stderr."""
         handler_name = f"{filename}.{level.lower()}"
         if formatter in ("django.server", "colorized") and not self.stderr.isatty():
             formatter = None

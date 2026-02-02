@@ -1,3 +1,5 @@
+"""Small wrapper around logging_loki to add some common labels."""
+
 from queue import Queue
 from typing import Optional, Tuple
 
@@ -7,15 +9,20 @@ emitter.LokiEmitter.level_tag = "level"
 
 
 class LokiHandler(LokiQueueHandler):
+    """Log handler that sends log records to Loki."""
+
     def __init__(
-        self, url: Optional[str] = None, auth: Optional[Tuple[str, str]] = None
+        self,
+        queue=None,
+        url: Optional[str] = None,
+        auth: Optional[Tuple[str, str]] = None,
     ):
+        """Create new Loki logging handler."""
         from django.conf import settings
 
-        tags = {
-            "application": settings.SERVER_NAME,
-            "command": settings.CURRENT_COMMAND_NAME,
-            "hostname": settings.HOSTNAME,
-            "log_source": "django",
-        }
-        super().__init__(Queue(-1), url=url, tags=tags, auth=auth, version="1")
+        if queue is None:
+            queue = Queue(-1)
+        tags = {}
+        if hasattr(settings, "LOG_LOKI_EXTRA_TAGS"):
+            tags = settings.LOG_LOKI_EXTRA_TAGS
+        super().__init__(queue=queue, url=url, tags=tags, auth=auth, version="1")

@@ -15,6 +15,8 @@
 # ##############################################################################
 from typing import Dict, Optional
 
+from django.core.exceptions import ImproperlyConfigured
+
 from df_config.config.url import DatabaseURL
 from df_config.guesses.databases import databases
 from test_df_config.test_dynamic_settings import TestDynamicSetting
@@ -162,8 +164,30 @@ class TestDynamicSettingURL(TestDynamicSetting):
         self.assertEqual(database_url.hostname_(), "localhost,localhost")
         self.assertEqual(database_url.port_(), "5432,5433")
         self.assertEqual(database_url.database_(), "db2")
+        self.assertEqual(database_url.scheme_(), "postgres")
         self.assertEqual(database_url.use_ssl_(), False)
         self.assertEqual(database_url.use_tls_(), False)
+        self.assertEqual(database_url.ssl_mode_(), "allow")
+        self.assertIsNone(database_url.client_cert_())
+        self.assertIsNone(database_url.client_key_())
+        self.assertIsNone(database_url.ca_cert_())
+        self.assertIsNone(database_url.ca_crl_())
+
+    def test_url_invalid_scheme(self):
+        database_url = DatabaseURL(
+            "DATABASE_URL",
+            url="redis://username:password@localhost,localhost:5433/db2",
+        )
+        with self.assertRaises(ImproperlyConfigured):
+            database_url.engine_()
+        self.assertEqual(database_url.hostname_(), "localhost,localhost")
+        with self.assertRaises(ImproperlyConfigured):
+            database_url.port_()
+        self.assertEqual(database_url.database_(), "db2")
+        with self.assertRaises(ImproperlyConfigured):
+            database_url.use_ssl_()
+        with self.assertRaises(ImproperlyConfigured):
+            database_url.use_tls_()
         self.assertEqual(database_url.ssl_mode_(), "allow")
         self.assertIsNone(database_url.client_cert_())
         self.assertIsNone(database_url.client_key_())

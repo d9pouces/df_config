@@ -48,7 +48,7 @@ class TestFunctions(TestCase):
 
     @given(text())
     def test_bool_setting_multi(self, k):
-        if k not in {"1", "ok", "yes", "true", "on"}:
+        if k.lower() not in {"1", "ok", "yes", "true", "on"}:
             self.assertFalse(bool_setting(k))
 
     def test_str_or_none(self):

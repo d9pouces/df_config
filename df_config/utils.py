@@ -18,23 +18,28 @@ import argparse
 import datetime
 import mimetypes
 import os
+import pathlib
 import re
 from email.utils import mktime_tz, parsedate_tz
 from importlib import metadata
 from importlib.util import find_spec
-from typing import Iterable, Optional, Set, Tuple
+from typing import Iterable, Optional, Set, Tuple, Union
 from urllib.parse import quote
 
 from django.conf import settings
 from django.core.exceptions import ImproperlyConfigured
 from django.http import (
+    FileResponse,
     HttpRequest,
     HttpResponse,
     HttpResponseNotModified,
     StreamingHttpResponse,
 )
+from django.utils.functional import Promise
 from django.utils.http import http_date
 from django.utils.module_loading import import_string
+
+StrOrPromise = Union[str, Promise]
 
 
 class RemovedInDjangoFloor200Warning(DeprecationWarning):
@@ -43,7 +48,7 @@ class RemovedInDjangoFloor200Warning(DeprecationWarning):
     pass
 
 
-def ensure_dir(path, parent=True):
+def ensure_dir(path: Union[str, pathlib.Path], parent=True):
     """Ensure that the given directory exists.
 
     :param path: the path to check
@@ -55,7 +60,7 @@ def ensure_dir(path, parent=True):
     return path
 
 
-def is_package_present(package_name):
+def is_package_present(package_name: str) -> bool:
     """Return True is the `package_name` package is present in your current Python environment."""
     return find_spec(package_name) is not None
 
@@ -293,11 +298,11 @@ def send_file(
             file_content = RangedChunkReader(fileobj, ranges, chunk_size=chunk_size)
             if len(ranges) == 1:
                 status = 206
+            response = StreamingHttpResponse(
+                file_content, content_type=mimetype, status=status
+            )
         else:
-            file_content = ChunkReader(fileobj, chunk_size=chunk_size)
-        response = StreamingHttpResponse(
-            file_content, content_type=mimetype, status=status
-        )
+            response = FileResponse(fileobj, content_type=mimetype, status=status)
         if len(ranges) == 1:
             response["Content-Range"] = "bytes %d-%d/%d" % (
                 ranges[0][0],

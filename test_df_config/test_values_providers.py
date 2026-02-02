@@ -20,6 +20,9 @@ from importlib import resources
 from typing import Dict, Iterable
 from unittest import TestCase
 
+from hypothesis import given
+from hypothesis.strategies import text
+
 from df_config.config.fields import BooleanConfigField, CharConfigField
 from df_config.config.values_providers import (
     DictProvider,
@@ -157,6 +160,22 @@ class TestIniConfigProvider(TestCase):
                 BooleanConfigField("test.test", "UNITTEST", default=True)
             )
             self.assertEqual(False, v)
+
+    @given(text())
+    def test_set_value(self, t):
+        provider = IniConfigProvider()
+        field = CharConfigField("test.test", "UNITTEST", default=t, allow_none=False)
+        provider.set_value(field, include_doc=True)
+        v = provider.get_value(field)
+        self.assertEqual(t, v)
+
+    def test_set_value_escape(self):
+        t = '%test% with \'special "chars" and new lines \n new line'
+        provider = IniConfigProvider()
+        field = CharConfigField("test.test", "UNITTEST", default=t, allow_none=False)
+        provider.set_value(field, include_doc=True)
+        v = provider.get_value(field)
+        self.assertEqual(t, v)
 
     def test_get_extra_settings(self):
         with tempfile.NamedTemporaryFile() as fd:

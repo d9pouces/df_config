@@ -172,7 +172,7 @@ class Command(BaseCommand):
                 _("# %(project)s version %(version)s")
                 % {
                     "version": guess_version(merger.settings),
-                    "project": merger.settings["DF_PROJECT_NAME"],
+                    "project": merger.settings.get("DF_PROJECT_NAME", "project"),
                 }
             )
         )

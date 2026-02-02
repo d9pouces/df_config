@@ -1,5 +1,8 @@
+import logging.config
 import tempfile
 from unittest import TestCase
+
+from django.test import override_settings
 
 from df_config.guesses.log import LogConfiguration
 
@@ -36,6 +39,7 @@ class LogConfigurationTest(TestCase):
         log_configuration = LogConfiguration(stdout=Stream(), stderr=Stream())
         config = log_configuration(settings, argv=self.argv)
         # print(config)
+        logging.config.dictConfig(config)
         return config
 
     def test_log_remote_url(self):
@@ -54,7 +58,7 @@ class LogConfigurationTest(TestCase):
                 "formatters": {
                     "django.server": {
                         "()": "df_config.guesses.log.ServerFormatter",
-                        "format": "%(asctime)s [test.example.com:9000] %(message)s",
+                        "fmt": "%(asctime)s [test.example.com:9000] %(message)s",
                     },
                     "nocolor": {
                         "()": "logging.Formatter",
@@ -159,6 +163,11 @@ class LogConfigurationTest(TestCase):
                         "level": "INFO",
                         "propagate": False,
                     },
+                    "granian.access": {
+                        "handlers": ["logging-server.access"],
+                        "level": "INFO",
+                        "propagate": False,
+                    },
                     "django.server": {
                         "handlers": ["logging-server.access"],
                         "level": "INFO",
@@ -211,7 +220,7 @@ class LogConfigurationTest(TestCase):
                 "formatters": {
                     "django.server": {
                         "()": "df_config.guesses.log.ServerFormatter",
-                        "format": "%(asctime)s [test.example.com:9000] %(message)s",
+                        "fmt": "%(asctime)s [test.example.com:9000] %(message)s",
                     },
                     "nocolor": {
                         "()": "logging.Formatter",
@@ -315,6 +324,11 @@ class LogConfigurationTest(TestCase):
                         "level": "INFO",
                         "propagate": False,
                     },
+                    "granian.access": {
+                        "handlers": ["logging-server.access"],
+                        "level": "INFO",
+                        "propagate": False,
+                    },
                     "django.server": {
                         "handlers": ["logging-server.access"],
                         "level": "INFO",
@@ -352,6 +366,7 @@ class LogConfigurationTest(TestCase):
             },
         )
 
+    @override_settings(SERVER_NAME="www.example.com")
     def test_log_loki_url_access(self):
         with tempfile.TemporaryDirectory() as dirname:
             config = self.get_config(
@@ -369,7 +384,7 @@ class LogConfigurationTest(TestCase):
                 "formatters": {
                     "django.server": {
                         "()": "df_config.guesses.log.ServerFormatter",
-                        "format": "%(asctime)s [test.example.com:9000] %(message)s",
+                        "fmt": "%(asctime)s [test.example.com:9000] %(message)s",
                     },
                     "nocolor": {
                         "()": "logging.Formatter",
@@ -479,6 +494,11 @@ class LogConfigurationTest(TestCase):
                         "level": "INFO",
                         "propagate": False,
                     },
+                    "granian.access": {
+                        "handlers": ["logging-server.access", "loki.debug"],
+                        "level": "INFO",
+                        "propagate": False,
+                    },
                     "django.server": {
                         "handlers": ["logging-server.access", "loki.debug"],
                         "level": "INFO",
@@ -527,7 +547,7 @@ class LogConfigurationTest(TestCase):
                 "formatters": {
                     "django.server": {
                         "()": "df_config.guesses.log.ServerFormatter",
-                        "format": "%(asctime)s [test.example.com:9000] %(message)s",
+                        "fmt": "%(asctime)s [test.example.com:9000] %(message)s",
                     },
                     "nocolor": {
                         "()": "logging.Formatter",
@@ -625,6 +645,11 @@ class LogConfigurationTest(TestCase):
                         "level": "INFO",
                         "propagate": False,
                     },
+                    "granian.access": {
+                        "handlers": ["logging-server.access"],
+                        "level": "INFO",
+                        "propagate": False,
+                    },
                     "django.server": {
                         "handlers": ["logging-server.access"],
                         "level": "INFO",
@@ -668,7 +693,7 @@ class LogConfigurationTest(TestCase):
                 "formatters": {
                     "django.server": {
                         "()": "df_config.guesses.log.ServerFormatter",
-                        "format": "%(asctime)s [test.example.com:9000] %(message)s",
+                        "fmt": "%(asctime)s [test.example.com:9000] %(message)s",
                     },
                     "nocolor": {
                         "()": "logging.Formatter",
@@ -756,6 +781,11 @@ class LogConfigurationTest(TestCase):
                         "level": "INFO",
                         "propagate": False,
                     },
+                    "granian.access": {
+                        "handlers": ["stderr.warning.django.server"],
+                        "level": "INFO",
+                        "propagate": False,
+                    },
                     "django.server": {
                         "handlers": ["stderr.warning.django.server"],
                         "level": "INFO",
@@ -799,7 +829,7 @@ class LogConfigurationTest(TestCase):
                 "formatters": {
                     "django.server": {
                         "()": "df_config.guesses.log.ServerFormatter",
-                        "format": "%(asctime)s [test.example.com:9000] %(message)s",
+                        "fmt": "%(asctime)s [test.example.com:9000] %(message)s",
                     },
                     "nocolor": {
                         "()": "logging.Formatter",
@@ -883,6 +913,11 @@ class LogConfigurationTest(TestCase):
                         "filters": ["remove_duplicate_warnings"],
                     },
                     "aiohttp.access": {
+                        "handlers": ["stderr.debug.django.server"],
+                        "level": "INFO",
+                        "propagate": False,
+                    },
+                    "granian.access": {
                         "handlers": ["stderr.debug.django.server"],
                         "level": "INFO",
                         "propagate": False,

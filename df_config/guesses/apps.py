@@ -27,6 +27,22 @@ from df_config.guesses.social_providers import SOCIAL_PROVIDER_APPS
 from df_config.utils import is_package_present
 
 
+def allauth_version() -> list[int]:
+    """Return the version of django-allauth as a list of integers."""
+    try:
+        version_str = version("django-allauth")
+    except PackageNotFoundError:
+        version_str = "1.0.0"
+    components_str = version_str.split(".")
+    components = []
+    for component in components_str:
+        try:
+            components.append(int(component))
+        except ValueError:
+            components.append(0)
+    return components
+
+
 def allauth_provider_apps(settings_dict):
     """Provide configured authentications for django_allauth."""
     parser = RawConfigParser()
@@ -73,7 +89,7 @@ class InstalledApps:
         "django.contrib.sitemaps",
         "django.contrib.sites",
         "django.contrib.staticfiles",
-        "django.contrib.admin",
+        "{DF_ADMIN_APP_CONFIG}",
     ]
     common_third_parties = OrderedDict(
         [
@@ -90,6 +106,7 @@ class InstalledApps:
     )
     required_settings = [
         "ALLAUTH_PROVIDER_APPS",
+        "DF_ADMIN_APP_CONFIG",
         "DF_INSTALLED_APPS",
         "SESSION_ENGINE",
         "USE_ALL_AUTH",

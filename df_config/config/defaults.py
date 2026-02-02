@@ -56,7 +56,12 @@ from df_config.config.dynamic_settings import (
     SettingReference,
 )
 from df_config.config.url import DatabaseURL, RedisURL, URLSetting
-from df_config.guesses.apps import allauth_provider_apps, installed_apps, middlewares
+from df_config.guesses.apps import (
+    allauth_provider_apps,
+    allauth_version,
+    installed_apps,
+    middlewares,
+)
 from df_config.guesses.auth import (
     CookieName,
     authentication_backends,
@@ -369,11 +374,20 @@ TERSER_BINARY = "terser"
 TERSER_ARGUMENTS = []
 
 # Django-All-Auth
+_allauth_version = allauth_version()
 ACCOUNT_EMAIL_SUBJECT_PREFIX = "[{SERVER_NAME}] "
 ALLAUTH_PROVIDER_APPS = DeduplicatedCallableList(allauth_provider_apps)
 ALLAUTH_APPLICATIONS_CONFIG = AutocreateFile("{LOCAL_PATH}/social_auth.ini", mode=0o600)
-ACCOUNT_EMAIL_REQUIRED = True
-ACCOUNT_AUTHENTICATION_METHOD = "username_email"
+if _allauth_version >= [65, 4, 0]:
+    ACCOUNT_LOGIN_METHODS = {"email", "username"}
+else:
+    ACCOUNT_AUTHENTICATION_METHOD = "username_email"
+if _allauth_version >= [65, 5, 0]:
+    ACCOUNT_SIGNUP_FIELDS = ["email*", "password1*", "password2*"]
+else:
+    ACCOUNT_EMAIL_REQUIRED = True
+
+ACCOUNT_FORMS = {"signup": "df_config.forms.SignupForm"}
 ACCOUNT_DEFAULT_HTTP_PROTOCOL = "{SERVER_PROTOCOL}"
 ACCOUNT_ADAPTER = "df_config.apps.allauth.AccountAdapter"
 
@@ -533,8 +547,9 @@ DF_JS = []
 DF_INDEX_VIEW = None
 DF_PROJECT_NAME = CallableSetting(project_name)
 DF_URL_CONF = "{DF_MODULE_NAME}.urls.urlpatterns"
-DF_ADMIN_SITE = "django.contrib.admin.site"
-DF_JS_CATALOG_VIEWS = ["django.contrib.admin"]
+DF_ADMIN_SITE = "django.contrib.admin.sites.site"
+DF_ADMIN_APP_CONFIG = "django.contrib.admin"
+DF_JS_CATALOG_VIEWS = ["{DF_ADMIN_APP_CONFIG}"]
 # noinspection PyUnresolvedReferences
 DF_INSTALLED_APPS = ["{DF_MODULE_NAME}"]  # your django app!
 DF_MIDDLEWARE = []
@@ -551,7 +566,13 @@ NPM_FILE_PATTERNS = {
     "respond.js": ["dest/*"],
 }
 # used by the "npm" command: downloads these packages and copies the files matching any pattern in the list
-LOG_REMOTE_ACCESS = True
+LOG_REMOTE_ACCESS = False
+LOG_LOKI_EXTRA_TAGS = {
+    "log_source": "django",
+    "command": "{CURRENT_COMMAND_NAME}",
+    "application": "{SERVER_NAME}",
+    "hostname": "{HOSTNAME}",
+}
 LOG_SLOW_QUERY_DURATION_IN_S = 10.0
 LOG_DIRECTORY = Directory("{LOCAL_PATH}/log")
 LOG_EXCLUDED_COMMANDS = {
@@ -612,8 +633,10 @@ DATABASE_SSL_CLIENT_KEY = DATABASE_URL.client_key()
 DATABASE_SSL_CRL = DATABASE_URL.ca_crl()
 
 DATABASE_OPTIONS = CallableSetting(databases_options)
-DATABASE_CONN_MAX_AGE = 3600  # reset DB connection after 1 hour
-EMAIL_HOST_URL = URLSetting("EMAIL_HOST_URL", split_char="")
+DATABASE_CONN_MAX_AGE = 0
+EMAIL_HOST_URL = URLSetting(
+    "EMAIL_HOST_URL", split_char="", accepted_schemes={"smtp", "smtps", "smtp+tls"}
+)
 EMAIL_HOST = EMAIL_HOST_URL.hostname("localhost")
 EMAIL_HOST_PASSWORD = EMAIL_HOST_URL.password("")
 EMAIL_HOST_USER = EMAIL_HOST_URL.username("")

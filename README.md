@@ -1,6 +1,9 @@
 df_config
 =========
 
+[![Basic unittests](https://github.com/d9pouces/df_config/actions/workflows/basic_unittests.yml/badge.svg)](https://github.com/d9pouces/df_config/actions/workflows/basic_unittests.yml) ![PyPI](https://img.shields.io/pypi/v/df_config?label=df_config)
+
+
 Django, *the web framework for perfectionists with deadlines*, is based on a single settings Python module (defined in a environment variable).
 
 `df-config` helps you to manage your settings in a more flexible way:
@@ -229,16 +232,6 @@ DF_SERVER = "gunicorn"  # "gunicorn" or "daphne"
 ```
 A new Django command `server` is available and launches `gunicorn` or `daphne`. The application and the listen address/port are specified so you do no have to set them. 
 
-
-Heroku
-------
-
-Environment variable names have been chosen to be compatible with the Heroku default environment: 
-
-  * `SECRET_KEY`: should set it in your `app.json` file
-  * `DATABASE_URL`: automatically set by the "heroku-postgresql" addon
-  * `PORT`: set by default
-  * `HEROKU_APP_NAME`: you should set it in your `app.json` file
   
 Django app detection
 --------------------
