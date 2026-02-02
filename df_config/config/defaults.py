@@ -278,6 +278,9 @@ USE_X_SEND_FILE = False  # Apache module
 X_ACCEL_REDIRECT = []  # paths used by nginx
 USE_HTTP_BASIC_AUTH = False  # HTTP-Authorization
 USE_X_FORWARDED_FOR = CallableSetting(use_x_forwarded_for)  # X-Forwarded-For
+USE_X_FORWARDED_PORT = SettingReference("USE_X_FORWARDED_FOR")
+USE_X_FORWARDED_HOST = SettingReference("USE_X_FORWARDED_FOR")
+
 DF_FAKE_AUTHENTICATION_USERNAME = None
 DF_ALLOW_USER_CREATION = True
 DF_SERVER = CallableSetting(
