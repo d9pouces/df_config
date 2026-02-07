@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "df_config"
-version = "1.2.84"
+version = "1.2.85"
 description = "Smart default settings for Django websites"
 authors = [{ name = "Matthieu Gallet", email = "github@19pouces.net" }]
 requires-python = ">=3.10"
