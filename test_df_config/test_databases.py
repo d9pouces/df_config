@@ -236,7 +236,12 @@ class TestCacheSetting(TestDynamicSetting):
         self.check(
             s,
             expected,
-            extra_values={"DEBUG": False, "CACHE_URL": "", "USE_PROMETHEUS": False},
+            extra_values={
+                "DEBUG": False,
+                "CACHE_URL": "",
+                "USE_PROMETHEUS": False,
+                "USE_DJANGO_REDIS": True,
+            },
         )
 
     def test_cache_setting_no_debug_prometheus(self):
@@ -263,7 +268,12 @@ class TestCacheSetting(TestDynamicSetting):
         self.check(
             s,
             expected,
-            extra_values={"DEBUG": False, "CACHE_URL": "", "USE_PROMETHEUS": True},
+            extra_values={
+                "DEBUG": False,
+                "CACHE_URL": "",
+                "USE_PROMETHEUS": True,
+                "USE_DJANGO_REDIS": True,
+            },
         )
 
     def test_cache_setting_debug(self):
@@ -286,7 +296,12 @@ class TestCacheSetting(TestDynamicSetting):
         self.check(
             s,
             expected,
-            extra_values={"DEBUG": True, "CACHE_URL": "", "USE_PROMETHEUS": False},
+            extra_values={
+                "DEBUG": True,
+                "CACHE_URL": "",
+                "USE_PROMETHEUS": False,
+                "USE_DJANGO_REDIS": True,
+            },
         )
 
     def test_cache_setting_debug_prometheus(self):
@@ -310,7 +325,12 @@ class TestCacheSetting(TestDynamicSetting):
         self.check(
             s,
             expected,
-            extra_values={"DEBUG": True, "CACHE_URL": "", "USE_PROMETHEUS": True},
+            extra_values={
+                "DEBUG": True,
+                "CACHE_URL": "",
+                "USE_PROMETHEUS": True,
+                "USE_DJANGO_REDIS": True,
+            },
         )
 
     def test_cache_setting_no_debug_redis(self):
@@ -365,6 +385,7 @@ class TestCacheSetting(TestDynamicSetting):
                 "DEBUG": False,
                 "CACHE_URL": "redis://:password@localhost:6379/1",
                 "USE_PROMETHEUS": False,
+                "USE_DJANGO_REDIS": True,
             },
         )
 
@@ -438,6 +459,7 @@ class TestCacheSetting(TestDynamicSetting):
                 "DEBUG": False,
                 "CACHE_URL": "redis://:password@hostname1:6379/1,redis://:password@hostname2:6379/1",
                 "USE_PROMETHEUS": False,
+                "USE_DJANGO_REDIS": True,
             },
         )
 
@@ -494,6 +516,7 @@ class TestCacheSetting(TestDynamicSetting):
                 "DEBUG": False,
                 "CACHE_URL": "redis://:password@localhost:6379/1",
                 "USE_PROMETHEUS": True,
+                "USE_DJANGO_REDIS": True,
             },
         )
 
@@ -541,6 +564,7 @@ class TestCacheSetting(TestDynamicSetting):
                 "DEBUG": True,
                 "CACHE_URL": "redis://:password@localhost:6379/1",
                 "USE_PROMETHEUS": False,
+                "USE_DJANGO_REDIS": True,
             },
         )
 
@@ -574,6 +598,7 @@ class TestCacheSetting(TestDynamicSetting):
                     "DEBUG": False,
                     "CACHE_URL": "memcache://localhost:11211",
                     "USE_PROMETHEUS": False,
+                    "USE_DJANGO_REDIS": True,
                 },
             ),
         expected = {
@@ -605,6 +630,7 @@ class TestCacheSetting(TestDynamicSetting):
                     "DEBUG": False,
                     "CACHE_URL": "memcache://hostname1:11211,memcache://hostname2:11211",
                     "USE_PROMETHEUS": False,
+                    "USE_DJANGO_REDIS": True,
                 },
             ),
         with mock.patch("df_config.utils.is_package_present", new=lambda x: False):
@@ -617,6 +643,7 @@ class TestCacheSetting(TestDynamicSetting):
                         "DEBUG": False,
                         "CACHE_URL": "memcache://localhost:11211",
                         "USE_PROMETHEUS": False,
+                        "USE_DJANGO_REDIS": True,
                     },
                 ),
             )
@@ -633,6 +660,7 @@ class TestCacheSetting(TestDynamicSetting):
                         "DEBUG": True,
                         "CACHE_URL": "memcache://localhost:11211",
                         "USE_PROMETHEUS": False,
+                        "USE_DJANGO_REDIS": True,
                     },
                 ),
             )
@@ -664,6 +692,7 @@ class TestCacheSetting(TestDynamicSetting):
                 "DEBUG": False,
                 "CACHE_URL": "file:///var/tmp/django_cache",
                 "USE_PROMETHEUS": True,
+                "USE_DJANGO_REDIS": True,
             },
         )
 
@@ -678,6 +707,7 @@ class TestCacheSetting(TestDynamicSetting):
                     "DEBUG": False,
                     "CACHE_URL": "file:///var/tmp/django_cache,file:///var/tmp/django_cache2",
                     "USE_PROMETHEUS": True,
+                    "USE_DJANGO_REDIS": True,
                 },
             ),
         )
