@@ -234,7 +234,7 @@ LOGIN_REDIRECT_URL = "{URL_PREFIX}"
 
 # django.contrib.sessions
 SESSION_ENGINE = "django.contrib.sessions.backends.cache"
-SESSION_CACHE_ALIAS = "default"
+SESSION_CACHE_ALIAS = "cached"
 SESSION_COOKIE_SECURE = SettingReference("USE_SSL")
 CSRF_COOKIE_SECURE = SettingReference("USE_SSL")
 
