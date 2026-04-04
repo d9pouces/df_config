@@ -218,7 +218,7 @@ class Directory(Path):
         :param setting_name: name of the setting containing this value
         """
         value = merger.analyze_raw_value(self.value, provider_name, setting_name)
-        if value is None:
+        if value is None or value == "":
             return None
         value = os.path.normpath(value)
         if not value.endswith("/"):

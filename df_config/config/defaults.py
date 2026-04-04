@@ -130,7 +130,7 @@ from df_config.guesses.staticfiles import (
 from df_config.utils import guess_version, is_package_present
 
 USE_CELERY = is_package_present("celery")
-USE_REDIS_SESSIONS = is_package_present("redis_sessions")
+USE_DJANGO_REDIS = is_package_present("django_redis")
 USE_PIPELINE = is_package_present("pipeline")
 USE_DEBUG_TOOLBAR = is_package_present("debug_toolbar")
 USE_ALL_AUTH = is_package_present("allauth")
@@ -233,9 +233,8 @@ LOGIN_REDIRECT_URL = "{URL_PREFIX}"
 # LOGOUT_REDIRECT_URL = '{URL_PREFIX}'
 
 # django.contrib.sessions
-SESSION_ENGINE = "django.contrib.sessions.backends.db"
-if USE_REDIS_SESSIONS:
-    SESSION_ENGINE = "redis_sessions.session"
+SESSION_ENGINE = "django.contrib.sessions.backends.cache"
+SESSION_CACHE_ALIAS = "default"
 SESSION_COOKIE_SECURE = SettingReference("USE_SSL")
 CSRF_COOKIE_SECURE = SettingReference("USE_SSL")
 

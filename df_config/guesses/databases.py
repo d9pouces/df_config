@@ -364,7 +364,7 @@ def cache_setting(settings_dict):
             "LOCATION": [x.geturl() for x in parsed_urls],
         }
     elif schemes.issubset({"redis", "rediss"}):
-        if utils.is_package_present("django_redis"):
+        if settings_dict["USE_DJANGO_REDIS"]:
             actual = {
                 "BACKEND": "django_redis.cache.RedisCache",
                 "LOCATION": [x.geturl() for x in parsed_urls],
@@ -411,4 +411,5 @@ cache_setting.required_settings = [
     "DEBUG",
     "CACHE_URL",
     "USE_PROMETHEUS",
+    "USE_DJANGO_REDIS",
 ]

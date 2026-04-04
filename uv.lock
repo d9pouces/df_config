@@ -597,7 +597,7 @@ wheels = [
 
 [[package]]
 name = "df-config"
-version = "1.2.83"
+version = "1.2.85"
 source = { editable = "." }
 dependencies = [
     { name = "django", version = "5.2.10", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.12'" },
@@ -623,24 +623,24 @@ dev = [
 ]
 
 [package.metadata]
-requires-dist = [{ name = "django", specifier = ">=2.1" }]
+requires-dist = [{ name = "django", specifier = ">=4.2" }]
 
 [package.metadata.requires-dev]
 dev = [
-    { name = "coverage", specifier = ">=7.13.1,<8" },
+    { name = "coverage", specifier = ">=7.13.1" },
     { name = "daphne", specifier = ">=4.0.0" },
-    { name = "django-allauth", specifier = ">=65.13.1,<66" },
-    { name = "django-debug-toolbar", specifier = ">=4.4.6,<5" },
-    { name = "django-minio-storage", specifier = ">=0.5.7,<0.6" },
-    { name = "django-prometheus", specifier = ">=2.3.1,<3" },
+    { name = "django-allauth", specifier = ">=65.13.1" },
+    { name = "django-debug-toolbar", specifier = ">=4.4.6" },
+    { name = "django-minio-storage", specifier = ">=0.5.7" },
+    { name = "django-prometheus", specifier = ">=2.3.1" },
     { name = "gunicorn", specifier = ">=21.2.0" },
     { name = "hypothesis", specifier = ">=6.72.0" },
-    { name = "pytest", specifier = ">=8.3.2,<9" },
+    { name = "pytest", specifier = ">=8.3.2" },
     { name = "pytest-django", specifier = ">=4.5.2" },
     { name = "python-logging-loki", specifier = ">=0.3.1" },
     { name = "tox", specifier = ">=4.4.12" },
     { name = "uvicorn", specifier = ">=0.23.2" },
-    { name = "whitenoise", specifier = ">=6.6.0,<7" },
+    { name = "whitenoise", specifier = ">=6.6.0" },
 ]
 
 [[package]]
@@ -747,7 +747,7 @@ name = "exceptiongroup"
 version = "1.3.1"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "typing-extensions", marker = "python_full_version < '3.12'" },
+    { name = "typing-extensions", marker = "python_full_version < '3.11'" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/50/79/66800aadf48771f6b62f7eb014e352e5d06856655206165d775e675a02c9/exceptiongroup-1.3.1.tar.gz", hash = "sha256:8b412432c6055b0b7d14c310000ae93352ed6754f70fa8f7c34141f91c4e3219", size = 30371, upload-time = "2025-11-21T23:01:54.787Z" }
 wheels = [
