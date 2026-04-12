@@ -13,12 +13,15 @@
 #  or https://cecill.info/licences/Licence_CeCILL-B_V1-fr.txt (French)         #
 #                                                                              #
 # ##############################################################################
+"""Guess the best Django-pipeline settings."""
 import shutil
 from typing import Dict, List, Optional, Tuple, Union
 
 from df_config.utils import is_package_present
 
 available_css_compressor = [
+    ("df_config.apps.pipeline.LightningcssCompressor", "LIGHTNINGCSS_BINARY", None),
+    ("df_config.apps.pipeline.CssoCompressor", "CSSO_BINARY", None),
     ("df_config.apps.pipeline.CssNanoCompressor", "CSSNANO_BINARY", None),
     ("pipeline.compressors.yuglify.YuglifyCompressor", "YUGLIFY_BINARY", None),
     ("pipeline.compressors.yui.YUICompressor", "YUI_BINARY", None),
@@ -28,6 +31,7 @@ available_css_compressor = [
     ("pipeline.compressors.NoopCompressor", None, None),
 ]
 available_js_compressors = [
+    ("df_config.apps.pipeline.ESBuildCompressor", "ESBUILD_BINARY", None),
     ("df_config.apps.pipeline.TerserCompressor", "TERSER_BINARY", None),
     ("pipeline.compressors.uglifyjs.UglifyJSCompressor", "UGLIFYJS_BINARY", None),
     ("pipeline.compressors.yuglify.YuglifyCompressor", "YUGLIFY_BINARY", None),
@@ -52,6 +56,7 @@ available_compilers = [
 def required_settings(
     candidates: List[Tuple[str, Optional[str], Optional[str]]]
 ) -> List[str]:
+    """Return the list of required Django settings."""
     return [x[1] for x in candidates if x[1]]
 
 
@@ -60,6 +65,7 @@ def guess_pipeline_extension(
     settings_dict: Dict,
     one: bool = False,
 ) -> Union[List[str], Optional[str]]:
+    """Guess the available django-pipeline utils, checking if the binary is actually installed."""
     extensions = []
     for extension, setting, package in candidates:
         if package and not is_package_present(package):
@@ -75,6 +81,7 @@ def guess_pipeline_extension(
 
 
 def pipeline_css_compressor(settings_dict: Dict) -> str:
+    """Guess the available CSS compressors."""
     return guess_pipeline_extension(available_css_compressor, settings_dict, one=True)
 
 
@@ -82,6 +89,7 @@ pipeline_css_compressor.required_settings = required_settings(available_css_comp
 
 
 def pipeline_js_compressor(settings_dict: Dict) -> str:
+    """Guess the available JS compressors."""
     return guess_pipeline_extension(available_js_compressors, settings_dict, one=True)
 
 
@@ -89,6 +97,7 @@ pipeline_js_compressor.required_settings = required_settings(available_js_compre
 
 
 def pipeline_compilers(settings_dict: Dict) -> List[str]:
+    """Guess the list of available compilers to use in the PIPELINE setting."""
     return guess_pipeline_extension(available_compilers, settings_dict)
 
 

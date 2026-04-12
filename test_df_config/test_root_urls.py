@@ -3,7 +3,6 @@ from unittest import TestCase
 from django.test import override_settings
 from django.urls.resolvers import URLResolver
 
-from df_config.config.defaults import STATIC_ROOT
 from df_config.root_urls import RootUrls
 
 

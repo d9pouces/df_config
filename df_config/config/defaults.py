@@ -369,8 +369,14 @@ TYPESCRIPT_BINARY = "tsc"
 TYPESCRIPT_ARGUMENTS = ["--sourceMap", "true", "--target", "es6"]
 CSSNANO_BINARY = "cssnano"
 CSSNANO_ARGUMENTS = []
+CSSO_BINARY = "csso"
+CSSO_ARGUMENTS = []
 TERSER_BINARY = "terser"
 TERSER_ARGUMENTS = []
+ESBUILD_BINARY = "esbuild"
+ESBUILD_ARGUMENTS = ["--minify"]
+LIGHTNINGCSS_BINARY = "npx"
+LIGHTNINGCSS_ARGUMENTS = ["lightningcss-cli"]
 
 # Django-All-Auth
 _allauth_version = allauth_version()
