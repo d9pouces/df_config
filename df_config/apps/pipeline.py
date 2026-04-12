@@ -91,12 +91,20 @@ class MinifyCompressor(SubProcessCompressor):
 
     def compress_css(self, css):
         """Compress a block of CSS code using the "cssnano" command."""
-        command = [settings.MINIFY_BINARY, "--type", "text/css"]
+        command = [
+            settings.MINIFY_BINARY,
+            "--type",
+            "text/css",
+        ] + settings.MINIFY_ARGUMENTS
         return self.execute_command(command, css)
 
     def compress_js(self, js):
         """Not implemented."""
-        command = [settings.MINIFY_BINARY, "--type", "text/javascript"]
+        command = [
+            settings.MINIFY_BINARY,
+            "--type",
+            "text/javascript",
+        ] + settings.MINIFY_ARGUMENTS
         return self.execute_command(command, js)
 
 
