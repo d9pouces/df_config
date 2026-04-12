@@ -44,15 +44,15 @@ class TestCompressor(TestCase):
             ref = importlib.resources.files("test_df_config").joinpath(f"data/{name}")
             with ref.open("r") as fd:
                 content = fd.read()
-                actual_content = compressor(verbose=False).compress_css(content)
+                compressor(verbose=False).compress_css(content)
 
     def test_lightningcss(self):
-        if not shutil.which("npx"):
-            self.skipTest("npx lightningcss-cli is not installed")
+        if not shutil.which("lightningcss"):
+            self.skipTest("lightningcss is not installed")
         self.check_css_compressor(LightningcssCompressor)
 
     def test_cssnano(self):
-        if not shutil.which("cssnano"):
+        if not shutil.which("postcss"):
             self.skipTest("cssnano is not installed")
         self.check_css_compressor(CssNanoCompressor)
 
