@@ -20,6 +20,7 @@ from typing import Dict, List, Optional, Tuple, Union
 from df_config.utils import is_package_present
 
 available_css_compressor = [
+    ("df_config.apps.pipeline.MinifyCompressor", "MINIFY_BINARY", None),
     ("df_config.apps.pipeline.LightningcssCompressor", "LIGHTNINGCSS_BINARY", None),
     ("df_config.apps.pipeline.CssoCompressor", "CSSO_BINARY", None),
     ("df_config.apps.pipeline.CssNanoCompressor", "CSSNANO_BINARY", None),
@@ -31,6 +32,7 @@ available_css_compressor = [
     ("pipeline.compressors.NoopCompressor", None, None),
 ]
 available_js_compressors = [
+    ("df_config.apps.pipeline.MinifyCompressor", "MINIFY_BINARY", None),
     ("df_config.apps.pipeline.ESBuildCompressor", "ESBUILD_BINARY", None),
     ("df_config.apps.pipeline.TerserCompressor", "TERSER_BINARY", None),
     ("pipeline.compressors.uglifyjs.UglifyJSCompressor", "UGLIFYJS_BINARY", None),

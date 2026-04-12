@@ -93,18 +93,19 @@ LOGGING = {
     "loggers": {},
     "root": {"handlers": [], "level": "CRITICAL"},
 }
-ESBUILD_BINARY = "esbuild"
-ESBUILD_ARGUMENTS = ["--minify"]
-TERSER_BINARY = "terser"
-TERSER_ARGUMENTS = []
-LIGHTNINGCSS_BINARY = "npx"
-LIGHTNINGCSS_ARGUMENTS = ["lightningcss-cli"]
-CSSO_BINARY = "csso"
-CSSO_ARGUMENTS = []
-CSSNANO_BINARY = "postcss"
 CSSNANO_ARGUMENTS = []
-TYPESCRIPT_BINARY = "tsc"
+CSSNANO_BINARY = "postcss"
+CSSO_ARGUMENTS = []
+CSSO_BINARY = "csso"
+ESBUILD_ARGUMENTS = ["--minify"]
+ESBUILD_BINARY = "esbuild"
+LIGHTNINGCSS_ARGUMENTS = ["lightningcss-cli"]
+LIGHTNINGCSS_BINARY = "npx"
+MINIFY_BINARY = "minify"
+TERSER_ARGUMENTS = []
+TERSER_BINARY = "terser"
 TYPESCRIPT_ARGUMENTS = ["--sourceMap", "true", "--target", "es6"]
+TYPESCRIPT_BINARY = "tsc"
 USE_PIPELINE = True
 PIPELINE = {
     "PIPELINE_ENABLED": True,
