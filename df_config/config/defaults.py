@@ -353,30 +353,31 @@ PIPELINE_JS = {
         "crossorigin": "anonymous",
     },
 }
-LIVE_SCRIPT_BINARY = "lsc"
-LESS_BINARY = "lessc"
-SASS_BINARY = "sass"
-STYLUS_BINARY = "stylus"
 BABEL_BINARY = "babel"
-YUGLIFY_BINARY = "yuglify"
-YUI_BINARY = "yuicompressor"
 CLOSURE_BINARY = "closure"
-UGLIFYJS_BINARY = "uglifyjs"
-CSSTIDY_BINARY = "csstidy"
 COFFEE_SCRIPT_BINARY = "coffee"
 CSSMIN_BINARY = "cssmin"
-TYPESCRIPT_BINARY = "tsc"
-TYPESCRIPT_ARGUMENTS = ["--sourceMap", "true", "--target", "es6"]
-CSSNANO_BINARY = "postcss"
 CSSNANO_ARGUMENTS = []
-CSSO_BINARY = "csso"
+CSSNANO_BINARY = "postcss"
 CSSO_ARGUMENTS = []
-TERSER_BINARY = "terser"
-TERSER_ARGUMENTS = []
-ESBUILD_BINARY = "esbuild"
+CSSO_BINARY = "csso"
+CSSTIDY_BINARY = "csstidy"
 ESBUILD_ARGUMENTS = ["--minify"]
-LIGHTNINGCSS_BINARY = "npx"
+ESBUILD_BINARY = "esbuild"
+LESS_BINARY = "lessc"
 LIGHTNINGCSS_ARGUMENTS = ["lightningcss-cli"]
+LIGHTNINGCSS_BINARY = "npx"
+LIVE_SCRIPT_BINARY = "lsc"
+MINIFY_BINARY = "minify"
+SASS_BINARY = "sass"
+STYLUS_BINARY = "stylus"
+TERSER_ARGUMENTS = []
+TERSER_BINARY = "terser"
+TYPESCRIPT_ARGUMENTS = ["--sourceMap", "true", "--target", "es6"]
+TYPESCRIPT_BINARY = "tsc"
+UGLIFYJS_BINARY = "uglifyjs"
+YUGLIFY_BINARY = "yuglify"
+YUI_BINARY = "yuicompressor"
 
 # Django-All-Auth
 _allauth_version = allauth_version()

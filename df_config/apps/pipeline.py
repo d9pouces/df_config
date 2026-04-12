@@ -86,6 +86,20 @@ class CssNanoCompressor(SubProcessCompressor):
         raise NotImplementedError
 
 
+class MinifyCompressor(SubProcessCompressor):
+    """CSS and JS compressor based on the "minify" command."""
+
+    def compress_css(self, css):
+        """Compress a block of CSS code using the "cssnano" command."""
+        command = [settings.MINIFY_BINARY, "--type", "text/css"]
+        return self.execute_command(command, css)
+
+    def compress_js(self, js):
+        """Not implemented."""
+        command = [settings.MINIFY_BINARY, "--type", "text/javascript"]
+        return self.execute_command(command, js)
+
+
 class CssoCompressor(SubProcessCompressor):
     """CSS compressor based on the "cssnano" command."""
 
