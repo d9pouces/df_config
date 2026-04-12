@@ -22,10 +22,18 @@ from django.conf import settings
 
 if getattr(settings, "USE_PIPELINE", False):
     from pipeline.compilers import SubProcessCompiler
-    from pipeline.compressors import SubProcessCompressor
+    from pipeline.compressors import CompressorBase, SubProcessCompressor
     from pipeline.storage import PipelineManifestStorage, PipelineMixin
 else:
-    SubProcessCompressor = object
+
+    class SubProcessCompressor:
+        """Fake baseclass, to avoid errors when django-pipeline is missing."""
+
+        def __init__(self, verbose=False):
+            """Init function."""
+            self.verbose = verbose
+
+    CompressorBase = SubProcessCompressor
     SubProcessCompiler = object
     PipelineManifestStorage = None
     PipelineMixin = None
@@ -38,7 +46,7 @@ else:
     CompressedManifestStaticFilesStorage = None
 
 
-class RcssCompressor(SubProcessCompressor):
+class RcssCompressor(CompressorBase):
     """CSS compressor based on the Python library rcssmin.
 
     (https://github.com/ndparker/rcssmin).
@@ -78,6 +86,40 @@ class CssNanoCompressor(SubProcessCompressor):
         raise NotImplementedError
 
 
+class CssoCompressor(SubProcessCompressor):
+    """CSS compressor based on the "cssnano" command."""
+
+    def compress_css(self, css):
+        """Compress a block of CSS code using the "cssnano" command."""
+        command = [settings.CSSO_BINARY] + settings.CSSO_ARGUMENTS
+        return self.execute_command(command, css)
+
+    def filter_css(self, css):
+        """Not implemented."""
+        raise NotImplementedError
+
+    def filter_js(self, js):
+        """Not implemented."""
+        raise NotImplementedError
+
+
+class LightningcssCompressor(SubProcessCompressor):
+    """CSS compressor based on the "lightningcss" command."""
+
+    def compress_css(self, css):
+        """Compress a block of CSS code using the "cssnano" command."""
+        command = [settings.LIGHTNINGCSS_BINARY] + settings.LIGHTNINGCSS_ARGUMENTS
+        return self.execute_command(command, css)
+
+    def filter_css(self, css):
+        """Not implemented."""
+        raise NotImplementedError
+
+    def filter_js(self, js):
+        """Not implemented."""
+        raise NotImplementedError
+
+
 class TerserCompressor(SubProcessCompressor):
     """JavaScript compressor based on the "terser" command."""
 
@@ -97,7 +139,26 @@ class TerserCompressor(SubProcessCompressor):
         raise NotImplementedError
 
 
-class PyScssCompiler(SubProcessCompiler):
+class ESBuildCompressor(SubProcessCompressor):
+    """JavaScript compressor based on the "esbuild" command."""
+
+    def compress_js(self, js):
+        """Compress a block of JavaScript code using the "esbuild" command."""
+        command = [settings.ESBUILD_BINARY, settings.ESBUILD_ARGUMENTS]
+        if self.verbose:
+            command += ["--verbose"]
+        return self.execute_command(command, js)
+
+    def filter_css(self, css):
+        """Not implemented."""
+        raise NotImplementedError
+
+    def filter_js(self, js):
+        """Not implemented."""
+        raise NotImplementedError
+
+
+class PyScssCompiler(CompressorBase):
     """SASS (.scss) compiler based on the Python library pyScss.
 
     (http://pyscss.readthedocs.io/en/latest/ ).

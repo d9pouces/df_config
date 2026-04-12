@@ -93,3 +93,37 @@ LOGGING = {
     "loggers": {},
     "root": {"handlers": [], "level": "CRITICAL"},
 }
+ESBUILD_BINARY = "esbuild"
+ESBUILD_ARGUMENTS = ["--minify"]
+TERSER_BINARY = "terser"
+TERSER_ARGUMENTS = []
+LIGHTNINGCSS_BINARY = "npx"
+LIGHTNINGCSS_ARGUMENTS = ["lightningcss-cli"]
+CSSO_BINARY = "csso"
+CSSO_ARGUMENTS = []
+CSSNANO_BINARY = "cssnano"
+CSSNANO_ARGUMENTS = []
+TYPESCRIPT_BINARY = "tsc"
+TYPESCRIPT_ARGUMENTS = ["--sourceMap", "true", "--target", "es6"]
+USE_PIPELINE = True
+PIPELINE = {
+    "PIPELINE_ENABLED": True,
+    "JAVASCRIPT": {
+        "django.admin": {
+            "source_filenames": ["admin/css/base.css", "admin/css/responsive.css"],
+            "output_filename": "css/django-admin.css",
+            "extra_context": {"media": "all"},
+        },
+    },
+    "STYLESHEETS": {
+        "default": {
+            "source_filenames": ["js/empty.js"],
+            "output_filename": "js/default.js",
+            "integrity": "sha384",
+            "crossorigin": "anonymous",
+        }
+    },
+    "CSS_COMPRESSOR": "pipeline.compressors.yui.YUICompressor",
+    "JS_COMPRESSOR": "pipeline.compressors.terser.TerserCompressor",
+    "COMPILERS": ["pipeline.compilers.sass.SASSCompiler"],
+}
