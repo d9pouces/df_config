@@ -664,7 +664,7 @@ class LogConfiguration:
         """Add a handler for stdout."""
         handler_name = f"{filename}.{level.lower()}"
         if formatter in ("django.server", "colorized") and not self.stdout.isatty():
-            formatter = None
+            formatter = "nocolor"
         elif formatter:
             handler_name += f".{formatter}"
         handler = {
