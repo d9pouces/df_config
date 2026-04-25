@@ -17,6 +17,7 @@
 import io
 import os
 from argparse import ArgumentParser
+from collections.abc import Iterable
 from importlib.metadata import version as get_version
 
 from django.core.management import BaseCommand
@@ -205,7 +206,18 @@ class Command(BaseCommand):
             if setting_name not in merger.settings:
                 continue
             value = merger.settings[setting_name]
-            add_import(SettingMerger.unwrap_object(value))
+            unwrapped = SettingMerger.unwrap_object(value)
+            add_import(unwrapped)
+            if isinstance(unwrapped, dict):
+                for key, elem in unwrapped.items():
+                    add_import(SettingMerger.unwrap_object(key))
+                    add_import(SettingMerger.unwrap_object(elem))
+            elif isinstance(unwrapped, Iterable) and not isinstance(
+                unwrapped, (str, bytes)
+            ):
+                for elem in unwrapped:
+                    add_import(SettingMerger.unwrap_object(elem))
+
         if imports:
             self.stdout.write("\n")
             for module_name in sorted(imports):
