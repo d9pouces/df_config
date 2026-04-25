@@ -247,4 +247,6 @@ class SettingMerger:
             # this is a Django LazyObject
             str(value)  # force the call of the _setup method
             value = getattr(value, "_wrapped")
+        elif hasattr(value, "_proxy____cast"):
+            value = getattr(value, "_proxy____cast")()
         return value
