@@ -71,6 +71,10 @@ class LogConfigurationTest(TestCase):
                     "remove_duplicate_warnings": {
                         "()": "df_config.guesses.log.RemoveDuplicateWarnings"
                     },
+                    "below_error": {
+                        "()": "df_config.guesses.log.MaxLevelFilter",
+                        "max_level": 40,
+                    },
                     "slow_queries": {
                         "()": "df_config.guesses.log.SlowQueriesFilter",
                         "slow_query_duration_in_s": 1.0,
@@ -232,6 +236,10 @@ class LogConfigurationTest(TestCase):
                 "filters": {
                     "remove_duplicate_warnings": {
                         "()": "df_config.guesses.log.RemoveDuplicateWarnings"
+                    },
+                    "below_error": {
+                        "()": "df_config.guesses.log.MaxLevelFilter",
+                        "max_level": 40,
                     },
                     "slow_queries": {
                         "()": "df_config.guesses.log.SlowQueriesFilter",
@@ -397,6 +405,10 @@ class LogConfigurationTest(TestCase):
                     "remove_duplicate_warnings": {
                         "()": "df_config.guesses.log.RemoveDuplicateWarnings"
                     },
+                    "below_error": {
+                        "()": "df_config.guesses.log.MaxLevelFilter",
+                        "max_level": 40,
+                    },
                     "slow_queries": {
                         "()": "df_config.guesses.log.SlowQueriesFilter",
                         "slow_query_duration_in_s": 1.0,
@@ -560,6 +572,10 @@ class LogConfigurationTest(TestCase):
                     "remove_duplicate_warnings": {
                         "()": "df_config.guesses.log.RemoveDuplicateWarnings"
                     },
+                    "below_error": {
+                        "()": "df_config.guesses.log.MaxLevelFilter",
+                        "max_level": 40,
+                    },
                     "slow_queries": {
                         "()": "df_config.guesses.log.SlowQueriesFilter",
                         "slow_query_duration_in_s": 1.0,
@@ -706,6 +722,10 @@ class LogConfigurationTest(TestCase):
                     "remove_duplicate_warnings": {
                         "()": "df_config.guesses.log.RemoveDuplicateWarnings"
                     },
+                    "below_error": {
+                        "()": "df_config.guesses.log.MaxLevelFilter",
+                        "max_level": 40,
+                    },
                     "slow_queries": {
                         "()": "df_config.guesses.log.SlowQueriesFilter",
                         "slow_query_duration_in_s": 1.0,
@@ -727,6 +747,13 @@ class LogConfigurationTest(TestCase):
                         "class": "logging.StreamHandler",
                         "level": "WARNING",
                         "stream": "ext://sys.stdout",
+                        "formatter": "colorized",
+                        "filters": ["below_error"],
+                    },
+                    "stderr.error.colorized": {
+                        "class": "logging.StreamHandler",
+                        "level": "ERROR",
+                        "stream": "ext://sys.stderr",
                         "formatter": "colorized",
                     },
                 },
@@ -813,7 +840,11 @@ class LogConfigurationTest(TestCase):
                     },
                 },
                 "root": {
-                    "handlers": ["stdout.warning.colorized", "mail_admins"],
+                    "handlers": [
+                        "stdout.warning.colorized",
+                        "stderr.error.colorized",
+                        "mail_admins",
+                    ],
                     "level": "WARNING",
                 },
             },
@@ -841,6 +872,10 @@ class LogConfigurationTest(TestCase):
                 "filters": {
                     "remove_duplicate_warnings": {
                         "()": "df_config.guesses.log.RemoveDuplicateWarnings"
+                    },
+                    "below_error": {
+                        "()": "df_config.guesses.log.MaxLevelFilter",
+                        "max_level": 40,
                     },
                     "slow_queries": {
                         "()": "df_config.guesses.log.SlowQueriesFilter",

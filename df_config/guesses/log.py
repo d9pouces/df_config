@@ -22,6 +22,7 @@ import sys
 import time
 import warnings
 from traceback import extract_stack
+from typing import Any
 from urllib.parse import urlparse
 
 from django.core.checks import Warning
@@ -158,7 +159,7 @@ class RemoveDuplicateWarnings(logging.Filter):
         super().__init__(name=name)
         self.previous_records = set()
 
-    def filter(self, record):
+    def filter(self, record: logging.LogRecord):
         """Check if the message has already been sent from the same Python file."""
         record_value = hash("%r %r" % (record.pathname, record.args))
         result = record_value not in self.previous_records
@@ -174,7 +175,7 @@ class SlowQueriesFilter(logging.Filter):
         super().__init__(name=name)
         self.slow_query_duration_in_s = slow_query_duration_in_s
 
-    def filter(self, record):
+    def filter(self, record: logging.LogRecord):
         """Filter SQL queries depending on their duration."""
         duration = getattr(record, "duration", 0)
         if duration > self.slow_query_duration_in_s:
@@ -184,6 +185,24 @@ class SlowQueriesFilter(logging.Filter):
             record.stack_info = sinfo
             return True
         return False
+
+
+class MaxLevelFilter(logging.Filter):
+    """Filter log records that are above a maximum level.
+
+    This filter is used to split log output between multiple handlers,
+    for example to send records below ERROR to stdout and ERROR+ to stderr.
+    Only records whose level is strictly below ``max_level`` are kept.
+    """
+
+    def __init__(self, name="", max_level=logging.NOTSET):
+        """Init function."""
+        super().__init__(name=name)
+        self.max_level: int = max_level
+
+    def filter(self, record: logging.LogRecord):
+        """Only keep messages that are below the max level."""
+        return record.levelno < self.max_level
 
 
 # noinspection PyMethodMayBeStatic
@@ -364,7 +383,13 @@ class LogConfiguration:
         )
         if not has_handler or not self.log_suffix:
             # (no file or interactive command) and no logd/syslog => we print to the console (like the debug mode)
-            self.add_handler("ROOT", "stdout", level=log_level, formatter="colorized")
+            name = self.add_handler(
+                "ROOT", "stdout", level=log_level, formatter="colorized"
+            )
+            if name:
+                # noinspection PyTypeChecker
+                self.handlers[name].setdefault("filters", []).append("below_error")
+            self.add_handler("ROOT", "stderr", level="ERROR", formatter="colorized")
             for logger in self.access_loggers:
                 self.add_handler(
                     logger, "stderr", formatter="django.server", level=log_level
@@ -498,6 +523,10 @@ class LogConfiguration:
             "remove_duplicate_warnings": {
                 "()": "df_config.guesses.log.RemoveDuplicateWarnings"
             },
+            "below_error": {
+                "()": "df_config.guesses.log.MaxLevelFilter",
+                "max_level": logging.ERROR,
+            },
         }
         if self.slow_query_duration_in_s:
             filters["slow_queries"] = {
@@ -530,7 +559,7 @@ class LogConfiguration:
         level: str = "WARNING",
         formatter=None,
         **kwargs,
-    ):
+    ) -> str | None:
         """Add a handler to a logger.
 
         The name of the added handler is unique, so the definition of the handler is also add if required.
@@ -539,9 +568,13 @@ class LogConfiguration:
         filename: can be a filename or one of the following special values: "stderr", "stdout", "logd", "syslog"
         """
         if filename == "stderr":
-            handler, handler_name = self.add_handler_stderr(filename, formatter, level)
+            handler, handler_name = self.add_handler_stderr_stdout(
+                filename, formatter, level, "stderr"
+            )
         elif filename == "stdout":
-            handler, handler_name = self.add_handler_stdout(filename, formatter, level)
+            handler, handler_name = self.add_handler_stderr_stdout(
+                filename, formatter, level, "stdout"
+            )
         elif filename == "loki":
             handler, handler_name = self.add_handler_loki(
                 logger, filename, level, kwargs
@@ -561,7 +594,7 @@ class LogConfiguration:
         else:
             handler, handler_name = None, None
         if not handler_name:
-            return
+            return None
         if handler_name not in self.handlers:
             self.handlers[handler_name] = handler
         if logger == "ROOT":
@@ -570,6 +603,7 @@ class LogConfiguration:
             target = self.loggers[logger]
         if handler_name not in target["handlers"]:
             target["handlers"].append(handler_name)
+        return handler_name
 
     def add_handler_loki(self, logger, filename, level, kwargs):
         """Add a loki handler when required and possible."""
@@ -662,30 +696,30 @@ class LogConfiguration:
 
     def add_handler_stdout(self, filename, formatter, level):
         """Add a handler for stdout."""
+        attr_name = "stdout"
+        return self.add_handler_stderr_stdout(filename, formatter, level, attr_name)
+
+    def add_handler_stderr(self, filename, formatter, level):
+        """Add a handler for stderr."""
+        attr_name = "stderr"
+        return self.add_handler_stderr_stdout(filename, formatter, level, attr_name)
+
+    def add_handler_stderr_stdout(
+        self, filename, formatter, level, attr_name: str
+    ) -> tuple[dict[str, str | Any], str]:
+        """Add a handler for stderr or stdout."""
         handler_name = f"{filename}.{level.lower()}"
-        if formatter in ("django.server", "colorized") and not self.stdout.isatty():
+        if (
+            formatter in ("django.server", "colorized")
+            and not getattr(self, attr_name).isatty()
+        ):
             formatter = "nocolor"
         elif formatter:
             handler_name += f".{formatter}"
         handler = {
             "class": "logging.StreamHandler",
             "level": level,
-            "stream": "ext://sys.stdout",
-            "formatter": formatter,
-        }
-        return handler, handler_name
-
-    def add_handler_stderr(self, filename, formatter, level):
-        """Add a handler for stderr."""
-        handler_name = f"{filename}.{level.lower()}"
-        if formatter in ("django.server", "colorized") and not self.stderr.isatty():
-            formatter = None
-        elif formatter:
-            handler_name += f".{formatter}"
-        handler = {
-            "class": "logging.StreamHandler",
-            "level": level,
-            "stream": "ext://sys.stderr",
+            "stream": f"ext://sys.{attr_name}",
             "formatter": formatter,
         }
         return handler, handler_name
