@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "df_config"
-version = "1.2.91"
+version = "1.2.92"
 description = "Smart default settings for Django websites"
 authors = [{ name = "Matthieu Gallet", email = "github@19pouces.net" }]
 requires-python = ">=3.10"
@@ -53,6 +53,7 @@ dev = [
     "django-debug-toolbar>=4.4.6",
     "django-allauth>=65.13.1",
     "coverage>=7.13.1",
+    "django-pipeline>=4.1.0",
 ]
 
 [tool.hatch.build.targets.sdist]
