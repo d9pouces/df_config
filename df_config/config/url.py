@@ -122,7 +122,7 @@ class URLSetting:
             parsed_url = urllib.parse.urlparse(value)
             self.parsed_urls = [parsed_url]
         if parsed_url:
-            self.parsed_query = urllib.parse.parse_qs(parsed_url.query)
+            self.parsed_query = urllib.parse.parse_qs(parsed_url.query or "")
         self._loaded = bool(parsed_url)
 
     def load(self, merger):
@@ -143,7 +143,9 @@ class URLSetting:
         """Return the hostname."""
         if self.parsed_urls is None:
             return None
-        return self.split_char.join(x.hostname for x in self.parsed_urls)
+        return (self.split_char or ",").join(
+            x.hostname for x in self.parsed_urls if x.hostname
+        )
 
     def netloc(self, default="localhost"):
         """Return a DynamicSetting that represents the netloc."""
@@ -153,7 +155,9 @@ class URLSetting:
         """Return the netloc."""
         if self.parsed_urls is None:
             return None
-        return self.split_char.join(x.netloc for x in self.parsed_urls)
+        return (self.split_char or ",").join(
+            x.netloc for x in self.parsed_urls if x.netloc
+        )
 
     def params(self, default=""):
         """Return a DynamicSetting that represents the params."""
