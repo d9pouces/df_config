@@ -14,6 +14,7 @@
 #                                                                              #
 # ##############################################################################
 """Check installed modules and settings to provide lists of middlewares/installed apps."""
+import itertools
 import os
 from collections import OrderedDict
 from configparser import RawConfigParser
@@ -91,26 +92,27 @@ class InstalledApps:
         "django.contrib.staticfiles",
         "{DF_ADMIN_APP_CONFIG}",
     ]
-    common_third_parties = OrderedDict(
-        [
-            ("USE_WEBSOCKETS", ["df_websockets", "channels"]),
-            ("USE_DEBUG_TOOLBAR", ["debug_toolbar.apps.DebugToolbarConfig"]),
-            ("USE_PIPELINE", ["pipeline"]),
-            ("USE_PAM_AUTHENTICATION", ["django_pam"]),
-            ("USE_CORS_HEADER", ["corsheaders"]),
-            ("USE_DAPHNE", ["daphne"]),
-            ("USE_DJANGO_PROBES", ["django_probes"]),
-            ("USE_CSP", "csp"),
-            ("USE_PROMETHEUS", "django_prometheus"),
-        ]
-    )
+    common_third_parties = [
+        (("USE_WEBSOCKETS",), ["df_websockets", "channels"]),
+        (("USE_DEBUG_TOOLBAR", "DEBUG"), ["debug_toolbar.apps.DebugToolbarConfig"]),
+        (("USE_PIPELINE",), ["pipeline"]),
+        (("USE_PAM_AUTHENTICATION",), ["django_pam"]),
+        (("USE_CORS_HEADER",), ["corsheaders"]),
+        (("USE_DAPHNE",), ["daphne"]),
+        (("USE_DJANGO_PROBES",), ["django_probes"]),
+        (("USE_CSP",), "csp"),
+        (("USE_PROMETHEUS",), "django_prometheus"),
+    ]
     required_settings = [
         "ALLAUTH_PROVIDER_APPS",
         "DF_ADMIN_APP_CONFIG",
         "DF_INSTALLED_APPS",
         "SESSION_ENGINE",
         "USE_ALL_AUTH",
-    ] + list(common_third_parties)
+    ]
+    required_settings += list(
+        itertools.chain.from_iterable(x[0] for x in common_third_parties)
+    )
     social_apps = SOCIAL_PROVIDER_APPS
 
     def __call__(self, settings_dict):
@@ -126,9 +128,9 @@ class InstalledApps:
     def process_third_parties(self, settings_dict):
         """Process third-party applications."""
         result = []
-        for k, v in self.common_third_parties.items():
+        for setting_names, v in self.common_third_parties:
             package_name = v[0].partition(".")[0]
-            if not settings_dict[k]:
+            if not all(settings_dict[x] for x in setting_names):
                 continue
             elif not is_package_present(package_name):
                 settings_check_results.append(missing_package(package_name, ""))
