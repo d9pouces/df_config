@@ -662,7 +662,10 @@ class LogConfiguration:
                 self.log_directory_warning = True
             self.add_handler(logger, "stdout", level=level, **kwargs)
             return None, None
-        basename = f"{self.log_suffix}-{filename}.log"
+        if filename == "":
+            basename = f"{self.log_suffix}.log"
+        else:
+            basename = f"{self.log_suffix}-{filename}.log"
         log_filename = os.path.join(log_directory, basename)
         if not os.access(log_directory, os.W_OK):
             warning_ = Warning(
@@ -674,7 +677,7 @@ class LogConfiguration:
             settings_check_results.append(warning_)
             self.add_handler(logger, "stdout", level=level, **kwargs)
             return None, None
-        handler_name = "%s.%s" % (self.log_suffix, filename)
+        handler_name = f"{self.log_suffix}.{filename}"
         handler = {
             "class": "logging.handlers.RotatingFileHandler",
             "maxBytes": self.get_logfile_maxsize(),
