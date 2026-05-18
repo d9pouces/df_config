@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "df_config"
-version = "1.2.93"
+version = "1.2.94"
 description = "Smart default settings for Django websites"
 authors = [{ name = "Matthieu Gallet", email = "github@19pouces.net" }]
 requires-python = ">=3.10"
@@ -31,7 +31,9 @@ classifiers = [
     "Programming Language :: Python :: 3.13",
     "Programming Language :: Python :: 3.14",
 ]
-dependencies = ["django>=4.2"]
+dependencies = [
+    "django>=4.2",
+]
 
 [project.urls]
 Repository = "https://github.com/d9pouces/df_config"
