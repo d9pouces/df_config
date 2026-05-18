@@ -677,7 +677,10 @@ class LogConfiguration:
             settings_check_results.append(warning_)
             self.add_handler(logger, "stdout", level=level, **kwargs)
             return None, None
-        handler_name = f"{self.log_suffix}.{filename}"
+        if filename == "":
+            handler_name = self.log_suffix
+        else:
+            handler_name = f"{self.log_suffix}.{filename}"
         handler = {
             "class": "logging.handlers.RotatingFileHandler",
             "maxBytes": self.get_logfile_maxsize(),
