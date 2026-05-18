@@ -32,13 +32,7 @@ classifiers = [
     "Programming Language :: Python :: 3.14",
 ]
 dependencies = [
-    "coverage>=7.13.1",
     "django>=4.2",
-    "django-debug-toolbar>=4.4.6",
-    "django-prometheus>=2.4.0",
-    "gunicorn>=23.0.0",
-    "tox>=4.34.1",
-    "uvicorn>=0.40.0",
 ]
 
 [project.urls]
