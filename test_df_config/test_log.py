@@ -3,6 +3,7 @@ import os
 import stat
 import sys
 import tempfile
+from importlib.util import find_spec
 from io import StringIO
 from unittest import TestCase
 from unittest.mock import MagicMock, patch
@@ -36,6 +37,12 @@ class LogConfigurationTest(TestCase):
         "LOG_LEVEL": "DEBUG",
     }
     argv = ["manage.py", "server"]
+
+    def test_log_configuration_exists(self):
+        try:
+            from df_config.guesses.log import log_configuration
+        except ImportError:
+            self.assertFalse(True)
 
     def get_config(self, **kwargs):
         settings = {}
