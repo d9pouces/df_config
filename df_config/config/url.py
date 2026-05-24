@@ -64,7 +64,7 @@ class URLSetting:
         "redis": (6379, False, False),
         "rediss": (6379, True, False),
         "smtp": (25, False, False),
-        "smtp+tls": (487, False, True),
+        "smtp+tls": (587, False, True),
         "smtps": (465, True, False),
         "sqlite": (None, False, False),
         "sqlite3": (None, False, False),
@@ -203,7 +203,7 @@ class URLSetting:
         """Return the port of the URL."""
         if self.parsed_urls is None:
             return None
-        ports = []
+        ports: list[str] = []
         for parsed_url in self.parsed_urls:
             if parsed_url.port:
                 ports.append(str(parsed_url.port))
@@ -212,8 +212,10 @@ class URLSetting:
                 s = self.SCHEME_ALIASES.get(s, s)
                 if self.accepted_schemes and s not in self.accepted_schemes:
                     raise ImproperlyConfigured(f"Unknown scheme '{s}' in URL.")
-                ports.append(str(self.SCHEMES[s][0]))
-        return self.split_char.join(ports)
+                port = self.SCHEMES[s][0]
+                if port is not None:
+                    ports.append(str(port))
+        return (self.split_char or ",").join(ports)
 
     def query(self, default=""):
         """Return a DynamicSetting that represents the query string from the URL."""

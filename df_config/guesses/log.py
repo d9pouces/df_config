@@ -14,19 +14,23 @@
 #                                                                              #
 # ##############################################################################
 """Provide a meaningful log configuration, depending on several options."""
+
 import logging
 import logging.handlers
 import os
+import platform
 import re
+import socket
 import sys
 import time
 import warnings
+from importlib.util import find_spec
 from traceback import extract_stack
 from typing import Any
-from urllib.parse import urlparse
+from urllib.parse import ParseResult, urlparse
 
 from django.core.checks import Warning
-from django.core.management import color_style
+from django.core.management.color import color_style, no_style
 from django.utils.log import AdminEmailHandler as BaseAdminEmailHandler
 
 from df_config.checks import settings_check_results
@@ -35,9 +39,9 @@ from df_config.checks import settings_check_results
 class ColorizedFormatter(logging.Formatter):
     """Used in console for applying colors to log lines, corresponding to the log level."""
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, use_color: bool = True, **kwargs):
         """Initialize the formatter."""
-        self.style = color_style()
+        self.style = color_style() if use_color else no_style()
         kwargs.setdefault("fmt", "%(asctime)s [%(name)s] [%(levelname)s] %(message)s")
         kwargs.setdefault("datefmt", "%Y-%m-%d %H:%M:%S")
         super().__init__(*args, **kwargs)
@@ -65,9 +69,9 @@ class ColorizedFormatter(logging.Formatter):
 class ServerFormatter(logging.Formatter):
     """Formatter for the access logs."""
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, use_color: bool = True, **kwargs):
         """Initialize the object."""
-        self.style = color_style()
+        self.style = color_style() if use_color else no_style()
         super().__init__(*args, **kwargs)
 
     def format(self, record):
@@ -109,7 +113,7 @@ class ServerFormatter(logging.Formatter):
 
     def uses_server_time(self):
         """Return true if the log format requires the response time."""
-        return self._fmt.find("%(server_time)") >= 0
+        return (self._fmt or "").find("%(server_time)") >= 0
 
 
 # noinspection PyClassHasNoInit
@@ -205,8 +209,36 @@ class MaxLevelFilter(logging.Filter):
         return record.levelno < self.max_level
 
 
+class HTTPAccessRecordFilter(logging.Filter):
+    """Filter log records to keep (or exclude) HTTP access messages.
+
+    HTTP access records are identified either by the logger name being in
+    ``LoggingConfiguration.access_loggers``, or by the record coming from
+    ``django.channels.server`` and containing a ``client`` key in its args.
+
+    :param keep_access: when ``True`` (default) only HTTP access records pass
+        through; when ``False`` only non-access records pass through.
+    """
+
+    def __init__(self, name="", keep_access: bool = True):
+        """Init function."""
+        super().__init__(name=name)
+        self.keep_access = keep_access
+
+    def filter(self, record: logging.LogRecord):
+        """Only keep messages that comes from an HTTP access."""
+        if record.name == "django.channels.server":
+            r = isinstance(record.args, dict) and "client" in record.args
+        elif record.name in LoggingConfiguration.access_loggers:
+            r = True
+        else:
+            r = False
+        return not (r ^ self.keep_access)
+
+
 # noinspection PyMethodMayBeStatic
 class LogConfiguration:
+    # noinspection SpellCheckingInspection
     """Generate a log configuration depending on a few parameters.
 
     * the debug mode (if `DEBUG == True`, everything is printed to the console and lower log level are applied),
@@ -314,10 +346,18 @@ class LogConfiguration:
         self.stderr = stderr or sys.stderr
         self.log_directory_warning = False  # True when a warning has been emitted
 
-    def __call__(self, settings_dict, argv=None):
+    def __call__(self, settings_dict, argv: list[str] | None = None):
         """Create the log configuration during the setting computation."""
+        warning = Warning(
+            "LogConfiguration is deprecated and will be removed in df_config 1.5. Use LoggingConfiguration instead.",
+            hint=None,
+            obj="configuration",
+            id="df_config.W011",
+        )
+        settings_check_results.append(warning)
         if argv is None:
             argv = sys.argv
+        argv: list[str]
         self.module_name = settings_dict["DF_MODULE_NAME"]
         self.server_name = settings_dict["SERVER_NAME"]
         self.server_port = settings_dict["SERVER_PORT"]
@@ -394,6 +434,7 @@ class LogConfiguration:
                 self.add_handler(
                     logger, "stderr", formatter="django.server", level=log_level
                 )
+        # noinspection PyUnresolvedReferences
         self.root["handlers"].append("mail_admins")
         return config
 
@@ -409,14 +450,16 @@ class LogConfiguration:
         parsed_log_url = urlparse(log_remote_url)
         scheme = parsed_log_url.scheme
         device, sep, facility_name = parsed_log_url.path.rpartition("/")
+        # noinspection SpellCheckingInspection
         if scheme == "syslog" or scheme == "syslog+tcp":
-            address, facility, socktype = self.parse_syslog_url(
+            address, facility, sock_type = self.parse_syslog_url(
                 parsed_log_url, scheme, device, facility_name
             )
+            # noinspection SpellCheckingInspection
             kwargs = {
                 "address": address,
                 "facility": facility,
-                "socktype": socktype,
+                "socktype": sock_type,
                 "formatter": "nocolor",
             }
             self.add_handler("ROOT", "syslog", level=level, **kwargs)
@@ -427,6 +470,7 @@ class LogConfiguration:
         elif scheme == "loki" or scheme == "lokis":
             # noinspection HttpUrlsUsage
             url = f"http://{parsed_log_url.hostname}"
+            # noinspection SpellCheckingInspection
             if scheme == "lokis":
                 url = f"https://{parsed_log_url.hostname}"
             if parsed_log_url.port:
@@ -434,7 +478,7 @@ class LogConfiguration:
             if parsed_log_url.path:
                 url += parsed_log_url.path
             if parsed_log_url.query:
-                url += f"?{parsed_log_url}"
+                url += f"?{parsed_log_url.query}"
             auth = None
             if parsed_log_url.username and parsed_log_url.password:
                 auth = (parsed_log_url.username, parsed_log_url.password)
@@ -445,6 +489,7 @@ class LogConfiguration:
                     self.add_handler(logger, "loki", level="DEBUG", **kwargs)
             has_handler = True
         else:
+            # noinspection SpellCheckingInspection
             warning = Warning(
                 "The only known schemes for remote logging are syslog, syslog+tcp, loki or lokis.",
                 hint=None,
@@ -474,12 +519,12 @@ class LogConfiguration:
             address = "/dev/log"
         else:
             address = ("localhost", 514)
-        socktype = socket.SOCK_DGRAM if scheme == "syslog" else socket.SOCK_STREAM
+        sock_type = socket.SOCK_DGRAM if scheme == "syslog" else socket.SOCK_STREAM
         # noinspection PyUnresolvedReferences
         facility = logging.handlers.SysLogHandler.facility_names.get(
             facility_name, syslog.LOG_USER
         )
-        return address, facility, socktype
+        return address, facility, sock_type
 
     @property
     def fmt_stderr(self):
@@ -488,7 +533,7 @@ class LogConfiguration:
 
     @property
     def fmt_stdout(self):
-        """Return the valid formatter for stderr (if it's a TTY)."""
+        """Return the valid formatter for stdout (if it's a TTY)."""
         return "colorized" if self.stdout.isatty() else None
 
     def get_default_formatters(self):
@@ -560,6 +605,7 @@ class LogConfiguration:
         formatter=None,
         **kwargs,
     ) -> str | None:
+        # noinspection SpellCheckingInspection
         """Add a handler to a logger.
 
         The name of the added handler is unique, so the definition of the handler is also add if required.
@@ -567,6 +613,7 @@ class LogConfiguration:
 
         filename: can be a filename or one of the following special values: "stderr", "stdout", "logd", "syslog"
         """
+        # noinspection SpellCheckingInspection
         if filename == "stderr":
             handler, handler_name = self.add_handler_stderr_stdout(
                 filename, formatter, level, "stderr"
@@ -626,14 +673,15 @@ class LogConfiguration:
         handler.update(kwargs)
         return handler, handler_name
 
-    def add_handler_logd(self, logger, filename, level, kwargs):
+    # noinspection SpellCheckingInspection
+    def add_handler_logd(self, logger: str, filename: str, level: str, kwargs: dict):
         """Add a logd (systemd) handler when required and possible."""
         try:
             # noinspection PyUnresolvedReferences,PyPackageRequirements
             import systemd.journal
         except ImportError:
             warning = Warning(
-                "Unable to import systemd.journal (required to log with journlad)",
+                "Unable to import systemd.journal (required to log with journald)",
                 hint=None,
                 obj="configuration",
                 id="df_config.W007",
@@ -762,4 +810,747 @@ class LogConfiguration:
         return None
 
 
-log_configuration = LogConfiguration()
+class LoggingConfiguration:
+    # noinspection SpellCheckingInspection
+    """Generate a Django ``LOGGING`` configuration dictionary from high-level parameters.
+
+    This is the modern replacement for :class:`LogConfiguration` (which is
+    deprecated).  It follows the same general approach — determine where log
+    records should be written, at what level, and in what format — but
+    separates concerns more cleanly into prepare_* / add_* methods so that
+    subclasses can override only what they need.
+
+    Supported output destinations (configured via ``LOG_REMOTE_URL``):
+
+    * **Console** – stdout / stderr streams (always available as fallback).
+    * **Rotating file** – written to ``LOG_DIRECTORY`` when that setting is
+      defined and the directory is writable.
+    * **Syslog** – ``syslog://`` or ``syslog+tcp://`` URLs.
+    * **journald (logd)** – ``logd://`` URL; requires *systemd* Python package.
+    * **Loki** – ``loki://`` or ``lokis://`` URLs; requires *logging-loki*.
+
+    Access logs (HTTP requests) are routed to separate handlers so that they
+    can be written to a dedicated ``*-access.log`` file without polluting the
+    main log.
+
+    Required keys in ``settings_dict`` (see ``required_settings``):
+
+    * ``DEBUG`` – enables verbose console output and DeprecationWarnings.
+    * ``DF_MODULE_NAME`` – project name used to build log file names.
+    * ``LOG_DIRECTORY`` – directory for rotating log files (empty = disabled).
+    * ``LOG_LEVEL`` – one of DEBUG / INFO / WARNING / ERROR / CRITICAL.
+    * ``LOG_REMOTE_URL`` – URL of a remote syslog / logd / loki endpoint.
+    * ``LOG_REMOTE_ACCESS`` – also forward HTTP-access records to the remote.
+    * ``LOG_SLOW_QUERY_DURATION_IN_S`` – threshold (seconds) for slow-query
+      logging; ``None`` or ``0`` disables the feature.
+    * ``SERVER_NAME`` / ``SERVER_PORT`` – included in the log format string.
+    * ``LOG_EXCLUDED_COMMANDS`` – Django management commands that suppress
+      file-based logging (e.g. interactive one-shot commands like *migrate*).
+    """
+
+    required_settings = [
+        "DEBUG",
+        "DF_MODULE_NAME",
+        "LOG_DIRECTORY",
+        "LOG_REMOTE_URL",
+        "LOG_SLOW_QUERY_DURATION_IN_S",
+        "LOG_REMOTE_ACCESS",
+        "SERVER_NAME",
+        "SERVER_PORT",
+        "LOG_EXCLUDED_COMMANDS",
+        "LOG_LEVEL",
+    ]
+    _level_up = {
+        "DEBUG": "INFO",
+        "INFO": "WARNING",
+        "WARNING": "ERROR",
+        "ERROR": "CRITICAL",
+    }
+    access_loggers = {
+        "aiohttp.access",
+        "django.channels.server",
+        "django.server",
+        "geventwebsocket.handler",
+        "granian.access",
+        "gunicorn.access",
+        "uvicorn.access",
+    }
+    other_level_loggers = {
+        "django": _level_up,
+        "django.db": _level_up,
+        "django.db.backends.schema": _level_up,
+        "pip.vcs": _level_up,
+        "py.warnings": _level_up,
+    }
+    disabled_loggers = set()
+
+    def __init__(self, stdout=None, stderr=None):
+        """Init function."""
+        self.argv = []
+        self.current_django_command: str = ""
+        self.access_handlers = {}
+        self.default_handlers = {}
+        self.filters = {}
+        self.formatters = {}
+        self.log_directory = None
+        self.debug = False
+        self.log_directory_warning = False  # True when a warning has been emitted
+        self.log_level: str = "NOTSET"
+        self.log_remote_url = None
+        self.log_remote_access = False
+        self.loggers = {}
+        self.root = {}
+        self.handlers = {}
+        self.server_name = "localhost"
+        self.server_port = "8000"
+        self.project_name = "application"
+        self.disable_existing_loggers = False
+        self.slow_query_duration_in_s = None
+        self.stderr = stderr or sys.stderr
+        self.stdout = stdout or sys.stdout
+        self.ignored_django_commands: set[str] = set()
+
+    def __call__(self, settings_dict, argv=None):
+        """Create the log configuration during the setting computation."""
+        # read and load config parameters
+        self.clean_log_configuration()
+        self.read_settings(settings_dict, argv)
+        self.prepare_configuration()
+        config = {
+            "version": 1,
+            "disable_existing_loggers": self.disable_existing_loggers,
+            "formatters": self.formatters,
+            "filters": self.filters,
+            "handlers": self.handlers,
+            "loggers": self.loggers,
+            "root": self.root,
+        }
+        return config
+
+    def clean_log_configuration(self):
+        """Remove any existing handlers and reset their level to NOTSET."""
+        for logger in logging.Logger.manager.loggerDict.values():
+            if isinstance(logger, logging.Logger):
+                handlers = list(logger.handlers)
+                for handler in handlers:
+                    logger.removeHandler(handler)
+                    handler.close()
+                logger.setLevel(self.log_level)
+
+    def read_settings(self, settings_dict, argv):
+        """Read and store all relevant values from *settings_dict* and *argv*.
+
+        Translates ``LOG_LEVEL`` (with ``DEBUG`` as a fallback) into a
+        canonical upper-case string such as ``"WARNING"``, and stores every
+        setting that later prepare_* methods will need.
+
+        :param settings_dict: the merged Django settings dictionary produced
+            by the :class:`~df_config.config.merger.SettingMerger`.
+        :param argv: the command-line argument list; defaults to ``sys.argv``
+            when ``None``.
+        """
+        self.argv = argv or sys.argv
+        self.read_django_command()
+        if settings_dict["LOG_LEVEL"]:
+            log_level = settings_dict["LOG_LEVEL"].upper()
+        elif settings_dict["DEBUG"]:
+            log_level = "DEBUG"
+        else:
+            log_level = "WARNING"
+        self.debug = settings_dict["DEBUG"]
+        self.project_name = settings_dict["DF_MODULE_NAME"]
+        self.server_name = settings_dict["SERVER_NAME"]
+        self.server_port = settings_dict["SERVER_PORT"]
+        self.log_level = log_level
+        self.log_remote_access = settings_dict["LOG_REMOTE_ACCESS"]
+        self.ignored_django_commands = settings_dict["LOG_EXCLUDED_COMMANDS"]
+        self.slow_query_duration_in_s = settings_dict["LOG_SLOW_QUERY_DURATION_IN_S"]
+        if self.current_django_command not in self.ignored_django_commands:
+            self.log_directory = settings_dict["LOG_DIRECTORY"]
+            self.log_remote_url = settings_dict["LOG_REMOTE_URL"]
+
+    def read_django_command(self):
+        """Extract the Django management command name from ``self.argv``.
+
+        Sets ``self.current_django_command`` to ``argv[1]`` (e.g. ``"server"``,
+        ``"runserver"``) or to an empty string when no sub-command is present.
+        """
+        self.current_django_command = self.argv[1] if len(self.argv) > 1 else ""
+
+    def prepare_configuration(self):
+        """Orchestrate all prepare_* calls in the correct order.
+
+        Formatters → filters → default handlers → access handlers → root →
+        loggers → per-logger filters.  After this method returns,
+        ``self.formatters``, ``self.filters``, ``self.handlers``,
+        ``self.loggers``, and ``self.root`` are fully populated and can be
+        merged into the Django ``LOGGING`` dict.
+        """
+        self.prepare_formatters()
+        self.prepare_filters()
+        self.prepare_default_handlers()
+        self.prepare_access_handlers()
+        self.prepare_root()
+        self.create_loggers()
+        self.add_filters_to_loggers()
+
+    def prepare_formatters(self):
+        """Prepare formatters that can be used by any handler or logger."""
+        name = f"{self.server_name}:{self.server_port}"
+        self.formatters |= {
+            "access.nocolor": {
+                "()": "df_config.guesses.log.ServerFormatter",
+                "fmt": "%(asctime)s [{}] %(message)s".format(name),
+                "use_color": False,
+            },
+            "access.color": {
+                "()": "df_config.guesses.log.ServerFormatter",
+                "fmt": "%(asctime)s [{}] %(message)s".format(name),
+                "use_color": True,
+            },
+            "plain.nocolor": {
+                "()": "df_config.guesses.log.ColorizedFormatter",
+                "use_color": False,
+            },
+            "plain.color": {
+                "()": "df_config.guesses.log.ColorizedFormatter",
+                "use_color": True,
+            },
+        }
+
+    @staticmethod
+    def get_colored_formatter(formatter: str, stream: str | None = None) -> str:
+        """Return the full formatter name with the appropriate color suffix.
+
+        Appends ``.color`` when *stream* refers to a TTY, or ``.nocolor``
+        otherwise.  This ensures that ANSI escape codes are only emitted when
+        the output device actually supports them.
+
+        :param formatter: base formatter name, e.g. ``"plain"`` or ``"access"``.
+        :param stream: name of the ``sys`` attribute to inspect (``"stdout"``
+            or ``"stderr"``), or ``None`` to always use the nocolor variant.
+        :returns: one of ``"<formatter>.color"`` or ``"<formatter>.nocolor"``.
+        """
+        if (
+            stream is not None
+            and hasattr(getattr(sys, stream), "isatty")
+            and getattr(sys, stream).isatty()
+        ):
+            return f"{formatter}.color"
+        return f"{formatter}.nocolor"
+
+    def add_stdout_stderr_handler(
+        self,
+        handlers: dict[str, dict],
+        log_suffix: str,
+        level: str,
+        formatter: str,
+        filters: list[str],
+    ):
+        """Register a pair of stdout / stderr stream handlers in *handlers*.
+
+        Records below ERROR are routed to stdout (through the ``below_error``
+        filter); ERROR and above go to stderr.  Both handlers share the same
+        *formatter* and extra *filters*.
+
+        :param handlers: the handler dict to populate (mutated in place).
+        :param log_suffix: suffix appended to the handler key to make it
+            unique, e.g. ``"-access"`` or ``"-default"``.
+        :param level: minimum log level for the stdout handler, e.g.
+            ``"INFO"`` or ``"WARNING"``.
+        :param formatter: base formatter name (``"plain"`` or ``"access"``);
+            the color variant is resolved automatically via
+            :meth:`get_colored_formatter`.
+        :param filters: list of filter keys to attach to both handlers.
+        """
+        handler = {
+            "class": "logging.StreamHandler",
+            "filters": ["below_error"],
+            "stream": f"ext://sys.stdout",
+        }
+        self.finalize_handler(
+            handlers,
+            handler,
+            f"stdout{log_suffix}",
+            level,
+            formatter,
+            "stdout",
+            filters,
+        )
+        handler = {
+            "class": "logging.StreamHandler",
+            "stream": f"ext://sys.stderr",
+        }
+        self.finalize_handler(
+            handlers,
+            handler,
+            f"stderr{log_suffix}",
+            "ERROR",
+            formatter,
+            "stderr",
+            filters,
+        )
+
+    def add_file_handler(
+        self,
+        handlers: dict[str, dict],
+        log_suffix: str,
+        level: str,
+        formatter: str,
+        filters: list[str],
+    ):
+        """Add a log handler when a log directory is defined and writeable."""
+        log_directory = os.path.normpath(self.log_directory)
+        basename = f"{self.project_name}{log_suffix}.log"
+        full_path = os.path.join(log_directory, basename)
+        if not os.path.isdir(log_directory):
+            if not self.log_directory_warning:
+                warning_ = Warning(
+                    f"Missing log directory '{log_directory}'.",
+                    hint=None,
+                    obj="configuration",
+                    id="df_config.W008",
+                )
+                settings_check_results.append(warning_)
+                self.log_directory_warning = True
+            self.add_stdout_stderr_handler(
+                handlers, log_suffix, level, formatter, filters
+            )
+            return
+        elif (
+            os.path.isfile(full_path) and not os.access(full_path, os.W_OK)
+        ) or not os.access(log_directory, os.W_OK):
+            if not self.log_directory_warning:
+                warning_ = Warning(
+                    f"Unable to write logs to '{log_directory}'.",
+                    hint=None,
+                    obj="configuration",
+                    id="df_config.W009",
+                )
+                settings_check_results.append(warning_)
+                self.log_directory_warning = True
+            self.add_stdout_stderr_handler(
+                handlers, log_suffix, level, formatter, filters
+            )
+            return
+        handler = {
+            "class": "logging.handlers.RotatingFileHandler",
+            "maxBytes": self.get_logfile_maxsize(),
+            "backupCount": self.get_logfile_backup_count(),
+            "filename": full_path,
+            "delay": True,
+        }
+        self.finalize_handler(
+            handlers,
+            handler,
+            f"file.{log_suffix}",
+            level,
+            formatter,
+            None,
+            filters,
+        )
+
+    @classmethod
+    def parse_syslog_url(
+        cls, parsed_log_url: ParseResult, scheme: str, device: str, facility_name: str
+    ):
+        """Parse a syslog URL and return valid parameters."""
+        import syslog
+
+        if (
+            parsed_log_url.hostname
+            and parsed_log_url.port
+            and re.match(r"^\d+$", str(parsed_log_url.port))
+        ):
+            # noinspection PyTypeChecker
+            address = (parsed_log_url.hostname, int(parsed_log_url.port))
+        elif device:
+            address = device
+        elif platform.system() == "Darwin":
+            address = "/var/run/syslog"
+        elif platform.system() == "Linux":
+            address = "/dev/log"
+        else:
+            address = ("localhost", 514)
+        sock_type = socket.SOCK_DGRAM if scheme == "syslog" else socket.SOCK_STREAM
+        # noinspection PyUnresolvedReferences
+        facility = logging.handlers.SysLogHandler.facility_names.get(
+            facility_name, syslog.LOG_USER
+        )
+        return address, facility, sock_type
+
+    def add_remote_collector(
+        self,
+        handlers,
+        name,
+        log_remote_url: str,
+        level: str,
+        formatter: str,
+        filters: list[str],
+    ):
+        """Add a remote collector, like syslog or loki."""
+        parsed_log_url: ParseResult = urlparse(log_remote_url)
+        scheme = parsed_log_url.scheme
+        # noinspection SpellCheckingInspection
+        if scheme == "syslog" or scheme == "syslog+tcp":
+            device, sep, facility_name = parsed_log_url.path.rpartition("/")
+            address, facility, sock_type = self.parse_syslog_url(
+                parsed_log_url, scheme, device, facility_name
+            )
+            # noinspection SpellCheckingInspection
+            kwargs = {"address": address, "facility": facility, "socktype": sock_type}
+            self.add_handler_syslog(
+                handlers, f"{name}-remote", level, formatter, filters, **kwargs
+            )
+        elif scheme == "logd":
+            self.add_logd_handler(
+                handlers,
+                f"{name}-remote",
+                level,
+                formatter,
+                filters,
+            )
+        elif scheme == "loki" or scheme == "lokis":
+            url = f"{scheme.replace('loki', 'http')}://{parsed_log_url.hostname}"
+            if parsed_log_url.port:
+                url += f":{parsed_log_url.port}"
+            if parsed_log_url.path:
+                url += parsed_log_url.path
+            if parsed_log_url.query:
+                url += f"?{parsed_log_url.query}"
+            auth = None
+            if parsed_log_url.username and parsed_log_url.password:
+                auth = (parsed_log_url.username, parsed_log_url.password)
+            kwargs = {"url": url, "auth": auth}
+            self.add_handler_loki(
+                handlers, f"{name}-remote", level, formatter, filters, **kwargs
+            )
+        else:
+            # noinspection SpellCheckingInspection
+            warning = Warning(
+                "The only known schemes for remote logging are logd, syslog, syslog+tcp, loki or lokis.",
+                hint=None,
+                obj="configuration",
+                id="df_config.W005",
+            )
+            settings_check_results.append(warning)
+
+    # noinspection SpellCheckingInspection
+    def add_logd_handler(
+        self,
+        handlers: dict[str, dict],
+        log_suffix: str,
+        level: str,
+        formatter: str,
+        filters: list[str],
+        **kwargs,
+    ):
+        """Add a LOGD (systemd) handler when required and possible."""
+        if find_spec("systemd.journal") is None:
+            warning = Warning(
+                "Unable to import systemd.journal (required to log with journald)",
+                hint=None,
+                obj="configuration",
+                id="df_config.W007",
+            )
+            settings_check_results.append(warning)
+            self.add_stdout_stderr_handler(
+                handlers, log_suffix, level, formatter, filters
+            )
+            return
+        handler = {"class": "systemd.journal.JournalHandler", **kwargs}
+        # noinspection SpellCheckingInspection
+        self.finalize_handler(
+            handlers,
+            handler,
+            f"logd.{log_suffix}",
+            level,
+            formatter,
+            None,
+            filters,
+        )
+
+    def add_handler_loki(
+        self,
+        handlers: dict[str, dict],
+        log_suffix: str,
+        level: str,
+        formatter: str,
+        filters: list[str],
+        **kwargs,
+    ):
+        """Add a loki handler when required and possible."""
+        if find_spec("logging_loki") is None:
+            warning = Warning(
+                "Unable to import logging_loki (required to log to Loki)",
+                hint=None,
+                obj="configuration",
+                id="df_config.W006",
+            )
+            settings_check_results.append(warning)
+            # replace loki by writing to a plain-text log
+            self.add_stdout_stderr_handler(
+                handlers, log_suffix, level, formatter, filters
+            )
+            return
+        handler = {"class": "df_config.extra.loki.LokiHandler", **kwargs}
+        self.finalize_handler(
+            handlers,
+            handler,
+            f"loki.{log_suffix}",
+            level,
+            formatter,
+            None,
+            filters,
+        )
+
+    def add_handler_syslog(
+        self,
+        handlers: dict[str, dict],
+        log_suffix: str,
+        level: str,
+        formatter: str,
+        filters: list[str],
+        **kwargs,
+    ):
+        """Add a syslog handler when required and possible."""
+        handler = {"class": "logging.handlers.SysLogHandler", **kwargs}
+        self.finalize_handler(
+            handlers,
+            handler,
+            f"syslog.{log_suffix}",
+            level,
+            formatter,
+            None,
+            filters,
+        )
+
+    def finalize_handler(
+        self,
+        handlers,
+        handler,
+        name: str,
+        level: str | None,
+        formatter: str,
+        stream: str | None,
+        filters: list[str],
+    ):
+        """Apply common fields to *handler* and register it in *handlers*.
+
+        Sets ``level``, ``formatter`` (color-aware), and ``filters`` on the
+        handler dict, then stores it under *name* in *handlers* (skipping the
+        registration if *name* is already present, so shared handlers are not
+        duplicated).
+
+        :param handlers: the handler dict to populate (mutated in place).
+        :param handler: partially built handler dict (class already set by the
+            caller).
+        :param name: unique key for the handler entry.
+        :param level: log level string (e.g. ``"WARNING"``), or ``None`` to
+            leave the handler's own default.
+        :param formatter: base formatter name passed to
+            :meth:`get_colored_formatter`.
+        :param stream: stream name (``"stdout"`` / ``"stderr"``) used to
+            detect TTY, or ``None`` for non-stream handlers.
+        :param filters: list of filter keys to append to the handler.
+        """
+        if level is not None:
+            handler["level"] = level
+        handler["formatter"] = self.get_colored_formatter(formatter, stream)
+        handler.setdefault("filters", [])
+        if filters is not None:
+            handler["filters"] += filters
+        if name not in handlers:
+            handlers[name] = handler
+
+    # noinspection PyMethodMayBeStatic
+    def get_logfile_maxsize(self) -> int:
+        """Return the maximum size (bytes) of a log file before it is rotated.
+
+        Override in a subclass to change the rotation threshold.
+        Default: 100 MB.
+        """
+        return 100_000_000
+
+    # noinspection PyMethodMayBeStatic
+    def get_logfile_backup_count(self) -> int:
+        """Return the number of rotated log files to keep before deletion.
+
+        Override in a subclass to change the retention count.
+        Default: 5 files.
+        """
+        return 5
+
+    def prepare_access_handlers(self):
+        """Prepare handlers used by access loggers."""
+        if self.log_directory:
+            self.add_file_handler(
+                self.access_handlers,
+                "-access",
+                "INFO",
+                "access",
+                filters=["http_access"],
+            )
+        if (
+            self.debug
+            or not self.log_directory
+            or self.current_django_command == "runserver"
+        ):
+            self.add_stdout_stderr_handler(
+                self.access_handlers,
+                "-access",
+                "INFO",
+                "access",
+                filters=["http_access"],
+            )
+        if self.log_remote_url and self.log_remote_access:
+            self.add_remote_collector(
+                self.access_handlers,
+                "remote.access",
+                self.log_remote_url,
+                "INFO",
+                "access",
+                filters=["http_access"],
+            )
+        self.handlers |= self.access_handlers
+
+    def prepare_default_handlers(self):
+        """Prepare handlers used by default loggers."""
+        default_handlers_at_level = {}
+        if not self.debug:
+            default_handlers_at_level["mail_admins"] = {
+                "class": "df_config.guesses.log.AdminEmailHandler",
+                "level": "ERROR",
+                "include_html": True,
+                "filters": ["not_http_access"],
+            }
+        if self.log_directory:
+            self.add_file_handler(
+                default_handlers_at_level,
+                "",
+                self.log_level,
+                "plain",
+                filters=["not_http_access"],
+            )
+            if self.debug:
+                self.add_stdout_stderr_handler(
+                    default_handlers_at_level,
+                    "-debug",
+                    "ERROR",
+                    "plain",
+                    filters=["not_http_access"],
+                )
+        else:
+            self.add_stdout_stderr_handler(
+                default_handlers_at_level,
+                "-default",
+                self.log_level,
+                "plain",
+                filters=["not_http_access"],
+            )
+        if self.log_remote_url:
+            self.add_remote_collector(
+                default_handlers_at_level,
+                "remote.default",
+                self.log_remote_url,
+                self.log_level,
+                "plain",
+                filters=["not_http_access"],
+            )
+        self.default_handlers |= default_handlers_at_level
+        self.handlers |= default_handlers_at_level
+
+    def prepare_filters(self):
+        """Prepare filters that can be used by any handler or logger."""
+        self.filters |= {
+            "remove_duplicate_warnings": {
+                "()": "df_config.guesses.log.RemoveDuplicateWarnings"
+            },
+            "below_error": {
+                "()": "df_config.guesses.log.MaxLevelFilter",
+                "max_level": logging.ERROR,
+            },
+            "http_access": {
+                "()": "df_config.guesses.log.HTTPAccessRecordFilter",
+                "keep_access": True,
+            },
+            "not_http_access": {
+                "()": "df_config.guesses.log.HTTPAccessRecordFilter",
+                "keep_access": False,
+            },
+        }
+        if self.slow_query_duration_in_s:
+            self.filters["slow_queries"] = {
+                "()": "df_config.guesses.log.SlowQueriesFilter",
+                "slow_query_duration_in_s": self.slow_query_duration_in_s,
+            }
+
+    def prepare_root(self):
+        """Return the default log root."""
+        self.root |= {"handlers": [], "level": self.log_level}
+
+    def set_logger(
+        self,
+        logger,
+        level: str = "NOTSET",
+        propagate: bool = True,
+        disabled: bool = False,
+    ):
+        """Add a logger entry to the configuration.
+
+        Creates the logger dict with the given *level*, an empty handler list,
+        and optional ``propagate`` / ``disabled`` flags.  If the logger is
+        already registered, the existing entry is returned unchanged.
+
+        :param logger: dotted logger name (e.g. ``"django.db.backends"``).
+        :param level: minimum log level string; defaults to ``"NOTSET"``
+            (i.e. inherit from the root logger).
+        :param propagate: when ``False``, records are not forwarded to parent
+            loggers.  Useful for access loggers that have their own handlers.
+        :param disabled: when ``True``, the logger is explicitly disabled.
+        :returns: the logger configuration dict (new or already existing).
+        """
+        if logger not in self.loggers:
+            self.loggers[logger] = {
+                "level": level or self.log_level,
+                "handlers": [],
+                "filters": [],
+            }
+            if not propagate:
+                self.loggers[logger]["propagate"] = False
+            if disabled:
+                self.loggers[logger]["disabled"] = True
+        return self.loggers[logger]
+
+    def create_loggers(self):
+        """Create all loggers and add handlers to them."""
+        default_handlers = list(self.default_handlers)
+        access_handlers = list(self.access_handlers)
+        self.root["handlers"] += default_handlers
+        for logger, levels in self.other_level_loggers.items():
+            new_level = levels.get(self.log_level, self.log_level)
+            self.set_logger(logger, level=new_level)
+        for logger in self.disabled_loggers:
+            self.set_logger(logger, level="CRITICAL", propagate=False, disabled=True)
+        if self.slow_query_duration_in_s:
+            self.set_logger("django.db.backends", level="INFO")
+        self.set_logger("py.warnings", level=self.log_level)
+        for logger in self.access_loggers:
+            self.set_logger(logger, level="INFO")
+            self.loggers[logger]["handlers"] += access_handlers
+
+    def add_filters_to_loggers(self):
+        """Attach specialized filters to specific loggers after creation.
+
+        * ``django.db.backends`` receives the ``slow_queries`` filter when
+          ``LOG_SLOW_QUERY_DURATION_IN_S`` is configured, so that only
+          database queries exceeding the threshold are logged.
+        * ``py.warnings`` receives the ``remove_duplicate_warnings`` filter
+          to suppress repeated identical Python warnings.
+        """
+        if self.slow_query_duration_in_s:
+            self.loggers["django.db.backends"]["filters"] = ["slow_queries"]
+        self.loggers["py.warnings"]["filters"] = ["remove_duplicate_warnings"]
+
+
+log_configuration = LoggingConfiguration()

@@ -582,6 +582,7 @@ LOG_LOKI_EXTRA_TAGS = {
 }
 LOG_SLOW_QUERY_DURATION_IN_S = 10.0
 LOG_DIRECTORY = Directory("{LOCAL_PATH}/log")
+# noinspection SpellCheckingInspection
 LOG_EXCLUDED_COMMANDS = {
     "clearsessions",
     "check",
