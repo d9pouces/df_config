@@ -292,7 +292,7 @@ def send_file(
         try:
             fileobj = open(filepath, "rb")
         except OSError:
-            return HttpResponse(status=40, content="Unable to open the file.")
+            return HttpResponse(status=404, content="Unable to open the file.")
         status = 200
         if ranges:
             file_content = RangedChunkReader(fileobj, ranges, chunk_size=chunk_size)

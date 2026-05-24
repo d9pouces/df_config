@@ -27,6 +27,8 @@ from df_config.config.fields import (
     CharConfigField,
     ChoiceConfigFile,
     ConfigField,
+    DirectoryPathConfigField,
+    FilePathConfigField,
     FloatConfigField,
     IntegerConfigField,
     ListConfigField,
@@ -34,6 +36,8 @@ from df_config.config.fields import (
     guess_relative_path,
     str_or_blank,
     str_or_none,
+    str_to_directory_path,
+    str_to_filepath,
     strip_split,
 )
 from df_config.utils import ensure_dir
@@ -83,6 +87,12 @@ class TestFunctions(TestCase):
         self.assertEqual("./test1/test2", r_2)
         self.assertEqual("", guess_relative_path(None))
         self.assertEqual("", guess_relative_path(""))
+
+    def test_guess_relative_path_outside_cwd(self):
+        """guess_relative_path returns the absolute path when not under cwd."""
+        # /tmp is typically not a sub-path of whatever the cwd is
+        result = guess_relative_path("/tmp")
+        self.assertTrue(os.path.isabs(result))
 
     @given(text())
     def test_guess_relative_path_multi(self, value):
@@ -180,3 +190,139 @@ class TestFields(TestCase):
         self.assertEqual(1, len(settings_check_results))
 
         settings_check_results[:] = p_values
+
+
+class TestStrToFilepath(TestCase):
+    """Cover lines 69-80 (str_to_filepath)."""
+
+    def setUp(self):
+        self._saved = list(settings_check_results)
+        settings_check_results[:] = []
+
+    def tearDown(self):
+        settings_check_results[:] = self._saved
+
+    def test_none_returns_none(self):
+        self.assertIsNone(str_to_filepath(None))
+        self.assertIsNone(str_to_filepath(""))
+        self.assertIsNone(str_to_filepath("   "))
+
+    def test_nonexistent_file_adds_warning(self):
+        result = str_to_filepath("/nonexistent/path/test_file.txt")
+        self.assertIsNotNone(result)
+        self.assertEqual(1, len(settings_check_results))
+        self.assertEqual("df_config.W002", settings_check_results[0].id)
+
+    def test_existing_file_no_warning(self):
+        with tempfile.NamedTemporaryFile() as f:
+            result = str_to_filepath(f.name)
+        self.assertEqual(0, len(settings_check_results))
+        self.assertIsNotNone(result)
+
+    def test_strips_whitespace(self):
+        with tempfile.NamedTemporaryFile() as f:
+            result = str_to_filepath("  " + f.name + "  ")
+        self.assertEqual(os.path.abspath(f.name), result)
+
+
+class TestStrToDirectoryPath(TestCase):
+    """Cover lines 91-102 (str_to_directory_path)."""
+
+    def setUp(self):
+        self._saved = list(settings_check_results)
+        settings_check_results[:] = []
+
+    def tearDown(self):
+        settings_check_results[:] = self._saved
+
+    def test_none_returns_none(self):
+        self.assertIsNone(str_to_directory_path(None))
+        self.assertIsNone(str_to_directory_path(""))
+
+    def test_nonexistent_dir_adds_warning(self):
+        result = str_to_directory_path("/nonexistent/xyz_dir_test")
+        self.assertIsNotNone(result)
+        self.assertEqual(1, len(settings_check_results))
+
+    def test_existing_dir_no_warning(self):
+        with tempfile.TemporaryDirectory() as d:
+            result = str_to_directory_path(d)
+        self.assertEqual(0, len(settings_check_results))
+        self.assertIsNotNone(result)
+
+
+class TestConfigFieldHelpers(TestCase):
+    """Cover lines 168, 172 (ConfigField.get_help and __str__)."""
+
+    def test_get_help(self):
+        f = ConfigField("section.name", "MY_SETTING", help_str="My help text.")
+        self.assertEqual("My help text.", f.get_help())
+
+    def test_str_with_name(self):
+        f = ConfigField("section.name", "MY_SETTING")
+        self.assertEqual("section.name", str(f))
+
+    def test_str_without_name(self):
+        f = ConfigField(None, "MY_SETTING")
+        self.assertEqual("MY_SETTING", str(f))
+
+
+class TestBooleanConfigFieldAllowNone(TestCase):
+    """Cover lines 253-261 (BooleanConfigField with allow_none=True)."""
+
+    def test_empty_string_returns_none(self):
+        f = BooleanConfigField("s.k", "S", allow_none=True)
+        self.assertIsNone(f.from_str(""))
+        self.assertIsNone(f.from_str(None))
+
+    def test_true_value(self):
+        f = BooleanConfigField("s.k", "S", allow_none=True)
+        self.assertTrue(f.from_str("true"))
+
+    def test_to_str_none(self):
+        f = BooleanConfigField("s.k", "S", allow_none=True)
+        self.assertEqual("", f.to_str(None))
+
+    def test_to_str_false(self):
+        f = BooleanConfigField("s.k", "S", allow_none=True)
+        self.assertEqual("false", f.to_str(False))
+
+    def test_to_str_true(self):
+        f = BooleanConfigField("s.k", "S", allow_none=True)
+        self.assertEqual("true", f.to_str(True))
+
+
+class TestChoiceConfigFileHelpers(TestCase):
+    """Cover lines 311, 326-336 (ChoiceConfigFile.to_str no match + get_help)."""
+
+    def test_to_str_no_match_returns_empty(self):
+        f = ChoiceConfigFile("s.k", "S", {"a": "ValA", "b": "ValB"})
+        self.assertEqual("", f.to_str("UnknownValue"))
+
+    def test_get_help_with_doc(self):
+        f = ChoiceConfigFile(
+            "s.k", "S", {"a": "ValA", "b": "ValB"}, help_str="My help."
+        )
+        help_text = f.get_help()
+        self.assertIn("My help.", help_text)
+        self.assertIn('"a"', help_text)
+
+    def test_get_help_without_doc(self):
+        f = ChoiceConfigFile("s.k", "S", {"a": "ValA"})
+        f.__doc__ = None  # simulate missing docstring
+        help_text = f.get_help()
+        self.assertIn('"a"', help_text)
+
+
+class TestFileAndDirPathFields(TestCase):
+    """Cover lines 344, 350-352 (FilePathConfigField and DirectoryPathConfigField)."""
+
+    def test_file_path_config_field_init(self):
+        f = FilePathConfigField("section.path", "MY_FILE_PATH")
+        self.assertEqual("section.path", f.name)
+        self.assertEqual(str_to_filepath, f.from_str)
+
+    def test_directory_path_config_field_init(self):
+        f = DirectoryPathConfigField("section.dir", "MY_DIR_PATH")
+        self.assertEqual("section.dir", f.name)
+        self.assertEqual(str_to_directory_path, f.from_str)
