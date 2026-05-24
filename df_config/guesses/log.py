@@ -1529,3 +1529,6 @@ class LoggingConfiguration:
         if self.slow_query_duration_in_s:
             self.loggers["django.db.backends"]["filters"] = ["slow_queries"]
         self.loggers["py.warnings"]["filters"] = ["remove_duplicate_warnings"]
+
+
+log_configuration = LoggingConfiguration()
