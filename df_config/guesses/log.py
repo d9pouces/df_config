@@ -228,7 +228,7 @@ class HTTPAccessRecordFilter(logging.Filter):
     def filter(self, record: logging.LogRecord):
         """Only keep messages that comes from an HTTP access."""
         if record.name == "django.channels.server":
-            r = "client" in record.args
+            r = isinstance(record.args, dict) and "client" in record.args
         elif record.name in LoggingConfiguration.access_loggers:
             r = True
         else:
@@ -478,7 +478,7 @@ class LogConfiguration:
             if parsed_log_url.path:
                 url += parsed_log_url.path
             if parsed_log_url.query:
-                url += f"?{parsed_log_url}"
+                url += f"?{parsed_log_url.query}"
             auth = None
             if parsed_log_url.username and parsed_log_url.password:
                 auth = (parsed_log_url.username, parsed_log_url.password)
@@ -961,11 +961,12 @@ class LoggingConfiguration:
         self.server_name = settings_dict["SERVER_NAME"]
         self.server_port = settings_dict["SERVER_PORT"]
         self.log_level = log_level
-        self.log_directory = settings_dict["LOG_DIRECTORY"]
-        self.log_remote_url = settings_dict["LOG_REMOTE_URL"]
         self.log_remote_access = settings_dict["LOG_REMOTE_ACCESS"]
         self.ignored_django_commands = settings_dict["LOG_EXCLUDED_COMMANDS"]
         self.slow_query_duration_in_s = settings_dict["LOG_SLOW_QUERY_DURATION_IN_S"]
+        if self.current_django_command not in self.ignored_django_commands:
+            self.log_directory = settings_dict["LOG_DIRECTORY"]
+            self.log_remote_url = settings_dict["LOG_REMOTE_URL"]
 
     def read_django_command(self):
         """Extract the Django management command name from ``self.argv``.
@@ -1215,7 +1216,7 @@ class LoggingConfiguration:
             if parsed_log_url.path:
                 url += parsed_log_url.path
             if parsed_log_url.query:
-                url += f"?{parsed_log_url}"
+                url += f"?{parsed_log_url.query}"
             auth = None
             if parsed_log_url.username and parsed_log_url.password:
                 auth = (parsed_log_url.username, parsed_log_url.password)
@@ -1381,10 +1382,7 @@ class LoggingConfiguration:
 
     def prepare_access_handlers(self):
         """Prepare handlers used by access loggers."""
-        if (
-            self.log_directory
-            and self.current_django_command not in self.ignored_django_commands
-        ):
+        if self.log_directory:
             self.add_file_handler(
                 self.access_handlers,
                 "-access",
