@@ -279,9 +279,9 @@ class TestLoggingConfigurationNoDirectory(LoggingConfigBase):
         """slow_query_duration_in_s adds slow_queries filter and django.db.backends logger."""
         fake = StringIO()
         lc = LoggingConfiguration(stdout=fake, stderr=fake)
-        lc.slow_query_duration_in_s = 1.0
+        settings = {**BASE_SETTINGS, "LOG_SLOW_QUERY_DURATION_IN_S": 1.0}
         with patch("sys.stdout", new=StringIO()), patch("sys.stderr", new=StringIO()):
-            config = lc(BASE_SETTINGS, argv=["manage.py", "server"])
+            config = lc(settings, argv=["manage.py", "server"])
         try:
             logging.config.dictConfig(config)
         except Exception:
@@ -469,20 +469,25 @@ class TestAddFileHandlerNotWritable(LoggingConfigBase):
     def test_file_exists_but_not_writable_falls_back_to_stdout(self):
         """When the log file exists but is read-only, we fall back to stdout/stderr."""
         with tempfile.TemporaryDirectory() as dirname:
-            # Create the file and make it read-only
-            full_path = os.path.join(dirname, "myapp.log")
-            open(full_path, "w").close()
-            os.chmod(full_path, stat.S_IRUSR | stat.S_IRGRP | stat.S_IROTH)
+            # Create both log files and make them read-only
+            log_files = [
+                os.path.join(dirname, "myapp.log"),
+                os.path.join(dirname, "myapp-access.log"),
+            ]
+            for full_path in log_files:
+                open(full_path, "w").close()
+                os.chmod(full_path, stat.S_IRUSR | stat.S_IRGRP | stat.S_IROTH)
             try:
                 config = self.get_config(LOG_DIRECTORY=dirname)
             finally:
                 # Restore permissions so the temp dir can be cleaned up
-                os.chmod(full_path, stat.S_IRUSR | stat.S_IWUSR)
+                for full_path in log_files:
+                    os.chmod(full_path, stat.S_IRUSR | stat.S_IWUSR)
 
-        # The file handler is NOT created; fallback to stdout/stderr
+        # No file handler expected; both log files are read-only → fallback to stdout/stderr
         self.assertFalse(
             any(h.startswith("file.") for h in config["handlers"]),
-            "No file handler expected when log file is not writable",
+            "No file handler expected when log files are not writable",
         )
         # And a warning was registered
         from df_config.checks import settings_check_results

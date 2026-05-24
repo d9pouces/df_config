@@ -681,7 +681,7 @@ class LogConfiguration:
             import systemd.journal
         except ImportError:
             warning = Warning(
-                "Unable to import systemd.journal (required to log with journlad)",
+                "Unable to import systemd.journal (required to log with journald)",
                 hint=None,
                 obj="configuration",
                 id="df_config.W007",
@@ -886,6 +886,7 @@ class LoggingConfiguration:
     def __init__(self, stdout=None, stderr=None):
         """Init function."""
         self.argv = []
+        self.current_django_command: str = ""
         self.access_handlers = {}
         self.default_handlers = {}
         self.filters = {}
@@ -906,6 +907,7 @@ class LoggingConfiguration:
         self.slow_query_duration_in_s = None
         self.stderr = stderr or sys.stderr
         self.stdout = stdout or sys.stdout
+        self.ignored_django_commands: set[str] = set()
 
     def __call__(self, settings_dict, argv=None):
         """Create the log configuration during the setting computation."""
@@ -928,7 +930,8 @@ class LoggingConfiguration:
         """Remove any existing handlers and reset their level to NOTSET."""
         for logger in logging.Logger.manager.loggerDict.values():
             if isinstance(logger, logging.Logger):
-                for handler in logger.handlers:
+                handlers = list(logger.handlers)
+                for handler in handlers:
                     logger.removeHandler(handler)
                     handler.close()
                 logger.setLevel(self.log_level)
@@ -946,6 +949,7 @@ class LoggingConfiguration:
             when ``None``.
         """
         self.argv = argv or sys.argv
+        self.read_django_command()
         if settings_dict["LOG_LEVEL"]:
             log_level = settings_dict["LOG_LEVEL"].upper()
         elif settings_dict["DEBUG"]:
@@ -960,6 +964,16 @@ class LoggingConfiguration:
         self.log_directory = settings_dict["LOG_DIRECTORY"]
         self.log_remote_url = settings_dict["LOG_REMOTE_URL"]
         self.log_remote_access = settings_dict["LOG_REMOTE_ACCESS"]
+        self.ignored_django_commands = settings_dict["LOG_EXCLUDED_COMMANDS"]
+        self.slow_query_duration_in_s = settings_dict["LOG_SLOW_QUERY_DURATION_IN_S"]
+
+    def read_django_command(self):
+        """Extract the Django management command name from ``self.argv``.
+
+        Sets ``self.current_django_command`` to ``argv[1]`` (e.g. ``"server"``,
+        ``"runserver"``) or to an empty string when no sub-command is present.
+        """
+        self.current_django_command = self.argv[1] if len(self.argv) > 1 else ""
 
     def prepare_configuration(self):
         """Orchestrate all prepare_* calls in the correct order.
@@ -1101,7 +1115,9 @@ class LoggingConfiguration:
                 handlers, log_suffix, level, formatter, filters
             )
             return
-        elif not os.access(full_path, os.W_OK):
+        elif (
+            os.path.isfile(full_path) and not os.access(full_path, os.W_OK)
+        ) or not os.access(log_directory, os.W_OK):
             if not self.log_directory_warning:
                 warning_ = Warning(
                     f"Unable to write logs to '{log_directory}'.",
@@ -1230,7 +1246,7 @@ class LoggingConfiguration:
         """Add a LOGD (systemd) handler when required and possible."""
         if find_spec("systemd.journal") is None:
             warning = Warning(
-                "Unable to import systemd.journal (required to log with journlad)",
+                "Unable to import systemd.journal (required to log with journald)",
                 hint=None,
                 obj="configuration",
                 id="df_config.W007",
@@ -1365,7 +1381,10 @@ class LoggingConfiguration:
 
     def prepare_access_handlers(self):
         """Prepare handlers used by access loggers."""
-        if self.log_directory:
+        if (
+            self.log_directory
+            and self.current_django_command not in self.ignored_django_commands
+        ):
             self.add_file_handler(
                 self.access_handlers,
                 "-access",
@@ -1373,7 +1392,11 @@ class LoggingConfiguration:
                 "access",
                 filters=["http_access"],
             )
-        if self.debug or not self.log_directory or "runserver" in self.argv:
+        if (
+            self.debug
+            or not self.log_directory
+            or self.current_django_command == "runserver"
+        ):
             self.add_stdout_stderr_handler(
                 self.access_handlers,
                 "-access",

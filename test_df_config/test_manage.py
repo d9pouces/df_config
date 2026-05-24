@@ -17,7 +17,6 @@ import io
 import os
 import sys
 from unittest import TestCase
-from unittest.mock import patch
 
 from df_config.manage import (
     MODULE_VARIABLE_NAME,
@@ -111,7 +110,6 @@ class TestPatchCommands(TestCase):
     def test_patch_commands_no_listen_address(self):
         # Should not raise even if LISTEN_ADDRESS is not set
         from django.conf import settings as django_settings
-        from django.test import override_settings
 
         if hasattr(django_settings, "LISTEN_ADDRESS"):
             # patch_commands is fine with it set too

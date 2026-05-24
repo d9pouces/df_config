@@ -16,6 +16,7 @@
 import io
 from collections import OrderedDict, defaultdict
 from unittest import TestCase
+from unittest.mock import MagicMock
 
 from django.utils.functional import SimpleLazyObject
 
@@ -243,7 +244,6 @@ class TestSettingMerger(TestCase):
 # ---------------------------------------------------------------------------
 # TestSettingMergerExtended
 # ---------------------------------------------------------------------------
-from unittest.mock import MagicMock
 
 
 class TestSettingMergerExtended(TestCase):

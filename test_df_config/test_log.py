@@ -42,7 +42,7 @@ class LogConfigurationTest(TestCase):
         try:
             from df_config.guesses.log import log_configuration
         except ImportError:
-            self.assertFalse(True)
+            self.fail("log_configuration is not found in df_config.guesses.log.")
 
     def get_config(self, **kwargs):
         settings = {}
