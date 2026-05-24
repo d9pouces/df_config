@@ -113,7 +113,7 @@ class ServerFormatter(logging.Formatter):
 
     def uses_server_time(self):
         """Return true if the log format requires the response time."""
-        return self._fmt.find("%(server_time)") >= 0
+        return (self._fmt or "").find("%(server_time)") >= 0
 
 
 # noinspection PyClassHasNoInit
@@ -811,6 +811,7 @@ class LogConfiguration:
 
 
 class LoggingConfiguration:
+    # noinspection SpellCheckingInspection
     """Generate a Django ``LOGGING`` configuration dictionary from high-level parameters.
 
     This is the modern replacement for :class:`LogConfiguration` (which is
@@ -1336,7 +1337,7 @@ class LoggingConfiguration:
     ):
         """Apply common fields to *handler* and register it in *handlers*.
 
-        Sets ``level``, ``formatter`` (colour-aware), and ``filters`` on the
+        Sets ``level``, ``formatter`` (color-aware), and ``filters`` on the
         handler dict, then stores it under *name* in *handlers* (skipping the
         registration if *name* is already present, so shared handlers are not
         duplicated).
