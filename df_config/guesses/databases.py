@@ -278,8 +278,9 @@ class RedisSmartSetting:
             url = "%(PROTOCOL)s://%(AUTH)s%(HOST)s:%(PORT)s/%(DB)s" % values
             config = {
                 "address": url,
-                "password": values["PASSWORD"] or None,
                 "db": int(values["DB"] or 0),
+                "password": values["PASSWORD"] or None,
+                "socket_timeout": None,
             }
             if self.extra_values:
                 config.update(self.extra_values)
@@ -287,18 +288,18 @@ class RedisSmartSetting:
             result = {
                 "BACKEND": "channels_redis.core.RedisChannelLayer",
                 "CONFIG": {
-                    "hosts": [config],
                     "capacity": 5000,
                     "expiry": 10,
+                    "hosts": [config],
                 },
             }
             return result
         elif self.fmt == "dict":
             result = {
-                "host": values["HOST"] or "localhost",
-                "port": int(values["PORT"] or 6379),
                 "db": int(values["DB"] or 0),
+                "host": values["HOST"] or "localhost",
                 "password": values["PASSWORD"] or None,
+                "port": int(values["PORT"] or 6379),
             }
             if self.extra_values:
                 result.update(self.extra_values)

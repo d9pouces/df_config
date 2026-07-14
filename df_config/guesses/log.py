@@ -1417,7 +1417,10 @@ class LoggingConfiguration:
     def prepare_default_handlers(self):
         """Prepare handlers used by default loggers."""
         default_handlers_at_level = {}
-        if not self.debug:
+        if (
+            not self.debug
+            and self.current_django_command not in self.ignored_django_commands
+        ):
             default_handlers_at_level["mail_admins"] = {
                 "class": "df_config.guesses.log.AdminEmailHandler",
                 "level": "ERROR",
