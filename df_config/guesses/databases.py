@@ -278,8 +278,9 @@ class RedisSmartSetting:
             url = "%(PROTOCOL)s://%(AUTH)s%(HOST)s:%(PORT)s/%(DB)s" % values
             config = {
                 "address": url,
-                "password": values["PASSWORD"] or None,
                 "db": int(values["DB"] or 0),
+                "password": values["PASSWORD"] or None,
+                "socket_timeout": None,
             }
             if self.extra_values:
                 config.update(self.extra_values)
@@ -290,7 +291,6 @@ class RedisSmartSetting:
                     "capacity": 5000,
                     "expiry": 10,
                     "hosts": [config],
-                    "socket_timeout": None,
                 },
             }
             return result
