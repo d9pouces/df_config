@@ -148,7 +148,13 @@ USE_PROMETHEUS = is_package_present("django_prometheus")
 # of course, you can override them in your default settings
 #
 # ######################################################################################################################
-ADMINS = (("admin", "{ADMIN_EMAIL}"),)
+
+if django_version[0] < 6:
+    ADMINS = [
+        ("admin", "{ADMIN_EMAIL}"),
+    ]
+else:
+    ADMINS = ["admin <{ADMIN_EMAIL}>"]
 ALLOWED_HOSTS = DeduplicatedCallableList(allowed_hosts)
 CACHE_URL = "{COMMON_REDIS_URL}"
 CACHES = CallableSetting(cache_setting)
