@@ -6,11 +6,11 @@ on:
 jobs:
   publish:
     name: Python ${{ matrix.python-version }} / Django ${{ matrix.django-version }}
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     strategy:
       matrix:
         python-version: ['3.14']
-        django-version: ['6.0']
+        django-version: ['6.1']
     env:
       DJANGO_SETTINGS_MODULE: test_df_config.data.settings
       POETRY_VIRTUALENVS_CREATE: false

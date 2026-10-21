@@ -146,7 +146,7 @@ BASE_MAPPING = [
         "EMAIL_HOST_URL",
         help_str=_(
             "SMTP server for sending admin emails. \n"
-            "smtp+tls://account@example.com:password@smtp.example.com:587/"
+            "smtp+tls://account@example.com:password@smtp.example.com:587/?ssl_certfile=/etc/client.crt&ssl_keyfile=/etc/client.key"
         ),
         env_name="EMAIL_HOST_URL",
     ),
