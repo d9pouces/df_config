@@ -29,6 +29,7 @@ from traceback import extract_stack
 from typing import Any
 from urllib.parse import ParseResult, urlparse
 
+from django import VERSION as django_version
 from django.core.checks import Warning
 from django.core.management.color import color_style, no_style
 from django.utils.log import AdminEmailHandler as BaseAdminEmailHandler
@@ -133,7 +134,15 @@ class AdminEmailHandler(BaseAdminEmailHandler):
         # noinspection PyPackageRequirements
         from django.conf import settings
 
-        if self.can_send_email() and settings.EMAIL_HOST:
+        can_send_email = True
+        if django_version[0:2] <= (6, 0) and not settings.EMAIL_HOST:
+            can_send_email = False
+        elif django_version[0:2] >= (6, 1) and not settings.MAILERS["default"].get(
+            "OPTIONS", {}
+        ).get("host"):
+            can_send_email = False
+        can_send_email = can_send_email and self.can_send_email()
+        if can_send_email:
             try:
                 super().send_mail(subject, message, *args, **kwargs)
             except Exception as e:

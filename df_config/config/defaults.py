@@ -148,7 +148,13 @@ USE_PROMETHEUS = is_package_present("django_prometheus")
 # of course, you can override them in your default settings
 #
 # ######################################################################################################################
-ADMINS = (("admin", "{ADMIN_EMAIL}"),)
+
+if django_version[0] < 6:
+    ADMINS = [
+        ("admin", "{ADMIN_EMAIL}"),
+    ]
+else:
+    ADMINS = ["admin <{ADMIN_EMAIL}>"]
 ALLOWED_HOSTS = DeduplicatedCallableList(allowed_hosts)
 CACHE_URL = "{COMMON_REDIS_URL}"
 CACHES = CallableSetting(cache_setting)
@@ -645,17 +651,38 @@ DATABASE_CONN_MAX_AGE = 0
 EMAIL_HOST_URL = URLSetting(
     "EMAIL_HOST_URL", split_char="", accepted_schemes={"smtp", "smtps", "smtp+tls"}
 )
-EMAIL_HOST = EMAIL_HOST_URL.hostname("localhost")
-EMAIL_HOST_PASSWORD = EMAIL_HOST_URL.password("")
-EMAIL_HOST_USER = EMAIL_HOST_URL.username("")
-# EMAIL_FROM is now useless and will be removed in a future version
-EMAIL_FROM = "{DEFAULT_FROM_EMAIL}"
-EMAIL_PORT = EMAIL_HOST_URL.port_int(25)
-EMAIL_SUBJECT_PREFIX = "[{SERVER_NAME}] "
-EMAIL_USE_TLS = EMAIL_HOST_URL.use_tls()
-EMAIL_USE_SSL = EMAIL_HOST_URL.use_ssl()
-EMAIL_SSL_CERTFILE = None
-EMAIL_SSL_KEYFILE = None
+
+if django_version[0:2] < (6, 1):
+    EMAIL_HOST = EMAIL_HOST_URL.hostname("localhost")
+    EMAIL_HOST_PASSWORD = EMAIL_HOST_URL.password("")
+    EMAIL_HOST_USER = EMAIL_HOST_URL.username("")
+    # EMAIL_FROM is now useless and will be removed in a future version
+    EMAIL_FROM = "{DEFAULT_FROM_EMAIL}"
+    EMAIL_PORT = EMAIL_HOST_URL.port_int(25)
+    EMAIL_SUBJECT_PREFIX = "[{SERVER_NAME}] "
+    EMAIL_USE_TLS = EMAIL_HOST_URL.use_tls()
+    EMAIL_USE_SSL = EMAIL_HOST_URL.use_ssl()
+    EMAIL_SSL_CERTFILE = EMAIL_HOST_URL.client_cert()
+    EMAIL_SSL_KEYFILE = EMAIL_HOST_URL.client_key()
+    EMAIL_TIMEOUT = None
+else:
+    MAILERS = {
+        "default": {
+            "BACKEND": "django.core.mail.backends.smtp.EmailBackend",
+            "OPTIONS": {
+                "host": EMAIL_HOST_URL.hostname("localhost"),
+                "use_tls": EMAIL_HOST_URL.use_tls(),
+                "use_ssl": EMAIL_HOST_URL.use_ssl(),
+                "port": EMAIL_HOST_URL.port_int(25),
+                "username": EMAIL_HOST_URL.username(""),
+                "password": EMAIL_HOST_URL.password(""),
+                "ssl_keyfile": EMAIL_HOST_URL.client_key(),
+                "ssl_certfile": EMAIL_HOST_URL.client_cert(),
+                "timeout": None,
+            },
+        },
+    }
+
 LANGUAGE_CODE = "en"  # aliased in settings.ini as "[global]language_code"
 TIME_ZONE = "Europe/Paris"  # aliased in settings.ini as "[global]time_zone"
 SERVER_BASE_URL = CallableSetting(smart_base_url)

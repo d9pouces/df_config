@@ -22,6 +22,7 @@ from io import StringIO
 from unittest import TestCase
 from unittest.mock import MagicMock, patch
 
+from django import VERSION as django_version
 from django.test import override_settings
 
 from df_config.guesses.log import (
@@ -899,6 +900,26 @@ class TestServerFormatter(TestCase):
 # ===========================================================================
 # Unit tests for helper classes: AdminEmailHandler
 # ===========================================================================
+if django_version[0:2] < (6, 1):
+    setting_patch_empty = {"EMAIL_HOST": ""}
+    setting_patch_valid = {"EMAIL_HOST": "smtp.example.com"}
+else:
+    setting_patch_empty = {
+        "MAILERS": {
+            "default": {
+                "BACKEND": "django.core.mail.backends.smtp.EmailBackend",
+                "OPTIONS": {"host": ""},
+            }
+        }
+    }
+    setting_patch_valid = {
+        "MAILERS": {
+            "default": {
+                "BACKEND": "django.core.mail.backends.smtp.EmailBackend",
+                "OPTIONS": {"host": "smtp.example.com"},
+            }
+        }
+    }
 
 
 class TestAdminEmailHandler(TestCase):
@@ -930,7 +951,7 @@ class TestAdminEmailHandler(TestCase):
         AdminEmailHandler._previous_email_time = time.time() - 700  # 700s ago
         self.assertTrue(handler.can_send_email())
 
-    @override_settings(EMAIL_HOST="", LOG_DIRECTORY=None)
+    @override_settings(**setting_patch_empty, LOG_DIRECTORY=None)
     def test_send_mail_no_email_host(self):
         """send_mail does nothing when EMAIL_HOST is empty."""
         handler = AdminEmailHandler()
@@ -939,7 +960,7 @@ class TestAdminEmailHandler(TestCase):
             handler.send_mail("subject", "body")
             mock_super.assert_not_called()
 
-    @override_settings(EMAIL_HOST="smtp.example.com", LOG_DIRECTORY=None)
+    @override_settings(**setting_patch_valid, LOG_DIRECTORY=None)
     def test_send_mail_smtp_exception_is_caught(self):
         """send_mail catches SMTP exceptions gracefully."""
         handler = AdminEmailHandler()
@@ -951,7 +972,7 @@ class TestAdminEmailHandler(TestCase):
             # Must not propagate
             handler.send_mail("subject", "body")
 
-    @override_settings(EMAIL_HOST="smtp.example.com", LOG_DIRECTORY="/var/log")
+    @override_settings(**setting_patch_valid, LOG_DIRECTORY="/var/log")
     def test_send_mail_smtp_exception_with_log_directory(self):
         """With LOG_DIRECTORY set, the except branch prints the directory hint."""
         handler = AdminEmailHandler()

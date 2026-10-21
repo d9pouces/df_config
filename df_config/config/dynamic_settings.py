@@ -184,7 +184,7 @@ class Path(DynamicSettting):
             return
         merger.stdout.write(f"Creating directory '{dirname}'")
         try:
-            os.makedirs(dirname)
+            os.makedirs(dirname, exist_ok=True)
         except Exception as e:
             merger.stderr.write(f"Unable to create directory '{dirname}' ({e})")
 

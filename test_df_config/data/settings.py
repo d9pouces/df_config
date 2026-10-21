@@ -14,6 +14,8 @@
 #                                                                              #
 # ##############################################################################
 """Settings for the test suite."""
+from django import VERSION as django_version
+
 SECRET_KEY = "-"
 USE_X_SEND_FILE = False
 X_ACCEL_REDIRECT = False
@@ -23,6 +25,19 @@ DATABASES = {
         "NAME": ":memory:?cache=shared",
     }
 }
+if django_version[0:2] < (6, 1):
+    EMAIL_HOST = None
+else:
+    MAILERS = {
+        "default": {
+            "BACKEND": "django.core.mail.backends.smtp.EmailBackend",
+            "OPTIONS": {
+                "host": None,
+                "timeout": None,
+            },
+        },
+    }
+
 INSTALLED_APPS = [
     "django.contrib.admin",
     "django.contrib.auth",
